@@ -1,0 +1,90 @@
+# Agents Configuration — DB Assistant
+
+## Project Overview
+
+**DB Assistant** is a cross-platform desktop database manager application targeting Windows, macOS, and Linux (Windows and Linux first). It connects to commonly used local and remote SQL and NoSQL databases, provides tabbed views for databases and tables, supports SQL command execution, and offers CRUD operations through shortcuts and context menus.
+
+## Tech Stack
+
+- **Desktop App**: Electron + React (TypeScript)
+- **Marketing Website**: Next.js (TypeScript), hosted in `/website`
+- **Supported Databases**:
+  - SQL: PostgreSQL, MySQL/MariaDB, SQLite, Microsoft SQL Server
+  - NoSQL: MongoDB, Redis
+- **Build/Package**: electron-builder (Windows `.exe`/`.msi`, Linux `.AppImage`/`.deb`/`.rpm`, macOS `.dmg`)
+- **Testing**: Vitest (unit), Playwright (e2e)
+
+## Coding Conventions
+
+- Use TypeScript strict mode in all packages
+- Use functional React components with hooks
+- Prefer named exports over default exports
+- Use `async/await` over raw promises
+- All database credentials must be stored encrypted at rest — never in plaintext config files
+- Sanitize and parameterize all SQL queries — never interpolate user input into query strings
+- Use ESLint + Prettier for formatting consistency
+- Commit messages follow Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, etc.)
+
+## Repository Structure
+
+```
+app-db-assistant/
+├── AGENTS.md              # This file — agent instructions
+├── README.md              # Project overview and setup
+├── ROADMAP.md             # Development roadmap
+├── ARCHITECTURE.md        # Technical architecture
+├── CONTRIBUTING.md        # Contribution guidelines
+├── website/               # Next.js marketing site
+│   ├── src/
+│   ├── public/
+│   └── package.json
+├── src/                   # Electron + React desktop app (future)
+│   ├── main/              # Electron main process
+│   ├── renderer/          # React renderer
+│   ├── shared/            # Shared types, utils
+│   └── db/                # Database connection drivers
+├── tests/
+└── package.json
+```
+
+## Agent Guidelines
+
+### When working on the Desktop App (`src/`)
+- All database connections must go through the `src/db/` driver layer — never import driver packages directly in renderer code
+- IPC between main and renderer must use typed channels defined in `src/shared/ipc.ts`
+- Never expose database credentials to the renderer process
+- Connection strings and credentials flow through the main process only
+
+### When working on the Marketing Website (`website/`)
+- Use Next.js App Router conventions
+- Components go in `website/src/components/`
+- Pages go in `website/src/app/`
+- Keep the site static where possible (SSG) for performance
+- Download links should point to GitHub Releases or a configurable CDN URL
+
+### Security Rules (All Code)
+- Parameterize all database queries — no string concatenation for SQL
+- Validate and sanitize all user input at system boundaries
+- Store credentials encrypted; use OS keychain where available
+- No secrets in source code or config files committed to git
+- Escape all user-provided content rendered in the UI to prevent XSS
+
+### Post-Change Checklist (Required After Every Agent Change)
+
+After every code change, agents **must** review and update all affected documentation and config:
+
+1. **README.md** — Update setup instructions, scripts table, project structure, or feature list if they changed
+2. **AGENTS.md** — Update conventions, structure, or guidelines if new patterns were introduced
+3. **ROADMAP.md** — Mark completed items `[x]`, add new items discovered during implementation
+4. **ARCHITECTURE.md** — Update diagrams or design decisions if architecture changed
+5. **CONTRIBUTING.md** — Update if workflows, branch conventions, or tooling changed
+6. **`.env.example`** — Add/remove/update environment variable entries to match current requirements (never commit actual `.env` files)
+7. **Tests** — Add or update unit tests (`*.test.ts` / `*.test.tsx`) for any changed or new code; update e2e tests in `tests/e2e/` if user-facing behavior changed
+8. **`package.json`** — Ensure scripts, dependencies, and metadata are accurate
+
+Do not skip documentation updates. Stale docs are worse than no docs.
+
+### Testing
+- Unit tests live next to source files as `*.test.ts` or `*.test.tsx`
+- E2E tests live in `tests/e2e/`
+- Run tests with `npm test` (unit) and `npm run test:e2e` (e2e)
