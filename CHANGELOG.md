@@ -1,27 +1,8 @@
 # Changelog
 
-All notable changes to DB Assistant will be documented in this file.
+All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
-The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
-and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
-
-## [Unreleased]
-
-### Added
-- Auto-update mechanism via electron-updater
-- GitHub Actions CI/CD release workflow with e2e test stage
-- Accessibility improvements (keyboard navigation, ARIA labels)
-- Marketing website changelog integration
-- Docker build containers for local CI pipeline validation (`docker/Dockerfile.linux`, `docker/Dockerfile.win`, `docker-compose.yml`)
-- App icon generation script (`scripts/generate-icons.js`) with SVG source
-- `standard-version` for automated version bumps and changelog generation
-- Release scripts: `npm run release`, `npm run release:beta`, `npm run release:dry`
-
-### Fixed
-- GitHub repo URL placeholder in download page
-- electron-builder icon paths to use auto-converted PNG
-- Windows build signing bypass for unsigned dev builds (`sign: null`)
-- Linux .deb packaging missing maintainer email
+### 0.1.1-beta.0 (2026-03-13)
 
 ## [0.1.0] - 2025-07-20
 
