@@ -65,8 +65,12 @@ app-db-assistant/
 │   │   ├── styles/        # Global CSS
 │   │   └── App.tsx        # Root app component
 │   ├── shared/            # Shared types and utilities
-│   │   └── ipc.ts         # Typed IPC channel definitions
-│   └── db/                # Database connection drivers (future)
+│   │   ├── ipc.ts         # Typed IPC channel definitions
+│   │   └── types/         # Shared type definitions
+│   └── db/                # Database connection drivers
+│       ├── drivers/       # PostgreSQL, MySQL, SQLite, MSSQL drivers
+│       ├── connection-manager.ts  # Connection lifecycle management
+│       └── credential-store.ts    # Encrypted credential storage
 ├── tests/                 # E2E tests
 ├── AGENTS.md              # Agent coding instructions
 ├── ROADMAP.md             # Development roadmap

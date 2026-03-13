@@ -1,6 +1,18 @@
-import { app, BrowserWindow, ipcMain, nativeTheme } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from "electron";
 import path from "path";
 import { AppSettings, DEFAULT_SETTINGS } from "../shared/ipc";
+import type { ConnectionConfig } from "../shared/types/database";
+import {
+  initConnectionManager,
+  listConnections,
+  saveConnection,
+  removeConnection,
+  connectToDb,
+  disconnectFromDb,
+  testConnection,
+  getConnectionStatuses,
+  disconnectAll,
+} from "../db/connection-manager";
 
 type StoreType = { settings: AppSettings };
 
@@ -78,8 +90,67 @@ ipcMain.handle("theme:get-system", (): "light" | "dark" => {
   return nativeTheme.shouldUseDarkColors ? "dark" : "light";
 });
 
+// Connection management IPC handlers
+ipcMain.handle("conn:list", () => {
+  return listConnections();
+});
+
+ipcMain.handle(
+  "conn:save",
+  (
+    _event,
+    payload: { config: ConnectionConfig; password?: string },
+  ) => {
+    return saveConnection(payload.config, payload.password);
+  },
+);
+
+ipcMain.handle("conn:delete", async (_event, id: string) => {
+  await removeConnection(id);
+});
+
+ipcMain.handle(
+  "conn:test",
+  async (
+    _event,
+    payload: { config: ConnectionConfig; password?: string },
+  ) => {
+    return testConnection(payload.config, payload.password);
+  },
+);
+
+ipcMain.handle("conn:connect", async (_event, id: string) => {
+  return connectToDb(id);
+});
+
+ipcMain.handle("conn:disconnect", async (_event, id: string) => {
+  return disconnectFromDb(id);
+});
+
+ipcMain.handle("conn:statuses", () => {
+  return getConnectionStatuses();
+});
+
+ipcMain.handle(
+  "dialog:open-file",
+  async (
+    _event,
+    opts: { title?: string; filters?: { name: string; extensions: string[] }[] },
+  ) => {
+    if (!mainWindow) return null;
+    const result = await dialog.showOpenDialog(mainWindow, {
+      title: opts.title ?? "Select File",
+      filters: opts.filters,
+      properties: ["openFile"],
+    });
+    if (result.canceled || result.filePaths.length === 0) return null;
+    return result.filePaths[0];
+  },
+);
+
 app.whenReady().then(async () => {
   await initStore();
+  await initConnectionManager();
 
   // Apply saved theme on startup
   const settings = store.get("settings");
@@ -98,4 +169,8 @@ app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
     app.quit();
   }
+});
+
+app.on("before-quit", async () => {
+  await disconnectAll();
 });

@@ -12,15 +12,15 @@
 - [x] ESLint, Prettier, Vitest tooling
 - [x] Typed IPC channels (main ↔ renderer)
 
-## Phase 2: Core Database Connectivity
+## Phase 2: Core Database Connectivity (Complete)
 
-- [ ] Connection manager UI (add, edit, delete, test connections)
-- [ ] Secure credential storage (encrypted at rest, OS keychain integration)
-- [ ] PostgreSQL driver and connection support
-- [ ] MySQL / MariaDB driver and connection support
-- [ ] SQLite driver and connection support (local file-based)
-- [ ] Microsoft SQL Server driver and connection support
-- [ ] Connection pooling and timeout management
+- [x] Connection manager UI (add, edit, delete, test connections)
+- [x] Secure credential storage (encrypted at rest, OS keychain integration)
+- [x] PostgreSQL driver and connection support
+- [x] MySQL / MariaDB driver and connection support
+- [x] SQLite driver and connection support (local file-based)
+- [x] Microsoft SQL Server driver and connection support
+- [x] Connection pooling and timeout management
 
 ## Phase 3: Database Browsing & Schema Viewer
 

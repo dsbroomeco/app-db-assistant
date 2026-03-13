@@ -1,10 +1,13 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { TabBar } from "./components/TabBar";
 import { Sidebar } from "./components/Sidebar";
 import { WelcomeView } from "./components/WelcomeView";
 import { SettingsView } from "./components/SettingsView";
+import { ConnectionForm } from "./components/ConnectionForm";
+import { ConnectionProvider } from "./context/ConnectionContext";
 import { useTabs } from "./hooks/useTabs";
 import type { Tab } from "./hooks/useTabs";
+import type { SavedConnection } from "@shared/types/database";
 import styles from "./App.module.css";
 
 const WELCOME_TAB: Tab = {
@@ -21,9 +24,13 @@ const SETTINGS_TAB: Tab = {
     closable: true,
 };
 
-export function App() {
+function AppContent() {
     const { tabs, activeTab, activeTabId, setActiveTabId, addTab, closeTab } =
         useTabs([WELCOME_TAB]);
+
+    const [connectionFormOpen, setConnectionFormOpen] = useState(false);
+    const [editingConnection, setEditingConnection] =
+        useState<SavedConnection | null>(null);
 
     const handleOpenSettings = useCallback(() => {
         addTab(SETTINGS_TAB);
@@ -40,10 +47,29 @@ export function App() {
         });
     }, [addTab]);
 
+    const handleNewConnection = useCallback(() => {
+        setEditingConnection(null);
+        setConnectionFormOpen(true);
+    }, []);
+
+    const handleEditConnection = useCallback((conn: SavedConnection) => {
+        setEditingConnection(conn);
+        setConnectionFormOpen(true);
+    }, []);
+
+    const handleCloseConnectionForm = useCallback(() => {
+        setConnectionFormOpen(false);
+        setEditingConnection(null);
+    }, []);
+
     return (
         <div className={styles.app}>
             <div className={styles.body}>
-                <Sidebar onOpenSettings={handleOpenSettings} />
+                <Sidebar
+                    onOpenSettings={handleOpenSettings}
+                    onNewConnection={handleNewConnection}
+                    onEditConnection={handleEditConnection}
+                />
                 <div className={styles.main}>
                     <TabBar
                         tabs={tabs}
@@ -53,7 +79,9 @@ export function App() {
                         onNewTab={handleNewQueryTab}
                     />
                     <div className={styles.content}>
-                        {activeTab?.type === "welcome" && <WelcomeView />}
+                        {activeTab?.type === "welcome" && (
+                            <WelcomeView onNewConnection={handleNewConnection} />
+                        )}
                         {activeTab?.type === "settings" && <SettingsView />}
                         {activeTab?.type === "query" && (
                             <div className={styles.placeholder}>
@@ -86,6 +114,21 @@ export function App() {
                     </div>
                 </div>
             </div>
+
+            {connectionFormOpen && (
+                <ConnectionForm
+                    editConnection={editingConnection}
+                    onClose={handleCloseConnectionForm}
+                />
+            )}
         </div>
+    );
+}
+
+export function App() {
+    return (
+        <ConnectionProvider>
+            <AppContent />
+        </ConnectionProvider>
     );
 }

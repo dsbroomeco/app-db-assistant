@@ -9,6 +9,6 @@
       "@shared/*": ["src/shared/*"]
     }
   },
-  "include": ["src/main/**/*", "src/shared/**/*"],
+  "include": ["src/main/**/*", "src/shared/**/*", "src/db/**/*"],
   "exclude": ["src/**/*.test.ts", "src/**/*.test.tsx"]
 }

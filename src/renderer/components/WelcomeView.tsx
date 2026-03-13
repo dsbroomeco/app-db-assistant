@@ -1,6 +1,10 @@
 import styles from "./WelcomeView.module.css";
 
-export function WelcomeView() {
+interface WelcomeViewProps {
+    onNewConnection: () => void;
+}
+
+export function WelcomeView({ onNewConnection }: WelcomeViewProps) {
     return (
         <div className={styles.welcome}>
             <div className={styles.content}>
@@ -13,7 +17,10 @@ export function WelcomeView() {
                 <div className={styles.quickActions}>
                     <h2 className={styles.sectionTitle}>Quick Start</h2>
                     <div className={styles.actions}>
-                        <button className={styles.actionBtn} disabled>
+                        <button
+                            className={styles.actionBtn}
+                            onClick={onNewConnection}
+                        >
                             <span className={styles.actionIcon}>➕</span>
                             <span>New Connection</span>
                         </button>
@@ -21,7 +28,10 @@ export function WelcomeView() {
                             <span className={styles.actionIcon}>⚡</span>
                             <span>New Query</span>
                         </button>
-                        <button className={styles.actionBtn} disabled>
+                        <button
+                            className={styles.actionBtn}
+                            onClick={onNewConnection}
+                        >
                             <span className={styles.actionIcon}>📂</span>
                             <span>Open SQLite File</span>
                         </button>
