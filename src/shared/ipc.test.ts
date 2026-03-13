@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
   DEFAULT_SETTINGS,
+  DEFAULT_SHORTCUTS,
   type AppSettings,
   type Theme,
   type IpcChannels,
@@ -76,7 +77,21 @@ describe("ipc shared types", () => {
       "redis:set",
       "redis:delete",
       "redis:command",
+      "import:preview",
+      "import:execute",
+      "schema:diff",
+      "queries:list",
+      "queries:save",
+      "queries:delete",
+      "shortcuts:get",
+      "shortcuts:set",
+      "shortcuts:reset",
     ];
-    expect(channelKeys).toHaveLength(40);
+    expect(channelKeys).toHaveLength(49);
+  });
+
+  it("DEFAULT_SHORTCUTS is re-exported from ipc", () => {
+    expect(DEFAULT_SHORTCUTS).toBeDefined();
+    expect(DEFAULT_SHORTCUTS.length).toBeGreaterThan(0);
   });
 });

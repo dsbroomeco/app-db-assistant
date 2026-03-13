@@ -25,6 +25,14 @@ export interface ConnectionConfig {
   filepath: string;
   connectionTimeout: number;
   poolSize: number;
+  /** SSH tunnel configuration (Phase 7) */
+  sshEnabled: boolean;
+  sshHost: string;
+  sshPort: number;
+  sshUsername: string;
+  sshPrivateKeyPath: string;
+  /** "password" or "privateKey" */
+  sshAuthMethod: "password" | "privateKey";
 }
 
 /** Connection info returned to renderer (never includes password). */
@@ -41,6 +49,13 @@ export interface SavedConnection {
   connectionTimeout: number;
   poolSize: number;
   hasPassword: boolean;
+  sshEnabled: boolean;
+  sshHost: string;
+  sshPort: number;
+  sshUsername: string;
+  sshPrivateKeyPath: string;
+  sshAuthMethod: "password" | "privateKey";
+  hasSshPassword: boolean;
 }
 
 export interface ConnectionStatus {
@@ -88,6 +103,12 @@ export function newConnectionConfig(
     filepath: "",
     connectionTimeout: 15000,
     poolSize: isNoSql ? 1 : 5,
+    sshEnabled: false,
+    sshHost: "",
+    sshPort: 22,
+    sshUsername: "",
+    sshPrivateKeyPath: "",
+    sshAuthMethod: "password",
     ...partial,
   };
 }
@@ -340,3 +361,123 @@ export interface RedisCommandResult {
   result: unknown;
   executionTime: number;
 }
+
+// ─── Data import types (Phase 7) ────────────────────────────────
+
+export interface ImportPreviewRequest {
+  filePath: string;
+  format: "csv" | "json";
+  /** Max rows to preview */
+  maxRows?: number;
+}
+
+export interface ImportPreviewResult {
+  columns: string[];
+  rows: Record<string, unknown>[];
+  totalRows: number;
+  detectedTypes: Record<string, string>;
+}
+
+export interface ImportExecuteRequest {
+  connectionId: string;
+  schema: string;
+  table: string;
+  filePath: string;
+  format: "csv" | "json";
+  /** Column name → target SQL type mapping */
+  columnMapping: Record<string, string>;
+  /** Whether to create the table if it doesn't exist */
+  createTable: boolean;
+  /** Whether to truncate existing data before import */
+  truncateFirst: boolean;
+}
+
+export interface ImportResult {
+  success: boolean;
+  rowsImported: number;
+  errors: string[];
+}
+
+// ─── Schema diff types (Phase 7) ────────────────────────────────
+
+export interface SchemaDiffRequest {
+  sourceConnectionId: string;
+  sourceSchema: string;
+  targetConnectionId: string;
+  targetSchema: string;
+}
+
+export type DiffStatus = "added" | "removed" | "modified" | "unchanged";
+
+export interface TableDiff {
+  tableName: string;
+  status: DiffStatus;
+  columnDiffs: ColumnDiff[];
+  indexDiffs: IndexDiff[];
+  constraintDiffs: ConstraintDiff[];
+}
+
+export interface ColumnDiff {
+  columnName: string;
+  status: DiffStatus;
+  sourceColumn?: ColumnInfo;
+  targetColumn?: ColumnInfo;
+}
+
+export interface IndexDiff {
+  indexName: string;
+  status: DiffStatus;
+  sourceIndex?: IndexInfo;
+  targetIndex?: IndexInfo;
+}
+
+export interface ConstraintDiff {
+  constraintName: string;
+  status: DiffStatus;
+  sourceConstraint?: ConstraintInfo;
+  targetConstraint?: ConstraintInfo;
+}
+
+export interface SchemaDiffResult {
+  tableDiffs: TableDiff[];
+  sourceSchema: string;
+  targetSchema: string;
+}
+
+// ─── Saved queries types (Phase 7) ──────────────────────────────
+
+export interface SavedQuery {
+  id: string;
+  name: string;
+  sql: string;
+  /** Optional connection ID to associate with */
+  connectionId?: string;
+  /** Folder/category for organization */
+  folder: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+// ─── Keyboard shortcuts types (Phase 7) ─────────────────────────
+
+export interface KeyboardShortcut {
+  id: string;
+  label: string;
+  /** Default key binding (e.g., "Ctrl+Enter") */
+  defaultBinding: string;
+  /** User-customized key binding, null means use default */
+  customBinding: string | null;
+}
+
+export const DEFAULT_SHORTCUTS: KeyboardShortcut[] = [
+  { id: "query.execute", label: "Execute Query", defaultBinding: "Ctrl+Enter", customBinding: null },
+  { id: "query.explain", label: "Explain Query", defaultBinding: "Ctrl+Shift+E", customBinding: null },
+  { id: "tab.new", label: "New Query Tab", defaultBinding: "Ctrl+T", customBinding: null },
+  { id: "tab.close", label: "Close Tab", defaultBinding: "Ctrl+W", customBinding: null },
+  { id: "table.addRow", label: "Add New Row", defaultBinding: "Ctrl+N", customBinding: null },
+  { id: "table.deleteRows", label: "Delete Selected Rows", defaultBinding: "Delete", customBinding: null },
+  { id: "table.selectAll", label: "Select All Rows", defaultBinding: "Ctrl+A", customBinding: null },
+  { id: "table.copy", label: "Copy Selection", defaultBinding: "Ctrl+C", customBinding: null },
+  { id: "table.editCell", label: "Edit Cell", defaultBinding: "F2", customBinding: null },
+  { id: "editor.save", label: "Save Query", defaultBinding: "Ctrl+S", customBinding: null },
+];

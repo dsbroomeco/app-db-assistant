@@ -9,6 +9,9 @@ import { TableStructureView } from "./components/TableStructureView";
 import { QueryEditorView } from "./components/QueryEditorView";
 import { MongoCollectionView } from "./components/MongoCollectionView";
 import { RedisBrowserView } from "./components/RedisBrowserView";
+import { DataImportView } from "./components/DataImportView";
+import { SchemaDiffView } from "./components/SchemaDiffView";
+import { ErdView } from "./components/ErdView";
 import { ConnectionProvider } from "./context/ConnectionContext";
 import { useTabs } from "./hooks/useTabs";
 import type { Tab } from "./hooks/useTabs";
@@ -119,6 +122,37 @@ function AppContent() {
         [addTab],
     );
 
+    const handleOpenImport = useCallback(
+        (connectionId: string) => {
+            addTab({
+                id: `import-${connectionId}`,
+                title: "Import Data",
+                type: "import",
+                closable: true,
+                meta: { connectionId },
+            });
+        },
+        [addTab],
+    );
+
+    const handleOpenSchemaDiff = useCallback(() => {
+        addTab({
+            id: "schema-diff",
+            title: "Schema Diff",
+            type: "schema-diff",
+            closable: true,
+        });
+    }, [addTab]);
+
+    const handleOpenErd = useCallback(() => {
+        addTab({
+            id: "erd",
+            title: "ERD",
+            type: "erd",
+            closable: true,
+        });
+    }, [addTab]);
+
     return (
         <div className={styles.app}>
             <div className={styles.body}>
@@ -130,6 +164,9 @@ function AppContent() {
                     onOpenStructure={handleOpenStructure}
                     onOpenCollection={handleOpenCollection}
                     onOpenRedisBrowser={handleOpenRedisBrowser}
+                    onOpenImport={handleOpenImport}
+                    onOpenSchemaDiff={handleOpenSchemaDiff}
+                    onOpenErd={handleOpenErd}
                 />
                 <div className={styles.main}>
                     <TabBar
@@ -175,6 +212,13 @@ function AppContent() {
                                 connectionId={activeTab.meta.connectionId!}
                             />
                         )}
+                        {activeTab?.type === "import" && activeTab.meta && (
+                            <DataImportView
+                                connectionId={activeTab.meta.connectionId!}
+                            />
+                        )}
+                        {activeTab?.type === "schema-diff" && <SchemaDiffView />}
+                        {activeTab?.type === "erd" && <ErdView />}
                         {!activeTab && (
                             <div className={styles.placeholder}>
                                 <span className={styles.placeholderIcon}>📭</span>

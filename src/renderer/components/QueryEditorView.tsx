@@ -19,7 +19,7 @@ import {
     exportResults,
     getExportMimeFilters,
 } from "../utils/exportResults";
-import type { ExecuteQueryResult, ExplainQueryResult, QueryHistoryEntry, ExportFormat } from "@shared/types/database";
+import type { ExecuteQueryResult, ExplainQueryResult, QueryHistoryEntry, ExportFormat, SavedQuery } from "@shared/types/database";
 import styles from "./QueryEditorView.module.css";
 
 interface QueryEditorViewProps {
@@ -43,6 +43,9 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
     const [activeResultsTab, setActiveResultsTab] = useState<ResultsTab>("results");
     const [editorHeight, setEditorHeight] = useState(200);
     const [exportMenuOpen, setExportMenuOpen] = useState(false);
+    const [savedQueries, setSavedQueries] = useState<SavedQuery[]>([]);
+    const [savedQueriesOpen, setSavedQueriesOpen] = useState(false);
+    const [saveQueryName, setSaveQueryName] = useState("");
 
     const editorRef = useRef<HTMLDivElement>(null);
     const viewRef = useRef<EditorView | null>(null);
@@ -171,6 +174,34 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
         },
         [result],
     );
+
+    // Saved queries
+    const refreshSavedQueries = useCallback(async () => {
+        const queries: SavedQuery[] = await window.electronAPI.invoke("queries:list");
+        setSavedQueries(queries);
+    }, []);
+
+    const handleSaveQuery = useCallback(async () => {
+        const sql = getEditorContent().trim();
+        if (!sql || !saveQueryName.trim()) return;
+        await window.electronAPI.invoke("queries:save", {
+            name: saveQueryName.trim(),
+            sql,
+            connectionId: selectedConnectionId || undefined,
+        });
+        setSaveQueryName("");
+        await refreshSavedQueries();
+    }, [getEditorContent, saveQueryName, selectedConnectionId, refreshSavedQueries]);
+
+    const handleLoadQuery = useCallback((sq: SavedQuery) => {
+        setEditorContent(sq.sql);
+        setSavedQueriesOpen(false);
+    }, [setEditorContent]);
+
+    const handleDeleteQuery = useCallback(async (id: string) => {
+        await window.electronAPI.invoke("queries:delete", id);
+        await refreshSavedQueries();
+    }, [refreshSavedQueries]);
 
     // Initialize CodeMirror editor
     useEffect(() => {
@@ -383,6 +414,69 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
                 )}
 
                 {statusText && <span className={styles.statusText}>{statusText}</span>}
+
+                {/* Saved Queries */}
+                <div className={styles.exportWrapper}>
+                    <button
+                        className={styles.toolbarBtn}
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            setSavedQueriesOpen(!savedQueriesOpen);
+                            if (!savedQueriesOpen) refreshSavedQueries();
+                        }}
+                    >
+                        📋 Saved
+                    </button>
+                    {savedQueriesOpen && (
+                        <div className={styles.exportMenu} style={{ minWidth: 260, right: 0, maxHeight: 300, overflowY: "auto" }}>
+                            <div style={{ padding: "4px 8px", display: "flex", gap: 4 }}>
+                                <input
+                                    type="text"
+                                    value={saveQueryName}
+                                    onChange={(e) => setSaveQueryName(e.target.value)}
+                                    placeholder="Query name…"
+                                    style={{ flex: 1, padding: "2px 6px", fontSize: 12, border: "1px solid var(--border)", borderRadius: "var(--radius)", background: "var(--bg-primary)" }}
+                                    onClick={(e) => e.stopPropagation()}
+                                />
+                                <button
+                                    className={styles.toolbarBtn}
+                                    onClick={handleSaveQuery}
+                                    disabled={!saveQueryName.trim()}
+                                    style={{ fontSize: 11 }}
+                                >
+                                    Save
+                                </button>
+                            </div>
+                            {savedQueries.length === 0 && (
+                                <div style={{ padding: "8px 12px", color: "var(--text-secondary)", fontSize: 12 }}>
+                                    No saved queries yet
+                                </div>
+                            )}
+                            {savedQueries.map((sq) => (
+                                <div
+                                    key={sq.id}
+                                    className={styles.exportMenuItem}
+                                    style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                                >
+                                    <span
+                                        style={{ flex: 1, cursor: "pointer" }}
+                                        onClick={() => handleLoadQuery(sq)}
+                                        title={sq.sql}
+                                    >
+                                        {sq.name}
+                                    </span>
+                                    <button
+                                        onClick={(e) => { e.stopPropagation(); handleDeleteQuery(sq.id); }}
+                                        style={{ background: "none", border: "none", cursor: "pointer", padding: "0 4px", color: "var(--text-secondary)", fontSize: 12 }}
+                                        title="Delete"
+                                    >
+                                        ✕
+                                    </button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Editor */}

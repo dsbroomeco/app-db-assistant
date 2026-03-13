@@ -1,0 +1,198 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+}
+
+.toolbar label {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.select {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-primary);
+  font-size: 12px;
+  min-width: 120px;
+}
+
+.input {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-primary);
+  font-size: 12px;
+  flex: 1;
+}
+
+.btn {
+  padding: 4px 12px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.btn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btnSecondary {
+  padding: 4px 12px;
+  border-radius: var(--radius);
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  font-size: 12px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+}
+
+.btnSecondary:hover {
+  background: var(--bg-hover);
+}
+
+/* ─── Setup Panel ─────────────────────────────────── */
+
+.setupPanel {
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fieldLabel {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+}
+
+.row {
+  display: flex;
+  gap: 8px;
+  align-items: end;
+}
+
+.checkboxLabel {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+}
+
+/* ─── Preview Table ─────────────────────────────── */
+
+.previewSection {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  overflow: hidden;
+  padding: 8px 12px;
+}
+
+.previewHeader {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.tableWrapper {
+  overflow: auto;
+  flex: 1;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.table th {
+  padding: 6px 8px;
+  text-align: left;
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+
+.table td {
+  padding: 4px 8px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.table tr:hover td {
+  background: var(--bg-hover);
+}
+
+/* ─── Footer ──────────────────────────────────── */
+
+.footer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-top: 1px solid var(--border);
+  background: var(--bg-secondary);
+  font-size: 12px;
+}
+
+.spacer {
+  flex: 1;
+}
+
+/* ─── Status Messages ─────────────────────────── */
+
+.success {
+  color: var(--success, #22c55e);
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
+.error {
+  color: var(--error, #ef4444);
+  font-size: 12px;
+  padding: 8px 12px;
+}
+
+.info {
+  color: var(--text-secondary);
+  padding: 16px;
+  text-align: center;
+  font-size: 13px;
+}

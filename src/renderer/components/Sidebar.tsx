@@ -15,6 +15,9 @@ interface SidebarProps {
     onOpenStructure: (connectionId: string, schema: string, table: string) => void;
     onOpenCollection: (connectionId: string, database: string, collection: string) => void;
     onOpenRedisBrowser: (connectionId: string) => void;
+    onOpenImport: (connectionId: string) => void;
+    onOpenSchemaDiff: () => void;
+    onOpenErd: () => void;
 }
 
 export function Sidebar({
@@ -25,6 +28,9 @@ export function Sidebar({
     onOpenStructure,
     onOpenCollection,
     onOpenRedisBrowser,
+    onOpenImport,
+    onOpenSchemaDiff,
+    onOpenErd,
 }: SidebarProps) {
     const { connections, connect, disconnect, isConnected, deleteConnection } =
         useConnections();
@@ -157,6 +163,26 @@ export function Sidebar({
                         })}
                     </div>
                 )}
+            </div>
+
+            {/* Tools section */}
+            <div className={styles.section}>
+                <div className={styles.sectionHeader}>
+                    <span className={styles.sectionTitle}>Tools</span>
+                </div>
+                <div className={styles.toolsList}>
+                    <button className={styles.toolBtn} onClick={onOpenSchemaDiff} title="Compare schemas between connections">
+                        🔀 Schema Diff
+                    </button>
+                    <button className={styles.toolBtn} onClick={onOpenErd} title="Generate Entity Relationship Diagram">
+                        📐 ERD
+                    </button>
+                    {connections.filter((c) => isConnected(c.id) && isSqlType(c.type)).map((c) => (
+                        <button key={c.id} className={styles.toolBtn} onClick={() => onOpenImport(c.id)} title={`Import data into ${c.name}`}>
+                            📥 Import → {c.name}
+                        </button>
+                    ))}
+                </div>
             </div>
 
             <div className={styles.footer}>

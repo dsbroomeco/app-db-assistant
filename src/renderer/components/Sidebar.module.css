@@ -174,6 +174,33 @@
   color: var(--text-primary);
 }
 
+/* Tools */
+.toolsList {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.toolBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  padding: 5px 8px;
+  font-size: 12px;
+  border-radius: var(--radius);
+  color: var(--text-secondary);
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.toolBtn:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
 /* Context menu */
 .contextMenu {
   position: fixed;

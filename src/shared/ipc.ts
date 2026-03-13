@@ -52,7 +52,17 @@ export type {
   RedisDeleteRequest,
   RedisCommandRequest,
   RedisCommandResult,
+  ImportPreviewRequest,
+  ImportPreviewResult,
+  ImportExecuteRequest,
+  ImportResult,
+  SchemaDiffRequest,
+  SchemaDiffResult,
+  SavedQuery,
+  KeyboardShortcut,
 } from "./types/database";
+
+export { DEFAULT_SHORTCUTS } from "./types/database";
 
 export interface IpcChannels {
   "settings:get": { request: void; response: AppSettings };
@@ -232,6 +242,50 @@ export interface IpcChannels {
   "redis:command": {
     request: import("./types/database").RedisCommandRequest;
     response: import("./types/database").RedisCommandResult;
+  };
+
+  // Data import (Phase 7)
+  "import:preview": {
+    request: import("./types/database").ImportPreviewRequest;
+    response: import("./types/database").ImportPreviewResult;
+  };
+  "import:execute": {
+    request: import("./types/database").ImportExecuteRequest;
+    response: import("./types/database").ImportResult;
+  };
+
+  // Schema diff (Phase 7)
+  "schema:diff": {
+    request: import("./types/database").SchemaDiffRequest;
+    response: import("./types/database").SchemaDiffResult;
+  };
+
+  // Saved queries (Phase 7)
+  "queries:list": {
+    request: void;
+    response: import("./types/database").SavedQuery[];
+  };
+  "queries:save": {
+    request: import("./types/database").SavedQuery;
+    response: import("./types/database").SavedQuery;
+  };
+  "queries:delete": {
+    request: string; // query id
+    response: void;
+  };
+
+  // Keyboard shortcuts (Phase 7)
+  "shortcuts:get": {
+    request: void;
+    response: import("./types/database").KeyboardShortcut[];
+  };
+  "shortcuts:set": {
+    request: import("./types/database").KeyboardShortcut[];
+    response: import("./types/database").KeyboardShortcut[];
+  };
+  "shortcuts:reset": {
+    request: void;
+    response: import("./types/database").KeyboardShortcut[];
   };
 }
 

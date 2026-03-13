@@ -59,14 +59,14 @@
 - [x] Redis key browser and value viewer
 - [x] Redis CLI passthrough
 
-## Phase 7: Advanced Features
+## Phase 7: Advanced Features (Complete)
 
-- [ ] Data import (CSV, JSON → table)
-- [ ] Schema diff and comparison between connections
-- [ ] ERD (Entity Relationship Diagram) generation
-- [ ] SSH tunnel support for remote databases
-- [ ] Saved queries and query snippets
-- [ ] Customizable keyboard shortcuts
+- [x] Data import (CSV, JSON → table)
+- [x] Schema diff and comparison between connections
+- [x] ERD (Entity Relationship Diagram) generation
+- [x] SSH tunnel support for remote databases
+- [x] Saved queries and query snippets
+- [x] Customizable keyboard shortcuts
 
 ## Phase 8: Polish & Distribution
 

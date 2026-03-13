@@ -32,6 +32,7 @@ import {
   hasPassword,
 } from "./credential-store";
 import { createDriver, createMongoDriver, createRedisDriver, createAnyDriver } from "./drivers";
+import { createTunnel, closeTunnel, closeAllTunnels } from "./ssh-tunnel";
 import type { DatabaseDriver, MongoDBDriver, RedisDriver, BaseDriver } from "./types";
 
 type StoreType = { connections: Record<string, ConnectionConfig> };
@@ -71,6 +72,7 @@ export function listConnections(): SavedConnection[] {
 export function saveConnection(
   config: ConnectionConfig,
   password?: string,
+  sshPassword?: string,
 ): SavedConnection {
   // Generate ID if new
   if (!config.id) {
@@ -83,6 +85,10 @@ export function saveConnection(
 
   if (password !== undefined && password !== "") {
     savePassword(config.id, password);
+  }
+
+  if (sshPassword !== undefined && sshPassword !== "") {
+    savePassword(`ssh:${config.id}`, sshPassword);
   }
 
   return toSavedConnection(config);
@@ -99,6 +105,7 @@ export async function removeConnection(id: string): Promise<void> {
   delete all[id];
   configStore.set("connections", all);
   deletePassword(id);
+  deletePassword(`ssh:${id}`);
 }
 
 /** Connect to a saved database. */
@@ -114,9 +121,18 @@ export async function connectToDb(id: string): Promise<ConnectionStatus> {
     await disconnectFromDb(id);
   }
 
-  const driver = createAnyDriver(config.type);
+  let effectiveConfig = config;
+
+  // Set up SSH tunnel if enabled
+  if (config.sshEnabled) {
+    const sshPassword = getPassword(`ssh:${id}`);
+    const { tunnelConfig } = await createTunnel(config, sshPassword);
+    effectiveConfig = tunnelConfig;
+  }
+
+  const driver = createAnyDriver(effectiveConfig.type);
   const password = getPassword(id);
-  await driver.connect(config, password);
+  await driver.connect(effectiveConfig, password);
   activeConnections.set(id, driver);
 
   return { id, connected: true };
@@ -129,6 +145,7 @@ export async function disconnectFromDb(id: string): Promise<ConnectionStatus> {
     await driver.disconnect();
     activeConnections.delete(id);
   }
+  await closeTunnel(id);
   return { id, connected: false };
 }
 
@@ -136,22 +153,32 @@ export async function disconnectFromDb(id: string): Promise<ConnectionStatus> {
 export async function testConnection(
   config: ConnectionConfig,
   password?: string,
+  sshPassword?: string,
 ): Promise<TestConnectionResult> {
-  const driver = createAnyDriver(config.type);
+  let effectiveConfig = config;
+  const tunnelId = `test-${Date.now()}`;
   try {
-    await driver.connect(config, password);
-    await driver.ping();
-    await driver.disconnect();
-    return { success: true, message: "Connection successful" };
-  } catch (err) {
-    // Ensure cleanup
-    try {
-      await driver.disconnect();
-    } catch {
-      // ignore cleanup errors
+    if (config.sshEnabled) {
+      effectiveConfig = await createTunnel({ ...config, id: tunnelId }, sshPassword);
     }
+    const driver = createAnyDriver(config.type);
+    try {
+      await driver.connect(effectiveConfig, password);
+      await driver.ping();
+      await driver.disconnect();
+      return { success: true, message: "Connection successful" };
+    } catch (err) {
+      try { await driver.disconnect(); } catch { /* ignore */ }
+      const message = err instanceof Error ? err.message : String(err);
+      return { success: false, message };
+    }
+  } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    return { success: false, message };
+    return { success: false, message: `SSH tunnel failed: ${message}` };
+  } finally {
+    if (config.sshEnabled) {
+      await closeTunnel(tunnelId);
+    }
   }
 }
 
@@ -170,6 +197,7 @@ export async function disconnectAll(): Promise<void> {
     disconnectFromDb(id),
   );
   await Promise.allSettled(promises);
+  await closeAllTunnels();
 }
 
 function toSavedConnection(config: ConnectionConfig): SavedConnection {
@@ -186,6 +214,13 @@ function toSavedConnection(config: ConnectionConfig): SavedConnection {
     connectionTimeout: config.connectionTimeout,
     poolSize: config.poolSize,
     hasPassword: hasPassword(config.id),
+    sshEnabled: config.sshEnabled,
+    sshHost: config.sshHost,
+    sshPort: config.sshPort,
+    sshUsername: config.sshUsername,
+    sshAuthMethod: config.sshAuthMethod,
+    sshPrivateKeyPath: config.sshPrivateKeyPath,
+    hasSshPassword: hasPassword(`ssh:${config.id}`),
   };
 }
 
@@ -515,4 +550,9 @@ export async function redisExecuteCommand(
   command: string,
 ): Promise<RedisCommandResult> {
   return getRedisDriver(connectionId).executeCommand(command);
+}
+
+/** Expose the SQL driver for a connection (for Phase 7 features). */
+export function getActiveDriver(connectionId: string): DatabaseDriver {
+  return getDriver(connectionId);
 }

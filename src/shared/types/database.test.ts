@@ -5,6 +5,7 @@ import {
   DATABASE_TYPE_LABELS,
   isSqlType,
   isNoSqlType,
+  DEFAULT_SHORTCUTS,
 } from "./database";
 import type {
   DatabaseType,
@@ -41,6 +42,17 @@ import type {
   RedisCommandRequest,
   RedisCommandResult,
   RedisValueType,
+  ImportPreviewRequest,
+  ImportPreviewResult,
+  ImportExecuteRequest,
+  ImportResult,
+  SchemaDiffRequest,
+  SchemaDiffResult,
+  TableDiff,
+  ColumnDiff,
+  DiffStatus,
+  SavedQuery,
+  KeyboardShortcut,
 } from "./database";
 
 describe("database types", () => {
@@ -616,6 +628,170 @@ describe("database types", () => {
         executionTime: 5,
       };
       expect(result.executionTime).toBe(5);
+    });
+  });
+
+  describe("SSH tunnel fields on ConnectionConfig (Phase 7)", () => {
+    it("newConnectionConfig includes SSH defaults", () => {
+      const config = newConnectionConfig("postgresql");
+      expect(config.sshEnabled).toBe(false);
+      expect(config.sshHost).toBe("");
+      expect(config.sshPort).toBe(22);
+      expect(config.sshUsername).toBe("");
+      expect(config.sshAuthMethod).toBe("password");
+      expect(config.sshPrivateKeyPath).toBe("");
+    });
+
+    it("SSH fields can be overridden", () => {
+      const config = newConnectionConfig("mysql", {
+        sshEnabled: true,
+        sshHost: "jump.example.com",
+      });
+      expect(config.sshEnabled).toBe(true);
+      expect(config.sshHost).toBe("jump.example.com");
+    });
+  });
+
+  describe("Data import types (Phase 7)", () => {
+    it("ImportPreviewRequest has expected shape", () => {
+      const req: ImportPreviewRequest = {
+        filePath: "/data/file.csv",
+        format: "csv",
+        maxRows: 100,
+      };
+      expect(req.format).toBe("csv");
+    });
+
+    it("ImportPreviewResult has expected shape", () => {
+      const res: ImportPreviewResult = {
+        columns: ["id", "name"],
+        rows: [{ id: 1, name: "Alice" }],
+        totalRows: 1,
+        detectedTypes: { id: "INTEGER", name: "VARCHAR(255)" },
+      };
+      expect(res.columns).toHaveLength(2);
+      expect(res.detectedTypes.id).toBe("INTEGER");
+    });
+
+    it("ImportExecuteRequest has expected shape", () => {
+      const req: ImportExecuteRequest = {
+        connectionId: "conn-1",
+        schema: "public",
+        table: "users",
+        filePath: "/data/file.csv",
+        format: "csv",
+        columnMapping: { id: "INTEGER", name: "VARCHAR(255)" },
+        createTable: true,
+        truncateFirst: false,
+      };
+      expect(req.createTable).toBe(true);
+    });
+
+    it("ImportResult has expected shape", () => {
+      const res: ImportResult = {
+        success: true,
+        rowsImported: 42,
+        errors: [],
+      };
+      expect(res.rowsImported).toBe(42);
+    });
+  });
+
+  describe("Schema diff types (Phase 7)", () => {
+    it("SchemaDiffRequest has expected shape", () => {
+      const req: SchemaDiffRequest = {
+        sourceConnectionId: "conn-1",
+        sourceSchema: "public",
+        targetConnectionId: "conn-2",
+        targetSchema: "public",
+      };
+      expect(req.sourceConnectionId).toBe("conn-1");
+    });
+
+    it("DiffStatus covers all statuses", () => {
+      const statuses: DiffStatus[] = ["added", "removed", "modified", "unchanged"];
+      expect(statuses).toHaveLength(4);
+    });
+
+    it("TableDiff has expected shape", () => {
+      const diff: TableDiff = {
+        tableName: "users",
+        status: "modified",
+        columnDiffs: [{
+          columnName: "email",
+          status: "added",
+          targetColumn: {
+            name: "email", dataType: "varchar(255)", nullable: true,
+            defaultValue: null, isPrimaryKey: false, ordinalPosition: 3,
+          },
+        }],
+        indexDiffs: [],
+        constraintDiffs: [],
+      };
+      expect(diff.status).toBe("modified");
+      expect(diff.columnDiffs).toHaveLength(1);
+    });
+
+    it("SchemaDiffResult has summary", () => {
+      const result: SchemaDiffResult = {
+        tables: [],
+        summary: { added: 1, removed: 0, modified: 2, unchanged: 5 },
+      };
+      expect(result.summary.added).toBe(1);
+    });
+  });
+
+  describe("Saved query types (Phase 7)", () => {
+    it("SavedQuery has expected shape", () => {
+      const query: SavedQuery = {
+        id: "sq-1",
+        name: "Get all users",
+        sql: "SELECT * FROM users",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      expect(query.name).toBe("Get all users");
+      expect(query.connectionId).toBeUndefined();
+    });
+
+    it("SavedQuery supports optional fields", () => {
+      const query: SavedQuery = {
+        id: "sq-2",
+        name: "Active users",
+        sql: "SELECT * FROM users WHERE active = true",
+        connectionId: "conn-1",
+        folder: "reports",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+      };
+      expect(query.connectionId).toBe("conn-1");
+      expect(query.folder).toBe("reports");
+    });
+  });
+
+  describe("Keyboard shortcut types (Phase 7)", () => {
+    it("KeyboardShortcut has expected shape", () => {
+      const sc: KeyboardShortcut = {
+        id: "query.execute",
+        label: "Execute Query",
+        defaultBinding: "Ctrl+Enter",
+        customBinding: null,
+      };
+      expect(sc.defaultBinding).toBe("Ctrl+Enter");
+      expect(sc.customBinding).toBeNull();
+    });
+
+    it("DEFAULT_SHORTCUTS has entries", () => {
+      expect(DEFAULT_SHORTCUTS.length).toBeGreaterThan(0);
+    });
+
+    it("DEFAULT_SHORTCUTS entries have required fields", () => {
+      for (const sc of DEFAULT_SHORTCUTS) {
+        expect(sc.id).toBeDefined();
+        expect(sc.label).toBeDefined();
+        expect(sc.defaultBinding).toBeDefined();
+        expect(sc.customBinding).toBeNull();
+      }
     });
   });
 });

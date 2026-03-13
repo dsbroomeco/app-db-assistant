@@ -1,7 +1,8 @@
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from "electron";
 import path from "path";
 import { AppSettings, DEFAULT_SETTINGS } from "../shared/ipc";
-import type { ConnectionConfig } from "../shared/types/database";
+import type { ConnectionConfig, ImportPreviewRequest, ImportExecuteRequest, SchemaDiffRequest, KeyboardShortcut } from "../shared/types/database";
+import { DEFAULT_SHORTCUTS } from "../shared/types/database";
 import {
   initConnectionManager,
   listConnections,
@@ -39,13 +40,24 @@ import {
   redisSetKeyValue,
   redisDeleteKeys,
   redisExecuteCommand,
+  getActiveDriver,
 } from "../db/connection-manager";
+import { previewImport, executeImport } from "../db/data-import";
+import { computeSchemaDiff } from "../db/schema-diff";
+import {
+  initSavedQueries,
+  listSavedQueries,
+  saveSavedQuery,
+  deleteSavedQuery,
+} from "../db/saved-queries";
 
-type StoreType = { settings: AppSettings };
+type StoreType = { settings: AppSettings; shortcuts: KeyboardShortcut[] };
 
 let store: {
   get(key: "settings"): AppSettings;
   set(key: "settings", value: AppSettings): void;
+  get(key: "shortcuts"): KeyboardShortcut[];
+  set(key: "shortcuts", value: KeyboardShortcut[]): void;
 };
 
 async function initStore(): Promise<void> {
@@ -53,12 +65,12 @@ async function initStore(): Promise<void> {
   const { default: Store } = await import("electron-store");
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const storeInstance: any = new Store<StoreType>({
-    defaults: { settings: DEFAULT_SETTINGS },
+    defaults: { settings: DEFAULT_SETTINGS, shortcuts: DEFAULT_SHORTCUTS },
   });
   store = {
-    get: (key: "settings") => storeInstance.get(key) as AppSettings,
-    set: (key: "settings", value: AppSettings) => storeInstance.set(key, value),
-  };
+    get: (key: string) => storeInstance.get(key),
+    set: (key: string, value: unknown) => storeInstance.set(key, value),
+  } as typeof store;
 }
 
 let mainWindow: BrowserWindow | null = null;
@@ -126,9 +138,9 @@ ipcMain.handle(
   "conn:save",
   (
     _event,
-    payload: { config: ConnectionConfig; password?: string },
+    payload: { config: ConnectionConfig; password?: string; sshPassword?: string },
   ) => {
-    return saveConnection(payload.config, payload.password);
+    return saveConnection(payload.config, payload.password, payload.sshPassword);
   },
 );
 
@@ -140,9 +152,9 @@ ipcMain.handle(
   "conn:test",
   async (
     _event,
-    payload: { config: ConnectionConfig; password?: string },
+    payload: { config: ConnectionConfig; password?: string; sshPassword?: string },
   ) => {
-    return testConnection(payload.config, payload.password);
+    return testConnection(payload.config, payload.password, payload.sshPassword);
   },
 );
 
@@ -550,10 +562,85 @@ ipcMain.handle(
   },
 );
 
+// Data import IPC handlers (Phase 7)
+ipcMain.handle(
+  "import:preview",
+  async (_event, payload: ImportPreviewRequest) => {
+    return previewImport(payload.filePath, payload.format, payload.maxRows);
+  },
+);
+
+ipcMain.handle(
+  "import:execute",
+  async (_event, payload: ImportExecuteRequest) => {
+    const driver = getActiveDriver(payload.connectionId);
+    return executeImport(
+      driver,
+      payload.schema,
+      payload.table,
+      payload.filePath,
+      payload.format,
+      payload.columnMapping,
+      payload.createTable,
+      payload.truncateFirst,
+    );
+  },
+);
+
+// Schema diff IPC handler (Phase 7)
+ipcMain.handle(
+  "schema:diff",
+  async (_event, payload: SchemaDiffRequest) => {
+    const sourceDriver = getActiveDriver(payload.sourceConnectionId);
+    const targetDriver = getActiveDriver(payload.targetConnectionId);
+    return computeSchemaDiff(
+      sourceDriver,
+      payload.sourceSchema,
+      targetDriver,
+      payload.targetSchema,
+    );
+  },
+);
+
+// Saved queries IPC handlers (Phase 7)
+ipcMain.handle("queries:list", () => {
+  return listSavedQueries();
+});
+
+ipcMain.handle(
+  "queries:save",
+  (_event, payload: { name: string; sql: string; connectionId?: string; folder?: string }) => {
+    return saveSavedQuery(payload);
+  },
+);
+
+ipcMain.handle("queries:delete", (_event, id: string) => {
+  deleteSavedQuery(id);
+});
+
+// Keyboard shortcuts IPC handlers (Phase 7)
+ipcMain.handle("shortcuts:get", (): KeyboardShortcut[] => {
+  return store.get("shortcuts");
+});
+
+ipcMain.handle(
+  "shortcuts:set",
+  (_event, shortcuts: KeyboardShortcut[]): KeyboardShortcut[] => {
+    store.set("shortcuts", shortcuts);
+    return shortcuts;
+  },
+);
+
+ipcMain.handle("shortcuts:reset", (): KeyboardShortcut[] => {
+  store.set("shortcuts", DEFAULT_SHORTCUTS);
+  return DEFAULT_SHORTCUTS;
+});
+
 app.whenReady().then(async () => {
   await initStore();
   await initConnectionManager();
   await initQueryHistory();
+  await initSavedQueries();
 
   // Apply saved theme on startup
   const settings = store.get("settings");

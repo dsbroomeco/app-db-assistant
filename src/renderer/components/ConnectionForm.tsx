@@ -40,12 +40,19 @@ export function ConnectionForm({
                 filepath: editConnection.filepath,
                 connectionTimeout: editConnection.connectionTimeout,
                 poolSize: editConnection.poolSize,
+                sshEnabled: editConnection.sshEnabled,
+                sshHost: editConnection.sshHost,
+                sshPort: editConnection.sshPort,
+                sshUsername: editConnection.sshUsername,
+                sshAuthMethod: editConnection.sshAuthMethod,
+                sshPrivateKeyPath: editConnection.sshPrivateKeyPath,
             };
         }
         return newConnectionConfig("postgresql");
     });
 
     const [password, setPassword] = useState("");
+    const [sshPassword, setSshPassword] = useState("");
     const [showAdvanced, setShowAdvanced] = useState(false);
     const [testing, setTesting] = useState(false);
     const [saving, setSaving] = useState(false);
@@ -93,23 +100,33 @@ export function ConnectionForm({
         }
     }, [update]);
 
+    const handleBrowseSshKey = useCallback(async () => {
+        const filepath = await window.electronAPI.invoke("dialog:open-file", {
+            title: "Select SSH Private Key",
+            filters: [{ name: "All Files", extensions: ["*"] }],
+        });
+        if (filepath) {
+            update({ sshPrivateKeyPath: filepath });
+        }
+    }, [update]);
+
     const handleTest = useCallback(async () => {
         setTesting(true);
         setTestResult(null);
-        const result = await testConnection(config, password || undefined);
+        const result = await testConnection(config, password || undefined, sshPassword || undefined);
         setTestResult(result);
         setTesting(false);
-    }, [config, password, testConnection]);
+    }, [config, password, sshPassword, testConnection]);
 
     const handleSave = useCallback(
         async (e: FormEvent) => {
             e.preventDefault();
             setSaving(true);
-            await saveConnection(config, password || undefined);
+            await saveConnection(config, password || undefined, sshPassword || undefined);
             setSaving(false);
             onClose();
         },
-        [config, password, saveConnection, onClose],
+        [config, password, sshPassword, saveConnection, onClose],
     );
 
     const isValid = () => {
@@ -290,6 +307,130 @@ export function ConnectionForm({
                                         <span>{isMongo ? "Use TLS encryption" : "Use SSL / TLS encryption"}</span>
                                     </label>
                                 </div>
+                            </>
+                        )}
+
+                        {/* SSH Tunnel (for non-SQLite connections) */}
+                        {needsHostPort && (
+                            <>
+                                <div className={styles.sectionTitle}>SSH Tunnel</div>
+                                <div className={styles.field}>
+                                    <label className={styles.checkboxLabel}>
+                                        <input
+                                            type="checkbox"
+                                            checked={config.sshEnabled}
+                                            onChange={(e) => update({ sshEnabled: e.target.checked })}
+                                        />
+                                        <span>Connect via SSH tunnel</span>
+                                    </label>
+                                </div>
+
+                                {config.sshEnabled && (
+                                    <>
+                                        <div className={styles.row}>
+                                            <div className={styles.field}>
+                                                <label className={styles.label}>SSH Host</label>
+                                                <input
+                                                    className={styles.input}
+                                                    type="text"
+                                                    value={config.sshHost}
+                                                    onChange={(e) => update({ sshHost: e.target.value })}
+                                                    placeholder="ssh.example.com"
+                                                />
+                                            </div>
+                                            <div className={styles.field}>
+                                                <label className={styles.label}>SSH Port</label>
+                                                <input
+                                                    className={styles.input}
+                                                    type="number"
+                                                    value={config.sshPort}
+                                                    onChange={(e) =>
+                                                        update({ sshPort: parseInt(e.target.value, 10) || 22 })
+                                                    }
+                                                    placeholder="22"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className={styles.field}>
+                                            <label className={styles.label}>SSH Username</label>
+                                            <input
+                                                className={styles.input}
+                                                type="text"
+                                                value={config.sshUsername}
+                                                onChange={(e) => update({ sshUsername: e.target.value })}
+                                                placeholder="user"
+                                            />
+                                        </div>
+
+                                        <div className={styles.field}>
+                                            <label className={styles.label}>Auth Method</label>
+                                            <select
+                                                className={styles.select}
+                                                value={config.sshAuthMethod}
+                                                onChange={(e) =>
+                                                    update({ sshAuthMethod: e.target.value as "password" | "privateKey" })
+                                                }
+                                            >
+                                                <option value="password">Password</option>
+                                                <option value="privateKey">Private Key</option>
+                                            </select>
+                                        </div>
+
+                                        {config.sshAuthMethod === "password" ? (
+                                            <div className={styles.field}>
+                                                <label className={styles.label}>SSH Password</label>
+                                                <input
+                                                    className={styles.input}
+                                                    type="password"
+                                                    value={sshPassword}
+                                                    onChange={(e) => {
+                                                        setSshPassword(e.target.value);
+                                                        setTestResult(null);
+                                                    }}
+                                                    placeholder={
+                                                        editConnection?.hasSshPassword ? "••••••••" : "SSH password"
+                                                    }
+                                                />
+                                            </div>
+                                        ) : (
+                                            <div className={styles.field}>
+                                                <label className={styles.label}>Private Key File</label>
+                                                <div className={styles.fileRow}>
+                                                    <input
+                                                        className={styles.input}
+                                                        type="text"
+                                                        value={config.sshPrivateKeyPath}
+                                                        onChange={(e) =>
+                                                            update({ sshPrivateKeyPath: e.target.value })
+                                                        }
+                                                        placeholder="~/.ssh/id_rsa"
+                                                    />
+                                                    <button
+                                                        type="button"
+                                                        className={styles.browseBtn}
+                                                        onClick={handleBrowseSshKey}
+                                                    >
+                                                        Browse…
+                                                    </button>
+                                                </div>
+                                                <div className={styles.field}>
+                                                    <label className={styles.label}>Passphrase (optional)</label>
+                                                    <input
+                                                        className={styles.input}
+                                                        type="password"
+                                                        value={sshPassword}
+                                                        onChange={(e) => {
+                                                            setSshPassword(e.target.value);
+                                                            setTestResult(null);
+                                                        }}
+                                                        placeholder="Key passphrase"
+                                                    />
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                )}
                             </>
                         )}
 

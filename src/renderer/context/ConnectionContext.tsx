@@ -21,11 +21,13 @@ interface ConnectionContextValue {
     saveConnection: (
         config: ConnectionConfig,
         password?: string,
+        sshPassword?: string,
     ) => Promise<SavedConnection>;
     deleteConnection: (id: string) => Promise<void>;
     testConnection: (
         config: ConnectionConfig,
         password?: string,
+        sshPassword?: string,
     ) => Promise<TestConnectionResult>;
     connect: (id: string) => Promise<ConnectionStatus>;
     disconnect: (id: string) => Promise<ConnectionStatus>;
@@ -54,10 +56,11 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     }, [refresh]);
 
     const save = useCallback(
-        async (config: ConnectionConfig, password?: string) => {
+        async (config: ConnectionConfig, password?: string, sshPassword?: string) => {
             const saved = await window.electronAPI.invoke("conn:save", {
                 config,
                 password,
+                sshPassword,
             });
             await refresh();
             return saved;
@@ -74,8 +77,8 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     );
 
     const test = useCallback(
-        async (config: ConnectionConfig, password?: string) => {
-            return window.electronAPI.invoke("conn:test", { config, password });
+        async (config: ConnectionConfig, password?: string, sshPassword?: string) => {
+            return window.electronAPI.invoke("conn:test", { config, password, sshPassword });
         },
         [],
     );
