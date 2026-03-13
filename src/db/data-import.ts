@@ -9,6 +9,7 @@ import type {
   ImportResult,
 } from "../shared/types/database";
 import type { DatabaseDriver } from "./types";
+import { isValidSqlType } from "./sanitize";
 
 /** Parse CSV text into rows. Handles quoted fields with commas/newlines. */
 function parseCsv(text: string): { headers: string[]; rows: Record<string, unknown>[] } {
@@ -186,12 +187,25 @@ export async function executeImport(
 
   const columns = Object.keys(columnMapping);
 
+  // Validate SQL types against allowlist to prevent injection via type strings
+  for (const col of columns) {
+    if (!isValidSqlType(columnMapping[col])) {
+      return {
+        success: false,
+        rowsImported: 0,
+        errors: [`Invalid SQL type "${columnMapping[col]}" for column "${col}"`],
+      };
+    }
+  }
+
+  const esc = (name: string) => driver.escapeIdentifier(name);
+
   // Create table if requested
   if (createTable) {
     const colDefs = columns
-      .map((col) => `"${col}" ${columnMapping[col]}`)
+      .map((col) => `${esc(col)} ${columnMapping[col]}`)
       .join(", ");
-    const createSql = `CREATE TABLE IF NOT EXISTS "${schema}"."${table}" (${colDefs})`;
+    const createSql = `CREATE TABLE IF NOT EXISTS ${esc(schema)}.${esc(table)} (${colDefs})`;
     try {
       await driver.executeQuery(createSql);
     } catch (err) {
@@ -206,11 +220,11 @@ export async function executeImport(
   // Truncate if requested
   if (truncateFirst) {
     try {
-      await driver.executeQuery(`TRUNCATE TABLE "${schema}"."${table}"`);
+      await driver.executeQuery(`TRUNCATE TABLE ${esc(schema)}.${esc(table)}`);
     } catch {
       // Try DELETE if TRUNCATE not supported
       try {
-        await driver.executeQuery(`DELETE FROM "${schema}"."${table}"`);
+        await driver.executeQuery(`DELETE FROM ${esc(schema)}.${esc(table)}`);
       } catch (err) {
         errors.push(`Warning: could not truncate table: ${err instanceof Error ? err.message : String(err)}`);
       }

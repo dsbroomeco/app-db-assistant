@@ -28,6 +28,9 @@ export interface BaseDriver {
 }
 
 export interface DatabaseDriver extends BaseDriver {
+  /** Escape a SQL identifier (schema, table, column name) for safe interpolation. */
+  escapeIdentifier(name: string): string;
+
   // ─── Schema introspection (Phase 3) ──────────────────────────
   getSchemas(): Promise<SchemaInfo[]>;
   getTables(schema: string): Promise<TableInfo[]>;

@@ -1,5 +1,6 @@
 import type BetterSqlite3 from "better-sqlite3";
 import type { ConnectionConfig } from "../../shared/types/database";
+import { escapePgId } from "../sanitize";
 import type {
   SchemaInfo,
   TableInfo,
@@ -13,6 +14,10 @@ import type { DatabaseDriver } from "../types";
 
 export class SQLiteDriver implements DatabaseDriver {
   private db: BetterSqlite3.Database | null = null;
+
+  escapeIdentifier(name: string): string {
+    return escapePgId(name);
+  }
 
   async connect(config: ConnectionConfig): Promise<void> {
     if (!config.filepath) {
@@ -76,7 +81,8 @@ export class SQLiteDriver implements DatabaseDriver {
   ): Promise<TableStructure> {
     const db = this.ensureDb();
 
-    const columns = db.prepare(`PRAGMA table_info("${table}")`).all() as {
+    const sTable = escapePgId(table);
+    const columns = db.prepare(`PRAGMA table_info(${sTable})`).all() as {
       cid: number;
       name: string;
       type: string;
@@ -85,7 +91,7 @@ export class SQLiteDriver implements DatabaseDriver {
       pk: number;
     }[];
 
-    const indexes = db.prepare(`PRAGMA index_list("${table}")`).all() as {
+    const indexes = db.prepare(`PRAGMA index_list(${sTable})`).all() as {
       seq: number;
       name: string;
       unique: number;
@@ -93,7 +99,7 @@ export class SQLiteDriver implements DatabaseDriver {
     }[];
 
     const indexDetails = indexes.map((idx) => {
-      const idxInfo = db.prepare(`PRAGMA index_info("${idx.name}")`).all() as {
+      const idxInfo = db.prepare(`PRAGMA index_info(${escapePgId(idx.name)})`).all() as {
         seqno: number;
         cid: number;
         name: string;
@@ -106,7 +112,7 @@ export class SQLiteDriver implements DatabaseDriver {
       };
     });
 
-    const fkList = db.prepare(`PRAGMA foreign_key_list("${table}")`).all() as {
+    const fkList = db.prepare(`PRAGMA foreign_key_list(${sTable})`).all() as {
       id: number;
       seq: number;
       table: string;
@@ -169,13 +175,14 @@ export class SQLiteDriver implements DatabaseDriver {
   ): Promise<QueryResult> {
     const db = this.ensureDb();
     const offset = page * pageSize;
+    const sTable = escapePgId(table);
 
     const countRow = db
-      .prepare(`SELECT COUNT(*) AS total FROM "${table}"`)
+      .prepare(`SELECT COUNT(*) AS total FROM ${sTable}`)
       .get() as { total: number };
     const totalRows = countRow.total;
 
-    const stmt = db.prepare(`SELECT * FROM "${table}" LIMIT ? OFFSET ?`);
+    const stmt = db.prepare(`SELECT * FROM ${sTable} LIMIT ? OFFSET ?`);
     const rows = stmt.all(pageSize, offset) as Record<string, unknown>[];
 
     const columns =
@@ -249,7 +256,7 @@ export class SQLiteDriver implements DatabaseDriver {
 
     const columnSet = new Set<string>();
     for (const t of tableRows) {
-      const cols = db.prepare(`PRAGMA table_info("${t.name}")`).all() as { name: string }[];
+      const cols = db.prepare(`PRAGMA table_info(${escapePgId(t.name)})`).all() as { name: string }[];
       for (const c of cols) columnSet.add(c.name);
     }
 
@@ -263,7 +270,7 @@ export class SQLiteDriver implements DatabaseDriver {
 
   async getPrimaryKeyColumns(_schema: string, table: string): Promise<string[]> {
     const db = this.ensureDb();
-    const cols = db.prepare(`PRAGMA table_info("${table}")`).all() as {
+    const cols = db.prepare(`PRAGMA table_info(${escapePgId(table)})`).all() as {
       name: string;
       pk: number;
     }[];
@@ -279,10 +286,10 @@ export class SQLiteDriver implements DatabaseDriver {
     const cols = Object.keys(row);
     const vals = Object.values(row);
     const placeholders = cols.map(() => "?").join(", ");
-    const colNames = cols.map((c) => `"${c}"`).join(", ");
+    const colNames = cols.map((c) => escapePgId(c)).join(", ");
 
     const info = db
-      .prepare(`INSERT INTO "${table}" (${colNames}) VALUES (${placeholders})`)
+      .prepare(`INSERT INTO ${escapePgId(table)} (${colNames}) VALUES (${placeholders})`)
       .run(...vals);
     return { success: true, affectedRows: info.changes };
   }
@@ -298,11 +305,11 @@ export class SQLiteDriver implements DatabaseDriver {
     const pkCols = Object.keys(primaryKey);
     const allVals = [...Object.values(changes), ...Object.values(primaryKey)];
 
-    const setClause = setCols.map((c) => `"${c}" = ?`).join(", ");
-    const whereClause = pkCols.map((c) => `"${c}" = ?`).join(" AND ");
+    const setClause = setCols.map((c) => `${escapePgId(c)} = ?`).join(", ");
+    const whereClause = pkCols.map((c) => `${escapePgId(c)} = ?`).join(" AND ");
 
     const info = db
-      .prepare(`UPDATE "${table}" SET ${setClause} WHERE ${whereClause}`)
+      .prepare(`UPDATE ${escapePgId(table)} SET ${setClause} WHERE ${whereClause}`)
       .run(...allVals);
     return { success: true, affectedRows: info.changes };
   }
@@ -319,10 +326,10 @@ export class SQLiteDriver implements DatabaseDriver {
       for (const pk of keys) {
         const pkCols = Object.keys(pk);
         const pkVals = Object.values(pk);
-        const whereClause = pkCols.map((c) => `"${c}" = ?`).join(" AND ");
+        const whereClause = pkCols.map((c) => `${escapePgId(c)} = ?`).join(" AND ");
 
         const info = db
-          .prepare(`DELETE FROM "${table}" WHERE ${whereClause}`)
+          .prepare(`DELETE FROM ${escapePgId(table)} WHERE ${whereClause}`)
           .run(...pkVals);
         totalAffected += info.changes;
       }

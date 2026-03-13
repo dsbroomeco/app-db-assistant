@@ -42,7 +42,7 @@ function toSqlInsert(result: ExecuteQueryResult, tableName: string): string {
   if (result.rows.length === 0) return `-- No data to export from ${tableName}`;
 
   const safeTable = tableName.replace(/[^a-zA-Z0-9_.]/g, "_");
-  const cols = result.columns.map((c) => `"${c}"`).join(", ");
+  const cols = result.columns.map((c) => `"${c.replace(/"/g, '""')}"`).join(", ");
 
   return result.rows
     .map((row) => {

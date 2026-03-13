@@ -1,8 +1,10 @@
-import { app, BrowserWindow, dialog, ipcMain, nativeTheme } from "electron";
+import { app, BrowserWindow, dialog, ipcMain, nativeTheme, session } from "electron";
 import path from "path";
+import os from "os";
 import { AppSettings, DEFAULT_SETTINGS } from "../shared/ipc";
 import type { ConnectionConfig, ImportPreviewRequest, ImportExecuteRequest, SchemaDiffRequest, KeyboardShortcut } from "../shared/types/database";
 import { DEFAULT_SHORTCUTS } from "../shared/types/database";
+import { sanitizeErrorMessage } from "../db/sanitize";
 import {
   initConnectionManager,
   listConnections,
@@ -76,6 +78,20 @@ async function initStore(): Promise<void> {
 let mainWindow: BrowserWindow | null = null;
 
 function createWindow(): void {
+  // Apply Content Security Policy in production to block inline scripts and eval
+  if (app.isPackaged) {
+    session.defaultSession.webRequest.onHeadersReceived((details, callback) => {
+      callback({
+        responseHeaders: {
+          ...details.responseHeaders,
+          "Content-Security-Policy": [
+            "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self';",
+          ],
+        },
+      });
+    });
+  }
+
   mainWindow = new BrowserWindow({
     width: 1200,
     height: 800,
@@ -154,7 +170,11 @@ ipcMain.handle(
     _event,
     payload: { config: ConnectionConfig; password?: string; sshPassword?: string },
   ) => {
-    return testConnection(payload.config, payload.password, payload.sshPassword);
+    const result = await testConnection(payload.config, payload.password, payload.sshPassword);
+    if (!result.success) {
+      result.message = sanitizeErrorMessage(result.message);
+    }
+    return result;
   },
 );
 
@@ -376,7 +396,13 @@ ipcMain.handle(
     payload: { filePath: string; content: string },
   ) => {
     const fs = await import("fs/promises");
-    await fs.writeFile(payload.filePath, payload.content, "utf-8");
+    // Validate file path is under user's home directory to prevent writing to system locations
+    const resolved = path.resolve(payload.filePath);
+    const home = os.homedir();
+    if (!resolved.startsWith(home + path.sep) && resolved !== home) {
+      throw new Error("File path must be within the user home directory");
+    }
+    await fs.writeFile(resolved, payload.content, "utf-8");
   },
 );
 

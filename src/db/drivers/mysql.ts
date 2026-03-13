@@ -1,6 +1,7 @@
 import mysql from "mysql2/promise";
 import type { Pool, FieldPacket } from "mysql2/promise";
 import type { ConnectionConfig } from "../../shared/types/database";
+import { escapeMysqlId } from "../sanitize";
 import type {
   SchemaInfo,
   TableInfo,
@@ -15,6 +16,10 @@ import type { DatabaseDriver } from "../types";
 export class MySQLDriver implements DatabaseDriver {
   private pool: Pool | null = null;
   private database = "";
+
+  escapeIdentifier(name: string): string {
+    return escapeMysqlId(name);
+  }
 
   async connect(config: ConnectionConfig, password?: string): Promise<void> {
     this.database = config.database;
@@ -180,13 +185,15 @@ export class MySQLDriver implements DatabaseDriver {
     const pool = this.ensurePool();
     const offset = page * pageSize;
 
+    const sSchema = escapeMysqlId(schema);
+    const sTable = escapeMysqlId(table);
     const [countRows] = await pool.query(
-      `SELECT COUNT(*) AS total FROM \`${schema}\`.\`${table}\``,
+      `SELECT COUNT(*) AS total FROM ${sSchema}.${sTable}`,
     );
     const totalRows = (countRows as Record<string, number>[])[0].total;
 
     const [dataRows, fields] = await pool.query(
-      `SELECT * FROM \`${schema}\`.\`${table}\` LIMIT ? OFFSET ?`,
+      `SELECT * FROM ${sSchema}.${sTable} LIMIT ? OFFSET ?`,
       [pageSize, offset],
     );
 
@@ -281,10 +288,10 @@ export class MySQLDriver implements DatabaseDriver {
     const cols = Object.keys(row);
     const vals = Object.values(row);
     const placeholders = cols.map(() => "?").join(", ");
-    const colNames = cols.map((c) => `\`${c}\``).join(", ");
+    const colNames = cols.map((c) => escapeMysqlId(c)).join(", ");
 
     const [result] = await pool.query(
-      `INSERT INTO \`${schema}\`.\`${table}\` (${colNames}) VALUES (${placeholders})`,
+      `INSERT INTO ${escapeMysqlId(schema)}.${escapeMysqlId(table)} (${colNames}) VALUES (${placeholders})`,
       vals,
     );
     return { success: true, affectedRows: (result as mysql.ResultSetHeader).affectedRows ?? 1 };
@@ -301,11 +308,11 @@ export class MySQLDriver implements DatabaseDriver {
     const pkCols = Object.keys(primaryKey);
     const allVals = [...Object.values(changes), ...Object.values(primaryKey)];
 
-    const setClause = setCols.map((c) => `\`${c}\` = ?`).join(", ");
-    const whereClause = pkCols.map((c) => `\`${c}\` = ?`).join(" AND ");
+    const setClause = setCols.map((c) => `${escapeMysqlId(c)} = ?`).join(", ");
+    const whereClause = pkCols.map((c) => `${escapeMysqlId(c)} = ?`).join(" AND ");
 
     const [result] = await pool.query(
-      `UPDATE \`${schema}\`.\`${table}\` SET ${setClause} WHERE ${whereClause}`,
+      `UPDATE ${escapeMysqlId(schema)}.${escapeMysqlId(table)} SET ${setClause} WHERE ${whereClause}`,
       allVals,
     );
     return { success: true, affectedRows: (result as mysql.ResultSetHeader).affectedRows ?? 0 };
@@ -322,10 +329,10 @@ export class MySQLDriver implements DatabaseDriver {
     for (const pk of primaryKeys) {
       const pkCols = Object.keys(pk);
       const pkVals = Object.values(pk);
-      const whereClause = pkCols.map((c) => `\`${c}\` = ?`).join(" AND ");
+      const whereClause = pkCols.map((c) => `${escapeMysqlId(c)} = ?`).join(" AND ");
 
       const [result] = await pool.query(
-        `DELETE FROM \`${schema}\`.\`${table}\` WHERE ${whereClause}`,
+        `DELETE FROM ${escapeMysqlId(schema)}.${escapeMysqlId(table)} WHERE ${whereClause}`,
         pkVals,
       );
       totalAffected += (result as mysql.ResultSetHeader).affectedRows ?? 0;

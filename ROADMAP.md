@@ -84,47 +84,47 @@
 Before any public release, the following security items **must** be audited, tested, and verified:
 
 ### SQL Injection Prevention
-- [ ] Verify all CRUD operations use parameterized queries — no string interpolation of user input in SQL
-- [ ] Audit `getTableData()` in all drivers for safe identifier quoting (schema/table names)
-- [ ] Review `executeQuery()` free-form SQL path — ensure it is clearly documented as an intentional "run anything" feature and not exposed to untrusted sources
-- [ ] Add automated tests that attempt SQL injection via CRUD inputs and verify they are safely parameterized
+- [x] Verify all CRUD operations use parameterized queries — no string interpolation of user input in SQL
+- [x] Audit `getTableData()` in all drivers for safe identifier quoting (schema/table names)
+- [x] Review `executeQuery()` free-form SQL path — ensure it is clearly documented as an intentional "run anything" feature and not exposed to untrusted sources
+- [x] Add automated tests that attempt SQL injection via CRUD inputs and verify they are safely parameterized
 
 ### Credential & Data Security
-- [ ] Verify credentials never leak into logs, error messages, or renderer process
-- [ ] Audit `electron-store` files to confirm no plaintext passwords are written to disk
-- [ ] Ensure OS keychain / `safeStorage` encryption is enforced — fallback behavior if keychain is unavailable must not store in plaintext
+- [x] Verify credentials never leak into logs, error messages, or renderer process
+- [x] Audit `electron-store` files to confirm no plaintext passwords are written to disk
+- [x] Ensure OS keychain / `safeStorage` encryption is enforced — fallback behavior if keychain is unavailable must not store in plaintext
 - [ ] Confirm TLS/SSL certificate validation is configurable (currently `rejectUnauthorized: false` — add user-facing toggle)
-- [ ] Review IPC channel surface — ensure no channel can be invoked to extract raw credentials
+- [x] Review IPC channel surface — ensure no channel can be invoked to extract raw credentials
 
 ### Electron Security Hardening
-- [ ] Confirm `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` in all windows
-- [ ] Verify `preload.ts` exposes only the minimal required API surface via `contextBridge`
-- [ ] Disable `remote` module entirely
-- [ ] Review CSP (Content Security Policy) headers for the renderer — block inline scripts and `eval`
-- [ ] Validate no `shell.openExternal()` calls with unsanitized URLs (prevent SSRF / open-redirect)
+- [x] Confirm `contextIsolation: true`, `nodeIntegration: false`, `sandbox: true` in all windows
+- [x] Verify `preload.ts` exposes only the minimal required API surface via `contextBridge`
+- [x] Disable `remote` module entirely
+- [x] Review CSP (Content Security Policy) headers for the renderer — block inline scripts and `eval`
+- [x] Validate no `shell.openExternal()` calls with unsanitized URLs (prevent SSRF / open-redirect)
 - [ ] Pin Electron version and monitor for security advisories
 - [ ] Sign application binaries (Windows Authenticode, macOS code signing)
 
 ### Cross-Site Scripting (XSS) Prevention
-- [ ] Audit all rendered database values — ensure cell values, error messages, and user content are escaped
-- [ ] Verify no `dangerouslySetInnerHTML` usage without sanitization
-- [ ] Review clipboard copy operations for potential script injection vectors
+- [x] Audit all rendered database values — ensure cell values, error messages, and user content are escaped
+- [x] Verify no `dangerouslySetInnerHTML` usage without sanitization
+- [x] Review clipboard copy operations for potential script injection vectors
 
 ### Input Validation
-- [ ] Validate connection config fields (host, port, database name) at the boundary — reject obviously malicious inputs
-- [ ] Validate and sanitize file paths for SQLite connections (prevent path traversal)
-- [ ] Validate export file paths before writing
+- [x] Validate connection config fields (host, port, database name) at the boundary — reject obviously malicious inputs
+- [x] Validate and sanitize file paths for SQLite connections (prevent path traversal)
+- [x] Validate export file paths before writing
 
 ### Dependency Audit
-- [ ] Run `npm audit` and resolve all critical/high vulnerabilities
+- [x] Run `npm audit` and resolve all critical/high vulnerabilities
 - [ ] Review native module supply chain (better-sqlite3, pg, mysql2, mssql, tedious)
 - [ ] Enable Dependabot or Renovate for automated dependency updates
 - [ ] Pin exact versions in `package-lock.json` and verify integrity hashes
 
 ### Access Control
-- [ ] Ensure application does not run with elevated privileges by default
-- [ ] Review file system access scope — limit to user config directories and explicitly selected files
-- [ ] Confirm no world-readable/writable config files are created
+- [x] Ensure application does not run with elevated privileges by default
+- [x] Review file system access scope — limit to user config directories and explicitly selected files
+- [x] Confirm no world-readable/writable config files are created
 
 ---
 

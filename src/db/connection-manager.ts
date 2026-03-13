@@ -31,6 +31,7 @@ import {
   deletePassword,
   hasPassword,
 } from "./credential-store";
+import { sanitizeErrorMessage } from "./sanitize";
 import { createDriver, createMongoDriver, createRedisDriver, createAnyDriver } from "./drivers";
 import { createTunnel, closeTunnel, closeAllTunnels } from "./ssh-tunnel";
 import type { DatabaseDriver, MongoDBDriver, RedisDriver, BaseDriver } from "./types";
@@ -360,7 +361,7 @@ export async function executeQuery(
     });
     return result;
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
+    const message = sanitizeErrorMessage(err instanceof Error ? err.message : String(err));
     addHistoryEntry({
       id: crypto.randomUUID(),
       connectionId,
@@ -371,7 +372,7 @@ export async function executeQuery(
       rowCount: 0,
       error: message,
     });
-    throw err;
+    throw new Error(message);
   }
 }
 

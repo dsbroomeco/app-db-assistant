@@ -132,7 +132,13 @@ export function ConnectionForm({
     const isValid = () => {
         if (!config.name.trim()) return false;
         if (isSqlite) return !!config.filepath.trim();
-        return !!config.host.trim() && config.port > 0;
+        if (!config.host.trim()) return false;
+        if (!Number.isInteger(config.port) || config.port < 1 || config.port > 65535) return false;
+        if (config.sshEnabled) {
+            if (!config.sshHost.trim()) return false;
+            if (!Number.isInteger(config.sshPort) || config.sshPort < 1 || config.sshPort > 65535) return false;
+        }
+        return true;
     };
 
     return (
@@ -220,10 +226,13 @@ export function ConnectionForm({
                                         <input
                                             className={styles.input}
                                             type="number"
+                                            min={1}
+                                            max={65535}
                                             value={config.port}
-                                            onChange={(e) =>
-                                                update({ port: parseInt(e.target.value, 10) || 0 })
-                                            }
+                                            onChange={(e) => {
+                                                const p = parseInt(e.target.value, 10) || 0;
+                                                update({ port: Math.min(65535, Math.max(0, p)) });
+                                            }}
                                             placeholder={String(
                                                 config.type !== "sqlite"
                                                     ? DEFAULT_PORTS[config.type]
@@ -343,10 +352,13 @@ export function ConnectionForm({
                                                 <input
                                                     className={styles.input}
                                                     type="number"
+                                                    min={1}
+                                                    max={65535}
                                                     value={config.sshPort}
-                                                    onChange={(e) =>
-                                                        update({ sshPort: parseInt(e.target.value, 10) || 22 })
-                                                    }
+                                                    onChange={(e) => {
+                                                        const p = parseInt(e.target.value, 10) || 22;
+                                                        update({ sshPort: Math.min(65535, Math.max(1, p)) });
+                                                    }}
                                                     placeholder="22"
                                                 />
                                             </div>

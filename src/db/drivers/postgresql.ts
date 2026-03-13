@@ -1,5 +1,6 @@
 import { Pool } from "pg";
 import type { ConnectionConfig } from "../../shared/types/database";
+import { escapePgId } from "../sanitize";
 import type {
   SchemaInfo,
   TableInfo,
@@ -13,6 +14,10 @@ import type { DatabaseDriver } from "../types";
 
 export class PostgreSQLDriver implements DatabaseDriver {
   private pool: Pool | null = null;
+
+  escapeIdentifier(name: string): string {
+    return escapePgId(name);
+  }
 
   async connect(config: ConnectionConfig, password?: string): Promise<void> {
     this.pool = new Pool({
@@ -174,14 +179,15 @@ export class PostgreSQLDriver implements DatabaseDriver {
     const pool = this.ensurePool();
     const offset = page * pageSize;
 
-    // Use quoted identifiers to handle special characters safely
+    const sSchema = escapePgId(schema);
+    const sTable = escapePgId(table);
     const countResult = await pool.query(
-      `SELECT COUNT(*)::int AS total FROM "${schema}"."${table}"`,
+      `SELECT COUNT(*)::int AS total FROM ${sSchema}.${sTable}`,
     );
     const totalRows: number = countResult.rows[0].total;
 
     const dataResult = await pool.query(
-      `SELECT * FROM "${schema}"."${table}" LIMIT $1 OFFSET $2`,
+      `SELECT * FROM ${sSchema}.${sTable} LIMIT $1 OFFSET $2`,
       [pageSize, offset],
     );
 
@@ -270,10 +276,10 @@ export class PostgreSQLDriver implements DatabaseDriver {
     const cols = Object.keys(row);
     const vals = Object.values(row);
     const placeholders = cols.map((_, i) => `$${i + 1}`).join(", ");
-    const colNames = cols.map((c) => `"${c}"`).join(", ");
+    const colNames = cols.map((c) => escapePgId(c)).join(", ");
 
     const result = await pool.query(
-      `INSERT INTO "${schema}"."${table}" (${colNames}) VALUES (${placeholders})`,
+      `INSERT INTO ${escapePgId(schema)}.${escapePgId(table)} (${colNames}) VALUES (${placeholders})`,
       vals,
     );
     return { success: true, affectedRows: result.rowCount ?? 1 };
@@ -291,14 +297,14 @@ export class PostgreSQLDriver implements DatabaseDriver {
     const allVals = [...Object.values(changes), ...Object.values(primaryKey)];
 
     const setClause = setCols
-      .map((c, i) => `"${c}" = $${i + 1}`)
+      .map((c, i) => `${escapePgId(c)} = $${i + 1}`)
       .join(", ");
     const whereClause = pkCols
-      .map((c, i) => `"${c}" = $${setCols.length + i + 1}`)
+      .map((c, i) => `${escapePgId(c)} = $${setCols.length + i + 1}`)
       .join(" AND ");
 
     const result = await pool.query(
-      `UPDATE "${schema}"."${table}" SET ${setClause} WHERE ${whereClause}`,
+      `UPDATE ${escapePgId(schema)}.${escapePgId(table)} SET ${setClause} WHERE ${whereClause}`,
       allVals,
     );
     return { success: true, affectedRows: result.rowCount ?? 0 };
@@ -316,11 +322,11 @@ export class PostgreSQLDriver implements DatabaseDriver {
       const pkCols = Object.keys(pk);
       const pkVals = Object.values(pk);
       const whereClause = pkCols
-        .map((c, i) => `"${c}" = $${i + 1}`)
+        .map((c, i) => `${escapePgId(c)} = $${i + 1}`)
         .join(" AND ");
 
       const result = await pool.query(
-        `DELETE FROM "${schema}"."${table}" WHERE ${whereClause}`,
+        `DELETE FROM ${escapePgId(schema)}.${escapePgId(table)} WHERE ${whereClause}`,
         pkVals,
       );
       totalAffected += result.rowCount ?? 0;

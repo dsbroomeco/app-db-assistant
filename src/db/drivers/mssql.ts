@@ -1,5 +1,6 @@
 import sql from "mssql";
 import type { ConnectionConfig } from "../../shared/types/database";
+import { escapeMssqlId } from "../sanitize";
 import type {
   SchemaInfo,
   TableInfo,
@@ -13,6 +14,10 @@ import type { DatabaseDriver } from "../types";
 
 export class MSSQLDriver implements DatabaseDriver {
   private pool: sql.ConnectionPool | null = null;
+
+  escapeIdentifier(name: string): string {
+    return escapeMssqlId(name);
+  }
 
   async connect(config: ConnectionConfig, password?: string): Promise<void> {
     const mssqlConfig: sql.config = {
@@ -206,12 +211,12 @@ export class MSSQLDriver implements DatabaseDriver {
     const pool = this.ensurePool();
     const offset = page * pageSize;
 
+    const sSchema = escapeMssqlId(schema);
+    const sTable = escapeMssqlId(table);
     const countResult = await pool
       .request()
-      .input("schema", sql.NVarChar, schema)
-      .input("table", sql.NVarChar, table)
       .query(
-        `SELECT COUNT(*) AS total FROM [${schema}].[${table}]`,
+        `SELECT COUNT(*) AS total FROM ${sSchema}.${sTable}`,
       );
     const totalRows: number = countResult.recordset[0].total;
 
@@ -220,7 +225,7 @@ export class MSSQLDriver implements DatabaseDriver {
       .input("offset", sql.Int, offset)
       .input("pageSize", sql.Int, pageSize)
       .query(
-        `SELECT * FROM [${schema}].[${table}]
+        `SELECT * FROM ${sSchema}.${sTable}
          ORDER BY (SELECT NULL)
          OFFSET @offset ROWS FETCH NEXT @pageSize ROWS ONLY`,
       );
@@ -333,11 +338,11 @@ export class MSSQLDriver implements DatabaseDriver {
     const req = pool.request();
     cols.forEach((_, i) => req.input(`p${i}`, vals[i]));
 
-    const colNames = cols.map((c) => `[${c}]`).join(", ");
+    const colNames = cols.map((c) => escapeMssqlId(c)).join(", ");
     const placeholders = cols.map((_, i) => `@p${i}`).join(", ");
 
     const result = await req.query(
-      `INSERT INTO [${schema}].[${table}] (${colNames}) VALUES (${placeholders})`,
+      `INSERT INTO ${escapeMssqlId(schema)}.${escapeMssqlId(table)} (${colNames}) VALUES (${placeholders})`,
     );
     return { success: true, affectedRows: result.rowsAffected?.[0] ?? 1 };
   }
@@ -362,11 +367,11 @@ export class MSSQLDriver implements DatabaseDriver {
       req.input(`w${i}`, Object.values(primaryKey)[i]);
     });
 
-    const setClause = setCols.map((c, i) => `[${c}] = @s${i}`).join(", ");
-    const whereClause = pkCols.map((c, i) => `[${c}] = @w${i}`).join(" AND ");
+    const setClause = setCols.map((c, i) => `${escapeMssqlId(c)} = @s${i}`).join(", ");
+    const whereClause = pkCols.map((c, i) => `${escapeMssqlId(c)} = @w${i}`).join(" AND ");
 
     const result = await req.query(
-      `UPDATE [${schema}].[${table}] SET ${setClause} WHERE ${whereClause}`,
+      `UPDATE ${escapeMssqlId(schema)}.${escapeMssqlId(table)} SET ${setClause} WHERE ${whereClause}`,
     );
     return { success: true, affectedRows: result.rowsAffected?.[0] ?? 0 };
   }
@@ -386,10 +391,10 @@ export class MSSQLDriver implements DatabaseDriver {
       const req = pool.request();
       pkCols.forEach((_, i) => req.input(`p${i}`, pkVals[i]));
 
-      const whereClause = pkCols.map((c, i) => `[${c}] = @p${i}`).join(" AND ");
+      const whereClause = pkCols.map((c, i) => `${escapeMssqlId(c)} = @p${i}`).join(" AND ");
 
       const result = await req.query(
-        `DELETE FROM [${schema}].[${table}] WHERE ${whereClause}`,
+        `DELETE FROM ${escapeMssqlId(schema)}.${escapeMssqlId(table)} WHERE ${whereClause}`,
       );
       totalAffected += result.rowsAffected?.[0] ?? 0;
     }
