@@ -19,6 +19,14 @@ A cross-platform desktop database manager for SQL and NoSQL databases.
 - **Cross-Platform** — Runs on Windows, Linux, and macOS
 - **Connection Manager** — Save, organize, and securely store database connections
 - **Data Export** — Export query results to CSV, JSON, and other formats
+- **Data Import** — Import CSV and JSON files into database tables with column mapping
+- **Schema Diff** — Compare schemas between connections to spot differences
+- **ERD Generation** — Generate Entity Relationship Diagrams with Mermaid
+- **SSH Tunnel** — Connect to remote databases through SSH tunnels
+- **Saved Queries** — Save and organize frequently used queries
+- **Customizable Shortcuts** — Remap keyboard shortcuts to your preferences
+- **Auto-Update** — Automatic update notifications with one-click install
+- **SSL/TLS** — Configurable SSL certificate verification for all database types
 
 ## Downloads
 
@@ -71,12 +79,17 @@ app-db-assistant/
 │   │   ├── styles/        # Global CSS
 │   │   └── App.tsx        # Root app component
 │   ├── shared/            # Shared types and utilities
-│   │   ├── ipc.ts         # Typed IPC channel definitions (40 channels)
+│   │   ├── ipc.ts         # Typed IPC channel definitions (50 channels)
 │   │   └── types/         # Shared type definitions
 │   └── db/                # Database connection drivers
 │       ├── drivers/       # PostgreSQL, MySQL, SQLite, MSSQL, MongoDB, Redis drivers
 │       ├── connection-manager.ts  # Connection lifecycle management
-│       └── credential-store.ts    # Encrypted credential storage
+│       ├── credential-store.ts    # Encrypted credential storage
+│       ├── ssh-tunnel.ts          # SSH tunnel management
+│       ├── data-import.ts         # CSV/JSON import engine
+│       ├── schema-diff.ts         # Schema comparison engine
+│       ├── saved-queries.ts       # Saved query persistence
+│       └── sanitize.ts            # Error message sanitization
 ├── tests/                 # E2E tests
 ├── AGENTS.md              # Agent coding instructions
 ├── ROADMAP.md             # Development roadmap
@@ -90,6 +103,10 @@ app-db-assistant/
 | `npm run dev`        | Start desktop app (dev mode)        |
 | `npm run build`      | Build main process + renderer       |
 | `npm run build:electron` | Build + package with electron-builder |
+| `npm run build:win`  | Build + package for Windows           |
+| `npm run build:linux`| Build + package for Linux              |
+| `npm run build:mac`  | Build + package for macOS              |
+| `npm run pack`       | Build + pack (no installer, for testing) |
 | `npm test`           | Run unit tests                      |
 | `npm run test:watch` | Run unit tests in watch mode        |
 | `npm run test:e2e`   | Run end-to-end tests                |

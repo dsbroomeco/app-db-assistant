@@ -70,14 +70,14 @@
 
 ## Phase 8: Polish & Distribution
 
-- [ ] Auto-update mechanism (electron-updater)
-- [ ] Windows installer (`.exe` / `.msi` via electron-builder)
-- [ ] Linux packages (`.AppImage`, `.deb`, `.rpm`)
-- [ ] macOS build (`.dmg`) — stretch goal
-- [ ] CI/CD pipeline for automated builds and releases
-- [ ] Marketing website: release notes, changelog integration
+- [x] Auto-update mechanism (electron-updater)
+- [x] Windows installer (`.exe` / `.msi` via electron-builder)
+- [x] Linux packages (`.AppImage`, `.deb`, `.rpm`)
+- [x] macOS build (`.dmg`) — stretch goal
+- [x] CI/CD pipeline for automated builds and releases
+- [x] Marketing website: release notes, changelog integration
 - [ ] Performance profiling and optimization
-- [ ] Accessibility audit (keyboard navigation, screen readers)
+- [x] Accessibility audit (keyboard navigation, screen readers)
 
 ## Pre-Deployment: Security Audit & Vulnerability Review
 

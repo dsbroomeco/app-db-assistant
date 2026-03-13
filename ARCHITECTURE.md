@@ -21,7 +21,7 @@ DB Assistant is a cross-platform desktop application built with **Electron** and
 │  │              IPC Bridge (typed channels)       │  │
 │  └───────────────────────┬───────────────────────┘  │
 └──────────────────────────┼──────────────────────────┘
-                           │ IPC (40 channels)
+                           │ IPC (50 channels)
 ┌──────────────────────────┼──────────────────────────┐
 │                    Main Process                      │
 │  ┌───────────────────────┴───────────────────────┐  │
@@ -82,6 +82,7 @@ interface DatabaseDriver extends BaseDriver {
   insertRow(schema: string, table: string, row: Record<string, unknown>): Promise<CrudResult>;
   updateRow(schema: string, table: string, primaryKey: Record<string, unknown>, changes: Record<string, unknown>): Promise<CrudResult>;
   deleteRows(schema: string, table: string, primaryKeys: Record<string, unknown>[]): Promise<CrudResult>;
+  escapeIdentifier(identifier: string): string;
 }
 ```
 
@@ -92,8 +93,22 @@ NoSQL drivers implement their own interfaces (see `src/db/types.ts` for `MongoDB
 - Credentials are encrypted at rest using the OS keychain (via `keytar` or `electron-safeStorage`)
 - Connection configs stored in a local JSON file contain only non-sensitive fields
 - Credentials are decrypted only at connection time in the main process
+- All SSL/TLS connections support configurable certificate verification (`sslRejectUnauthorized`)
 
-### 4. Tab System
+### 4. Auto-Update
+
+- Uses `electron-updater` to check for and install updates from GitHub Releases
+- Download and install is user-initiated (not silent) — prompts before downloading and before restarting
+- Auto-updater is only active in packaged builds (`app.isPackaged`)
+
+### 5. CI/CD Pipeline
+
+- GitHub Actions workflow (`.github/workflows/release.yml`) triggered on version tags (`v*.*.*`)
+- Matrix build strategy: Windows, Linux, macOS
+- Pipeline: lint → typecheck → test → build → package → create GitHub Release
+- Dependabot configured for automated dependency updates (`.github/dependabot.yml`)
+
+### 6. Tab System
 
 The renderer uses a tab manager that supports:
 - Query editor tabs (with CodeMirror SQL editor, results grid, plan viewer, and history)
@@ -146,7 +161,7 @@ Keyboard shortcuts:
 
 ### 7. IPC Communication
 
-All main ↔ renderer communication uses typed IPC channels defined in `src/shared/ipc.ts` (40 channels total):
+All main ↔ renderer communication uses typed IPC channels defined in `src/shared/ipc.ts` (50 channels total):
 
 ```typescript
 // Channel definitions include connection management, schema browsing, query execution, CRUD, and NoSQL operations
