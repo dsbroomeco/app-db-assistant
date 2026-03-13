@@ -31,6 +31,10 @@ export type {
   ExplainQueryResult,
   QueryHistoryEntry,
   ExportFormat,
+  InsertRowRequest,
+  UpdateRowRequest,
+  DeleteRowsRequest,
+  CrudResult,
 } from "./types/database";
 
 export interface IpcChannels {
@@ -120,6 +124,24 @@ export interface IpcChannels {
   "query:completions": {
     request: string; // connectionId
     response: { tables: string[]; columns: string[] };
+  };
+
+  // CRUD operations (Phase 5)
+  "crud:insert-row": {
+    request: import("./types/database").InsertRowRequest;
+    response: import("./types/database").CrudResult;
+  };
+  "crud:update-row": {
+    request: import("./types/database").UpdateRowRequest;
+    response: import("./types/database").CrudResult;
+  };
+  "crud:delete-rows": {
+    request: import("./types/database").DeleteRowsRequest;
+    response: import("./types/database").CrudResult;
+  };
+  "crud:get-primary-keys": {
+    request: { connectionId: string; schema: string; table: string };
+    response: string[];
   };
 
   // Dialogs

@@ -15,6 +15,7 @@ import type {
   QueryResult,
   ExecuteQueryResult,
   QueryHistoryEntry,
+  CrudResult,
 } from "../shared/types/database";
 import {
   initCredentialStore,
@@ -326,4 +327,42 @@ export async function getCompletionItems(
 function getConnectionName(connectionId: string): string {
   const all = configStore.get("connections");
   return all[connectionId]?.name ?? connectionId;
+}
+
+// ─── CRUD operations (Phase 5) ──────────────────────────────────
+
+export async function getPrimaryKeyColumns(
+  connectionId: string,
+  schema: string,
+  table: string,
+): Promise<string[]> {
+  return getDriver(connectionId).getPrimaryKeyColumns(schema, table);
+}
+
+export async function insertRow(
+  connectionId: string,
+  schema: string,
+  table: string,
+  row: Record<string, unknown>,
+): Promise<CrudResult> {
+  return getDriver(connectionId).insertRow(schema, table, row);
+}
+
+export async function updateRow(
+  connectionId: string,
+  schema: string,
+  table: string,
+  primaryKey: Record<string, unknown>,
+  changes: Record<string, unknown>,
+): Promise<CrudResult> {
+  return getDriver(connectionId).updateRow(schema, table, primaryKey, changes);
+}
+
+export async function deleteRows(
+  connectionId: string,
+  schema: string,
+  table: string,
+  primaryKeys: Record<string, unknown>[],
+): Promise<CrudResult> {
+  return getDriver(connectionId).deleteRows(schema, table, primaryKeys);
 }

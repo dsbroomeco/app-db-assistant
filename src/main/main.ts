@@ -23,6 +23,10 @@ import {
   getCompletionItems,
   getQueryHistory,
   clearQueryHistory,
+  getPrimaryKeyColumns,
+  insertRow,
+  updateRow,
+  deleteRows,
 } from "../db/connection-manager";
 
 type StoreType = { settings: AppSettings };
@@ -246,6 +250,83 @@ ipcMain.handle("query:history:clear", () => {
 ipcMain.handle("query:completions", async (_event, connectionId: string) => {
   return getCompletionItems(connectionId);
 });
+
+// CRUD operations IPC handlers (Phase 5)
+ipcMain.handle(
+  "crud:insert-row",
+  async (
+    _event,
+    payload: {
+      connectionId: string;
+      schema: string;
+      table: string;
+      row: Record<string, unknown>;
+    },
+  ) => {
+    return insertRow(
+      payload.connectionId,
+      payload.schema,
+      payload.table,
+      payload.row,
+    );
+  },
+);
+
+ipcMain.handle(
+  "crud:update-row",
+  async (
+    _event,
+    payload: {
+      connectionId: string;
+      schema: string;
+      table: string;
+      primaryKey: Record<string, unknown>;
+      changes: Record<string, unknown>;
+    },
+  ) => {
+    return updateRow(
+      payload.connectionId,
+      payload.schema,
+      payload.table,
+      payload.primaryKey,
+      payload.changes,
+    );
+  },
+);
+
+ipcMain.handle(
+  "crud:delete-rows",
+  async (
+    _event,
+    payload: {
+      connectionId: string;
+      schema: string;
+      table: string;
+      primaryKeys: Record<string, unknown>[];
+    },
+  ) => {
+    return deleteRows(
+      payload.connectionId,
+      payload.schema,
+      payload.table,
+      payload.primaryKeys,
+    );
+  },
+);
+
+ipcMain.handle(
+  "crud:get-primary-keys",
+  async (
+    _event,
+    payload: { connectionId: string; schema: string; table: string },
+  ) => {
+    return getPrimaryKeyColumns(
+      payload.connectionId,
+      payload.schema,
+      payload.table,
+    );
+  },
+);
 
 ipcMain.handle(
   "dialog:save-file",

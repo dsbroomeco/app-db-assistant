@@ -174,3 +174,36 @@ export interface QueryHistoryEntry {
 }
 
 export type ExportFormat = "csv" | "json" | "sql";
+
+// ─── CRUD operation types (Phase 5) ─────────────────────────────
+
+export interface InsertRowRequest {
+  connectionId: string;
+  schema: string;
+  table: string;
+  row: Record<string, unknown>;
+}
+
+export interface UpdateRowRequest {
+  connectionId: string;
+  schema: string;
+  table: string;
+  /** Primary key column-value pairs identifying the row */
+  primaryKey: Record<string, unknown>;
+  /** Column-value pairs to update */
+  changes: Record<string, unknown>;
+}
+
+export interface DeleteRowsRequest {
+  connectionId: string;
+  schema: string;
+  table: string;
+  /** Array of primary key column-value pairs, one per row to delete */
+  primaryKeys: Record<string, unknown>[];
+}
+
+export interface CrudResult {
+  success: boolean;
+  affectedRows: number;
+  message?: string;
+}

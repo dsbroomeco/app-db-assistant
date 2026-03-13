@@ -52,8 +52,19 @@ describe("ipc shared types", () => {
       "db:table-structure",
       "db:routines",
       "db:table-data",
+      "query:execute",
+      "query:explain",
+      "query:history",
+      "query:history:clear",
+      "query:completions",
+      "crud:insert-row",
+      "crud:update-row",
+      "crud:delete-rows",
+      "crud:get-primary-keys",
       "dialog:open-file",
+      "dialog:save-file",
+      "file:write",
     ];
-    expect(channelKeys).toHaveLength(17);
+    expect(channelKeys).toHaveLength(28);
   });
 });

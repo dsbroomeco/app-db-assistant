@@ -66,6 +66,11 @@ interface DatabaseDriver {
   executeQuery(sql: string): Promise<ExecuteQueryResult>;
   explainQuery(sql: string): Promise<string>;
   getCompletionItems(): Promise<{ tables: string[]; columns: string[] }>;
+  // CRUD operations (Phase 5)
+  getPrimaryKeyColumns(schema: string, table: string): Promise<string[]>;
+  insertRow(schema: string, table: string, row: Record<string, unknown>): Promise<CrudResult>;
+  updateRow(schema: string, table: string, primaryKey: Record<string, unknown>, changes: Record<string, unknown>): Promise<CrudResult>;
+  deleteRows(schema: string, table: string, primaryKeys: Record<string, unknown>[]): Promise<CrudResult>;
 }
 ```
 
@@ -100,12 +105,38 @@ The SQL editor uses **CodeMirror 6** with the following features:
 
 Security: All SQL execution happens in the main process via the driver layer. The renderer sends raw SQL strings through IPC — the drivers execute them using their native client libraries. No string interpolation is used for parameterized table browsing queries.
 
-### 6. IPC Communication
+### 6. CRUD Operations
+
+The table data viewer supports inline CRUD operations:
+
+- **Inline editing**: Double-click a cell to edit it in-place. Changes are committed via `UPDATE` with parameterized queries using the row's primary key for identification.
+- **Add row**: An insertable row form appears at the top of the table. Empty columns default to `NULL`, letting the database apply column defaults.
+- **Delete rows**: Single or multi-row deletion with a confirmation dialog. Rows are identified by primary key.
+- **Bulk operations**: Multi-select rows with Ctrl+Click (toggle) or Shift+Click (range). Bulk delete operates on all selected rows.
+- **Copy**: Cell, row, column, or multi-row copy to clipboard (as JSON for rows, as text for cells/columns).
+
+All CRUD mutations flow through typed IPC channels (`crud:insert-row`, `crud:update-row`, `crud:delete-rows`) to the main process, where drivers execute parameterized queries. Primary key columns are resolved via `crud:get-primary-keys`. Tables without a primary key are read-only.
+
+Keyboard shortcuts:
+| Shortcut | Action |
+| --- | --- |
+| Double-click | Edit cell |
+| F2 | Edit first column in selected row |
+| Enter | Commit edit |
+| Escape | Cancel edit / close add row |
+| Ctrl+N | Add new row |
+| Delete / Backspace | Delete selected rows |
+| Ctrl+A | Select all rows |
+| Ctrl+C | Copy selected rows |
+| Ctrl+Click | Toggle row selection |
+| Shift+Click | Range-select rows |
+
+### 7. IPC Communication
 
 All main ↔ renderer communication uses typed IPC channels defined in `src/shared/ipc.ts`:
 
 ```typescript
-// Channel definitions include connection management, schema browsing, and query execution
+// Channel definitions include connection management, schema browsing, query execution, and CRUD
 type IpcChannels = {
   'conn:connect': { request: string; response: ConnectionStatus };
   'conn:disconnect': { request: string; response: ConnectionStatus };
@@ -118,6 +149,12 @@ type IpcChannels = {
   'query:explain': { request: ExplainQueryRequest; response: ExplainQueryResult };
   'query:history': { request: void; response: QueryHistoryEntry[] };
   'query:completions': { request: string; response: { tables: string[]; columns: string[] } };
+  // CRUD operations (Phase 5)
+  'crud:insert-row': { request: InsertRowRequest; response: CrudResult };
+  'crud:update-row': { request: UpdateRowRequest; response: CrudResult };
+  'crud:delete-rows': { request: DeleteRowsRequest; response: CrudResult };
+  'crud:get-primary-keys': { request: { connectionId: string; schema: string; table: string }; response: string[] };
+};
 };
 ```
 

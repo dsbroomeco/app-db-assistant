@@ -8,6 +8,7 @@ import type {
   RoutineInfo,
   QueryResult,
   ExecuteQueryResult,
+  CrudResult,
 } from "../shared/types/database";
 
 export interface DatabaseDriver {
@@ -44,4 +45,27 @@ export interface DatabaseDriver {
   explainQuery(sql: string): Promise<string>;
   /** Get table and column names for autocomplete. */
   getCompletionItems(): Promise<{ tables: string[]; columns: string[] }>;
+
+  // ─── CRUD operations (Phase 5) ───────────────────────────────
+  /** Get primary key column names for a table. */
+  getPrimaryKeyColumns(schema: string, table: string): Promise<string[]>;
+  /** Insert a new row into a table. Values are parameterized. */
+  insertRow(
+    schema: string,
+    table: string,
+    row: Record<string, unknown>,
+  ): Promise<CrudResult>;
+  /** Update a single row identified by primary key. Values are parameterized. */
+  updateRow(
+    schema: string,
+    table: string,
+    primaryKey: Record<string, unknown>,
+    changes: Record<string, unknown>,
+  ): Promise<CrudResult>;
+  /** Delete rows identified by primary keys. Values are parameterized. */
+  deleteRows(
+    schema: string,
+    table: string,
+    primaryKeys: Record<string, unknown>[],
+  ): Promise<CrudResult>;
 }

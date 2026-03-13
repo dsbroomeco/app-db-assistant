@@ -75,6 +75,10 @@ const mockDriver: DatabaseDriver = {
     tables: ["public.users"],
     columns: ["id", "name"],
   }),
+  getPrimaryKeyColumns: vi.fn().mockResolvedValue(["id"]),
+  insertRow: vi.fn().mockResolvedValue({ success: true, affectedRows: 1 }),
+  updateRow: vi.fn().mockResolvedValue({ success: true, affectedRows: 1 }),
+  deleteRows: vi.fn().mockResolvedValue({ success: true, affectedRows: 1 }),
 };
 
 vi.mock("./drivers", () => ({
@@ -259,6 +263,68 @@ describe("connection-manager", () => {
       const items = await manager.getCompletionItems(saved.id);
       expect(items.tables).toContain("public.users");
       expect(items.columns).toContain("id");
+    });
+  });
+
+  // Phase 5: CRUD operation tests
+  describe("CRUD operations", () => {
+    it("getPrimaryKeyColumns throws when not connected", async () => {
+      const saved = manager.saveConnection({ ...pgConfig });
+      await expect(
+        manager.getPrimaryKeyColumns(saved.id, "public", "users"),
+      ).rejects.toThrow("not active");
+    });
+
+    it("getPrimaryKeyColumns returns PK columns for connected db", async () => {
+      const saved = manager.saveConnection({ ...pgConfig });
+      await manager.connectToDb(saved.id);
+      const pks = await manager.getPrimaryKeyColumns(saved.id, "public", "users");
+      expect(pks).toEqual(["id"]);
+    });
+
+    it("insertRow returns success for connected db", async () => {
+      const saved = manager.saveConnection({ ...pgConfig });
+      await manager.connectToDb(saved.id);
+      const result = await manager.insertRow(saved.id, "public", "users", { name: "Alice" });
+      expect(result.success).toBe(true);
+      expect(result.affectedRows).toBe(1);
+    });
+
+    it("insertRow throws when not connected", async () => {
+      const saved = manager.saveConnection({ ...pgConfig });
+      await expect(
+        manager.insertRow(saved.id, "public", "users", { name: "Alice" }),
+      ).rejects.toThrow("not active");
+    });
+
+    it("updateRow returns success for connected db", async () => {
+      const saved = manager.saveConnection({ ...pgConfig });
+      await manager.connectToDb(saved.id);
+      const result = await manager.updateRow(
+        saved.id, "public", "users",
+        { id: 1 },
+        { name: "Bob" },
+      );
+      expect(result.success).toBe(true);
+      expect(result.affectedRows).toBe(1);
+    });
+
+    it("deleteRows returns success for connected db", async () => {
+      const saved = manager.saveConnection({ ...pgConfig });
+      await manager.connectToDb(saved.id);
+      const result = await manager.deleteRows(
+        saved.id, "public", "users",
+        [{ id: 1 }],
+      );
+      expect(result.success).toBe(true);
+      expect(result.affectedRows).toBe(1);
+    });
+
+    it("deleteRows throws when not connected", async () => {
+      const saved = manager.saveConnection({ ...pgConfig });
+      await expect(
+        manager.deleteRows(saved.id, "public", "users", [{ id: 1 }]),
+      ).rejects.toThrow("not active");
     });
   });
 });

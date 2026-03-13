@@ -19,6 +19,10 @@ import type {
   ExplainQueryResult,
   QueryHistoryEntry,
   ExportFormat,
+  InsertRowRequest,
+  UpdateRowRequest,
+  DeleteRowsRequest,
+  CrudResult,
 } from "./database";
 
 describe("database types", () => {
@@ -293,6 +297,61 @@ describe("database types", () => {
     it("ExportFormat covers all formats", () => {
       const formats: ExportFormat[] = ["csv", "json", "sql"];
       expect(formats).toHaveLength(3);
+    });
+  });
+
+  describe("CRUD operation types (Phase 5)", () => {
+    it("InsertRowRequest has expected shape", () => {
+      const req: InsertRowRequest = {
+        connectionId: "conn-1",
+        schema: "public",
+        table: "users",
+        row: { name: "Alice", email: "alice@example.com" },
+      };
+      expect(req.connectionId).toBe("conn-1");
+      expect(req.row).toHaveProperty("name", "Alice");
+    });
+
+    it("UpdateRowRequest has expected shape", () => {
+      const req: UpdateRowRequest = {
+        connectionId: "conn-1",
+        schema: "public",
+        table: "users",
+        primaryKey: { id: 1 },
+        changes: { name: "Bob" },
+      };
+      expect(req.primaryKey).toEqual({ id: 1 });
+      expect(req.changes).toEqual({ name: "Bob" });
+    });
+
+    it("DeleteRowsRequest supports multiple primary keys", () => {
+      const req: DeleteRowsRequest = {
+        connectionId: "conn-1",
+        schema: "public",
+        table: "users",
+        primaryKeys: [{ id: 1 }, { id: 2 }, { id: 3 }],
+      };
+      expect(req.primaryKeys).toHaveLength(3);
+    });
+
+    it("CrudResult has expected shape", () => {
+      const result: CrudResult = {
+        success: true,
+        affectedRows: 3,
+      };
+      expect(result.success).toBe(true);
+      expect(result.affectedRows).toBe(3);
+      expect(result.message).toBeUndefined();
+    });
+
+    it("CrudResult supports optional message", () => {
+      const result: CrudResult = {
+        success: false,
+        affectedRows: 0,
+        message: "Foreign key violation",
+      };
+      expect(result.success).toBe(false);
+      expect(result.message).toBe("Foreign key violation");
     });
   });
 });

@@ -7,6 +7,7 @@ import type {
   RoutineInfo,
   QueryResult,
   ExecuteQueryResult,
+  CrudResult,
 } from "../../shared/types/database";
 import type { DatabaseDriver } from "../types";
 
@@ -297,5 +298,102 @@ export class MSSQLDriver implements DatabaseDriver {
       tables: tablesResult.recordset.map((r: Record<string, string>) => r.name),
       columns: columnsResult.recordset.map((r: Record<string, string>) => r.name),
     };
+  }
+
+  // ─── CRUD operations (Phase 5) ────────────────────────────────
+
+  async getPrimaryKeyColumns(schema: string, table: string): Promise<string[]> {
+    const pool = this.ensurePool();
+    const result = await pool
+      .request()
+      .input("schema", sql.NVarChar, schema)
+      .input("table", sql.NVarChar, table)
+      .query(
+        `SELECT kcu.COLUMN_NAME AS name
+         FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc
+         JOIN INFORMATION_SCHEMA.KEY_COLUMN_USAGE kcu
+           ON tc.CONSTRAINT_NAME = kcu.CONSTRAINT_NAME
+           AND tc.TABLE_SCHEMA = kcu.TABLE_SCHEMA
+         WHERE tc.CONSTRAINT_TYPE = 'PRIMARY KEY'
+           AND tc.TABLE_SCHEMA = @schema AND tc.TABLE_NAME = @table
+         ORDER BY kcu.ORDINAL_POSITION`,
+      );
+    return result.recordset.map((r: Record<string, string>) => r.name);
+  }
+
+  async insertRow(
+    schema: string,
+    table: string,
+    row: Record<string, unknown>,
+  ): Promise<CrudResult> {
+    const pool = this.ensurePool();
+    const cols = Object.keys(row);
+    const vals = Object.values(row);
+
+    const req = pool.request();
+    cols.forEach((_, i) => req.input(`p${i}`, vals[i]));
+
+    const colNames = cols.map((c) => `[${c}]`).join(", ");
+    const placeholders = cols.map((_, i) => `@p${i}`).join(", ");
+
+    const result = await req.query(
+      `INSERT INTO [${schema}].[${table}] (${colNames}) VALUES (${placeholders})`,
+    );
+    return { success: true, affectedRows: result.rowsAffected?.[0] ?? 1 };
+  }
+
+  async updateRow(
+    schema: string,
+    table: string,
+    primaryKey: Record<string, unknown>,
+    changes: Record<string, unknown>,
+  ): Promise<CrudResult> {
+    const pool = this.ensurePool();
+    const setCols = Object.keys(changes);
+    const pkCols = Object.keys(primaryKey);
+
+    const req = pool.request();
+    let paramIdx = 0;
+    setCols.forEach((_, i) => {
+      req.input(`s${i}`, Object.values(changes)[i]);
+      paramIdx++;
+    });
+    pkCols.forEach((_, i) => {
+      req.input(`w${i}`, Object.values(primaryKey)[i]);
+    });
+
+    const setClause = setCols.map((c, i) => `[${c}] = @s${i}`).join(", ");
+    const whereClause = pkCols.map((c, i) => `[${c}] = @w${i}`).join(" AND ");
+
+    const result = await req.query(
+      `UPDATE [${schema}].[${table}] SET ${setClause} WHERE ${whereClause}`,
+    );
+    return { success: true, affectedRows: result.rowsAffected?.[0] ?? 0 };
+  }
+
+  async deleteRows(
+    schema: string,
+    table: string,
+    primaryKeys: Record<string, unknown>[],
+  ): Promise<CrudResult> {
+    const pool = this.ensurePool();
+    let totalAffected = 0;
+
+    for (const pk of primaryKeys) {
+      const pkCols = Object.keys(pk);
+      const pkVals = Object.values(pk);
+
+      const req = pool.request();
+      pkCols.forEach((_, i) => req.input(`p${i}`, pkVals[i]));
+
+      const whereClause = pkCols.map((c, i) => `[${c}] = @p${i}`).join(" AND ");
+
+      const result = await req.query(
+        `DELETE FROM [${schema}].[${table}] WHERE ${whereClause}`,
+      );
+      totalAffected += result.rowsAffected?.[0] ?? 0;
+    }
+
+    return { success: true, affectedRows: totalAffected };
   }
 }

@@ -7,6 +7,7 @@ import type {
   RoutineInfo,
   QueryResult,
   ExecuteQueryResult,
+  CrudResult,
 } from "../../shared/types/database";
 import type { DatabaseDriver } from "../types";
 
@@ -256,5 +257,78 @@ export class SQLiteDriver implements DatabaseDriver {
       tables: tableRows.map((r) => r.name),
       columns: Array.from(columnSet).sort(),
     };
+  }
+
+  // ─── CRUD operations (Phase 5) ────────────────────────────────
+
+  async getPrimaryKeyColumns(_schema: string, table: string): Promise<string[]> {
+    const db = this.ensureDb();
+    const cols = db.prepare(`PRAGMA table_info("${table}")`).all() as {
+      name: string;
+      pk: number;
+    }[];
+    return cols.filter((c) => c.pk > 0).map((c) => c.name);
+  }
+
+  async insertRow(
+    _schema: string,
+    table: string,
+    row: Record<string, unknown>,
+  ): Promise<CrudResult> {
+    const db = this.ensureDb();
+    const cols = Object.keys(row);
+    const vals = Object.values(row);
+    const placeholders = cols.map(() => "?").join(", ");
+    const colNames = cols.map((c) => `"${c}"`).join(", ");
+
+    const info = db
+      .prepare(`INSERT INTO "${table}" (${colNames}) VALUES (${placeholders})`)
+      .run(...vals);
+    return { success: true, affectedRows: info.changes };
+  }
+
+  async updateRow(
+    _schema: string,
+    table: string,
+    primaryKey: Record<string, unknown>,
+    changes: Record<string, unknown>,
+  ): Promise<CrudResult> {
+    const db = this.ensureDb();
+    const setCols = Object.keys(changes);
+    const pkCols = Object.keys(primaryKey);
+    const allVals = [...Object.values(changes), ...Object.values(primaryKey)];
+
+    const setClause = setCols.map((c) => `"${c}" = ?`).join(", ");
+    const whereClause = pkCols.map((c) => `"${c}" = ?`).join(" AND ");
+
+    const info = db
+      .prepare(`UPDATE "${table}" SET ${setClause} WHERE ${whereClause}`)
+      .run(...allVals);
+    return { success: true, affectedRows: info.changes };
+  }
+
+  async deleteRows(
+    _schema: string,
+    table: string,
+    primaryKeys: Record<string, unknown>[],
+  ): Promise<CrudResult> {
+    const db = this.ensureDb();
+    let totalAffected = 0;
+
+    const deleteInTransaction = db.transaction((keys: Record<string, unknown>[]) => {
+      for (const pk of keys) {
+        const pkCols = Object.keys(pk);
+        const pkVals = Object.values(pk);
+        const whereClause = pkCols.map((c) => `"${c}" = ?`).join(" AND ");
+
+        const info = db
+          .prepare(`DELETE FROM "${table}" WHERE ${whereClause}`)
+          .run(...pkVals);
+        totalAffected += info.changes;
+      }
+    });
+
+    deleteInTransaction(primaryKeys);
+    return { success: true, affectedRows: totalAffected };
   }
 }
