@@ -7,6 +7,7 @@ import type {
   TableStructure,
   RoutineInfo,
   QueryResult,
+  ExecuteQueryResult,
 } from "../shared/types/database";
 
 export interface DatabaseDriver {
@@ -35,4 +36,12 @@ export interface DatabaseDriver {
     page: number,
     pageSize: number,
   ): Promise<QueryResult>;
+
+  // ─── Query execution (Phase 4) ───────────────────────────────
+  /** Execute an arbitrary SQL query and return results. */
+  executeQuery(sql: string): Promise<ExecuteQueryResult>;
+  /** Execute EXPLAIN/ANALYZE on a query and return the plan. */
+  explainQuery(sql: string): Promise<string>;
+  /** Get table and column names for autocomplete. */
+  getCompletionItems(): Promise<{ tables: string[]; columns: string[] }>;
 }

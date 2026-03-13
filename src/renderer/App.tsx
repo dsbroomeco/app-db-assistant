@@ -6,6 +6,7 @@ import { SettingsView } from "./components/SettingsView";
 import { ConnectionForm } from "./components/ConnectionForm";
 import { TableDataView } from "./components/TableDataView";
 import { TableStructureView } from "./components/TableStructureView";
+import { QueryEditorView } from "./components/QueryEditorView";
 import { ConnectionProvider } from "./context/ConnectionContext";
 import { useTabs } from "./hooks/useTabs";
 import type { Tab } from "./hooks/useTabs";
@@ -114,14 +115,9 @@ function AppContent() {
                         )}
                         {activeTab?.type === "settings" && <SettingsView />}
                         {activeTab?.type === "query" && (
-                            <div className={styles.placeholder}>
-                                <span className={styles.placeholderIcon}>⚡</span>
-                                <p>SQL Query Editor</p>
-                                <p className={styles.placeholderHint}>
-                                    Coming in Phase 4 — SQL editor with syntax highlighting and
-                                    autocomplete.
-                                </p>
-                            </div>
+                            <QueryEditorView
+                                connectionId={activeTab.meta?.connectionId}
+                            />
                         )}
                         {activeTab?.type === "table" && activeTab.meta && (
                             <TableDataView

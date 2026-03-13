@@ -132,3 +132,45 @@ export interface QueryResult {
   pageSize: number;
   hasMore: boolean;
 }
+
+// ─── Query execution types (Phase 4) ────────────────────────────
+
+export interface ExecuteQueryRequest {
+  connectionId: string;
+  sql: string;
+}
+
+export interface ExecuteQueryResult {
+  columns: string[];
+  rows: Record<string, unknown>[];
+  rowCount: number;
+  /** Time in milliseconds the query took to execute */
+  executionTime: number;
+  /** Whether the query was a data modification (INSERT/UPDATE/DELETE) vs a SELECT */
+  isModification: boolean;
+  /** Number of rows affected for modification queries */
+  affectedRows?: number;
+}
+
+export interface ExplainQueryRequest {
+  connectionId: string;
+  sql: string;
+}
+
+export interface ExplainQueryResult {
+  plan: string;
+  executionTime: number;
+}
+
+export interface QueryHistoryEntry {
+  id: string;
+  connectionId: string;
+  connectionName: string;
+  sql: string;
+  executedAt: string;
+  executionTime: number;
+  rowCount: number;
+  error?: string;
+}
+
+export type ExportFormat = "csv" | "json" | "sql";

@@ -1,0 +1,388 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ─── Toolbar ──────────────────────────────────────────────────── */
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  background: var(--bg-secondary);
+}
+
+.connectionSelect {
+  padding: 4px 8px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--bg-primary);
+  font-size: 12px;
+  min-width: 160px;
+}
+
+.runBtn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  border-radius: var(--radius);
+  background: var(--accent);
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.runBtn:hover:not(:disabled) {
+  background: var(--accent-hover);
+}
+
+.runBtn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.toolbarBtn {
+  padding: 4px 10px;
+  border-radius: var(--radius);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.toolbarBtn:hover:not(:disabled) {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.toolbarBtn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.toolbarSpacer {
+  flex: 1;
+}
+
+.statusText {
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+}
+
+/* ─── Editor ───────────────────────────────────────────────────── */
+
+.editorWrapper {
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.editorWrapper :global(.cm-editor) {
+  height: 100%;
+  font-size: 13px;
+}
+
+.editorWrapper :global(.cm-editor.cm-focused) {
+  outline: none;
+}
+
+.editorWrapper :global(.cm-scroller) {
+  overflow: auto;
+}
+
+.editorWrapper :global(.cm-gutters) {
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+}
+
+/* ─── Resize handle ────────────────────────────────────────────── */
+
+.resizeHandle {
+  height: 4px;
+  cursor: ns-resize;
+  background: transparent;
+  flex-shrink: 0;
+  position: relative;
+}
+
+.resizeHandle:hover,
+.resizeHandleActive {
+  background: var(--accent);
+}
+
+/* ─── Results Panel ────────────────────────────────────────────── */
+
+.resultsPanel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 100px;
+}
+
+.resultsTabs {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+  flex-shrink: 0;
+}
+
+.resultsTab {
+  padding: 6px 16px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-bottom: 2px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.resultsTab:hover {
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+}
+
+.resultsTabActive {
+  color: var(--text-primary);
+  border-bottom-color: var(--accent);
+}
+
+.resultsContent {
+  flex: 1;
+  overflow: auto;
+  position: relative;
+}
+
+/* ─── Result Grid ─────────────────────────────────────────────── */
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  text-align: left;
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-secondary);
+  border-bottom: 2px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg-primary);
+  z-index: 1;
+  white-space: nowrap;
+}
+
+.table td {
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 12px;
+}
+
+.table tbody tr:hover {
+  background: var(--bg-tertiary);
+}
+
+.rowNumHeader {
+  width: 45px;
+  color: var(--text-muted) !important;
+}
+
+.rowNum {
+  color: var(--text-muted);
+  font-size: 11px;
+  text-align: right;
+}
+
+.null {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 11px;
+}
+
+.boolean {
+  color: var(--accent);
+}
+
+.number {
+  color: #c084fc;
+}
+
+.json {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.emptyRow {
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 40px !important;
+}
+
+/* ─── Messages & States ────────────────────────────────────────── */
+
+.loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 40px;
+}
+
+.error {
+  color: var(--danger);
+  padding: 16px;
+  font-size: 13px;
+  white-space: pre-wrap;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+}
+
+.modificationResult {
+  padding: 24px;
+  text-align: center;
+  color: var(--success);
+  font-size: 14px;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-muted);
+  font-size: 13px;
+  gap: 4px;
+}
+
+.emptyStateIcon {
+  font-size: 32px;
+  margin-bottom: 8px;
+}
+
+.emptyStateHint {
+  font-size: 11px;
+  opacity: 0.7;
+}
+
+/* ─── Query Plan ───────────────────────────────────────────────── */
+
+.planOutput {
+  padding: 16px;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  line-height: 1.5;
+  color: var(--text-primary);
+}
+
+/* ─── History ──────────────────────────────────────────────────── */
+
+.historyList {
+  display: flex;
+  flex-direction: column;
+}
+
+.historyItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.historyItem:hover {
+  background: var(--bg-tertiary);
+}
+
+.historyError {
+  border-left: 3px solid var(--danger);
+}
+
+.historySql {
+  flex: 1;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 500px;
+  color: var(--text-primary);
+}
+
+.historyMeta {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.historyActions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-secondary);
+}
+
+.clearHistoryBtn {
+  padding: 3px 10px;
+  border-radius: var(--radius);
+  font-size: 11px;
+  color: var(--danger);
+}
+
+.clearHistoryBtn:hover {
+  background: var(--bg-tertiary);
+}
+
+/* ─── Export Dropdown ──────────────────────────────────────────── */
+
+.exportWrapper {
+  position: relative;
+}
+
+.exportMenu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 4px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 100;
+  min-width: 140px;
+  overflow: hidden;
+}
+
+.exportMenuItem {
+  display: block;
+  width: 100%;
+  padding: 7px 14px;
+  text-align: left;
+  font-size: 12px;
+  color: var(--text-primary);
+}
+
+.exportMenuItem:hover {
+  background: var(--bg-tertiary);
+}

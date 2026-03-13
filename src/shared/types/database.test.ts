@@ -15,6 +15,10 @@ import type {
   RoutineInfo,
   TableStructure,
   QueryResult,
+  ExecuteQueryResult,
+  ExplainQueryResult,
+  QueryHistoryEntry,
+  ExportFormat,
 } from "./database";
 
 describe("database types", () => {
@@ -218,6 +222,77 @@ describe("database types", () => {
         hasMore: false,
       };
       expect(result.hasMore).toBe(false);
+    });
+  });
+
+  describe("Query execution types (Phase 4)", () => {
+    it("ExecuteQueryResult has expected shape for SELECT", () => {
+      const result: ExecuteQueryResult = {
+        columns: ["id", "name"],
+        rows: [{ id: 1, name: "Alice" }],
+        rowCount: 1,
+        executionTime: 42,
+        isModification: false,
+      };
+      expect(result.isModification).toBe(false);
+      expect(result.rowCount).toBe(1);
+      expect(result.executionTime).toBe(42);
+      expect(result.affectedRows).toBeUndefined();
+    });
+
+    it("ExecuteQueryResult has expected shape for INSERT", () => {
+      const result: ExecuteQueryResult = {
+        columns: [],
+        rows: [],
+        rowCount: 0,
+        executionTime: 10,
+        isModification: true,
+        affectedRows: 5,
+      };
+      expect(result.isModification).toBe(true);
+      expect(result.affectedRows).toBe(5);
+    });
+
+    it("ExplainQueryResult has expected shape", () => {
+      const result: ExplainQueryResult = {
+        plan: "Seq Scan on users",
+        executionTime: 3,
+      };
+      expect(result.plan).toBe("Seq Scan on users");
+      expect(result.executionTime).toBe(3);
+    });
+
+    it("QueryHistoryEntry has expected shape", () => {
+      const entry: QueryHistoryEntry = {
+        id: "abc-123",
+        connectionId: "conn-1",
+        connectionName: "My DB",
+        sql: "SELECT * FROM users",
+        executedAt: "2026-03-13T12:00:00Z",
+        executionTime: 100,
+        rowCount: 10,
+      };
+      expect(entry.error).toBeUndefined();
+      expect(entry.rowCount).toBe(10);
+    });
+
+    it("QueryHistoryEntry supports error field", () => {
+      const entry: QueryHistoryEntry = {
+        id: "abc-456",
+        connectionId: "conn-1",
+        connectionName: "My DB",
+        sql: "SELECT * FROM nonexistent",
+        executedAt: "2026-03-13T12:00:00Z",
+        executionTime: 0,
+        rowCount: 0,
+        error: "relation does not exist",
+      };
+      expect(entry.error).toBe("relation does not exist");
+    });
+
+    it("ExportFormat covers all formats", () => {
+      const formats: ExportFormat[] = ["csv", "json", "sql"];
+      expect(formats).toHaveLength(3);
     });
   });
 });

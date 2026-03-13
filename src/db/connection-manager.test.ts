@@ -63,6 +63,18 @@ const mockDriver: DatabaseDriver = {
     pageSize: 50,
     hasMore: false,
   }),
+  executeQuery: vi.fn().mockResolvedValue({
+    columns: ["id"],
+    rows: [{ id: 1 }],
+    rowCount: 1,
+    executionTime: 10,
+    isModification: false,
+  }),
+  explainQuery: vi.fn().mockResolvedValue("Seq Scan on users"),
+  getCompletionItems: vi.fn().mockResolvedValue({
+    tables: ["public.users"],
+    columns: ["id", "name"],
+  }),
 };
 
 vi.mock("./drivers", () => ({
@@ -211,6 +223,42 @@ describe("connection-manager", () => {
       expect(data.rows).toHaveLength(1);
       expect(data.totalRows).toBe(1);
       expect(data.hasMore).toBe(false);
+    });
+  });
+
+  // Phase 4: Query execution tests
+  describe("query execution", () => {
+    it("executeQuery throws when not connected", async () => {
+      const saved = manager.saveConnection({ ...pgConfig });
+      await expect(
+        manager.executeQuery(saved.id, "SELECT 1"),
+      ).rejects.toThrow("not active");
+    });
+
+    it("executeQuery returns results for connected db", async () => {
+      const saved = manager.saveConnection({ ...pgConfig });
+      await manager.connectToDb(saved.id);
+      const result = await manager.executeQuery(saved.id, "SELECT * FROM users");
+      expect(result.columns).toEqual(["id"]);
+      expect(result.rows).toHaveLength(1);
+      expect(result.executionTime).toBe(10);
+      expect(result.isModification).toBe(false);
+    });
+
+    it("explainQuery returns query plan", async () => {
+      const saved = manager.saveConnection({ ...pgConfig });
+      await manager.connectToDb(saved.id);
+      const result = await manager.explainQuery(saved.id, "SELECT * FROM users");
+      expect(result.plan).toBe("Seq Scan on users");
+      expect(result.executionTime).toBeGreaterThanOrEqual(0);
+    });
+
+    it("getCompletionItems returns tables and columns", async () => {
+      const saved = manager.saveConnection({ ...pgConfig });
+      await manager.connectToDb(saved.id);
+      const items = await manager.getCompletionItems(saved.id);
+      expect(items.tables).toContain("public.users");
+      expect(items.columns).toContain("id");
     });
   });
 });

@@ -6,6 +6,7 @@ import type {
   TableStructure,
   RoutineInfo,
   QueryResult,
+  ExecuteQueryResult,
 } from "../../shared/types/database";
 import type { DatabaseDriver } from "../types";
 
@@ -188,6 +189,72 @@ export class SQLiteDriver implements DatabaseDriver {
       page,
       pageSize,
       hasMore: offset + pageSize < totalRows,
+    };
+  }
+
+  // ─── Query execution (Phase 4) ───────────────────────────────
+
+  async executeQuery(sql: string): Promise<ExecuteQueryResult> {
+    const db = this.ensureDb();
+    const start = performance.now();
+
+    const isModification = /^\s*(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP)/i.test(sql);
+
+    if (isModification) {
+      const info = db.prepare(sql).run();
+      const executionTime = Math.round(performance.now() - start);
+      return {
+        columns: [],
+        rows: [],
+        rowCount: 0,
+        executionTime,
+        isModification: true,
+        affectedRows: info.changes,
+      };
+    }
+
+    const stmt = db.prepare(sql);
+    const rows = stmt.all() as Record<string, unknown>[];
+    const executionTime = Math.round(performance.now() - start);
+    const columns =
+      rows.length > 0
+        ? Object.keys(rows[0])
+        : stmt.columns().map((c) => c.name);
+
+    return {
+      columns,
+      rows,
+      rowCount: rows.length,
+      executionTime,
+      isModification: false,
+    };
+  }
+
+  async explainQuery(sql: string): Promise<string> {
+    const db = this.ensureDb();
+    const rows = db.prepare(`EXPLAIN QUERY PLAN ${sql}`).all() as Record<string, unknown>[];
+    return rows.map((r) => r.detail ?? JSON.stringify(r)).join("\n");
+  }
+
+  async getCompletionItems(): Promise<{ tables: string[]; columns: string[] }> {
+    const db = this.ensureDb();
+    const tableRows = db
+      .prepare(
+        `SELECT name FROM sqlite_master
+         WHERE type IN ('table', 'view') AND name NOT LIKE 'sqlite_%'
+         ORDER BY name`,
+      )
+      .all() as { name: string }[];
+
+    const columnSet = new Set<string>();
+    for (const t of tableRows) {
+      const cols = db.prepare(`PRAGMA table_info("${t.name}")`).all() as { name: string }[];
+      for (const c of cols) columnSet.add(c.name);
+    }
+
+    return {
+      tables: tableRows.map((r) => r.name),
+      columns: Array.from(columnSet).sort(),
     };
   }
 }

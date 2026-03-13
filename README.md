@@ -62,9 +62,10 @@ app-db-assistant/
 │   │   ├── main.ts        # App entry, window management, IPC handlers
 │   │   └── preload.ts     # Context bridge for renderer
 │   ├── renderer/          # React UI (Vite)
-│   │   ├── components/    # React components (Sidebar, TabBar, TreeView, TableData, TableStructure)
+│   │   ├── components/    # React components (Sidebar, TabBar, TreeView, TableData, TableStructure, QueryEditor)
 │   │   ├── context/       # React context providers (Connection, Settings, Theme)
 │   │   ├── hooks/         # Custom hooks (useTabs)
+│   │   ├── utils/         # Utilities (query result export)
 │   │   ├── styles/        # Global CSS
 │   │   └── App.tsx        # Root app component
 │   ├── shared/            # Shared types and utilities

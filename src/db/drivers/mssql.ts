@@ -6,6 +6,7 @@ import type {
   TableStructure,
   RoutineInfo,
   QueryResult,
+  ExecuteQueryResult,
 } from "../../shared/types/database";
 import type { DatabaseDriver } from "../types";
 
@@ -237,6 +238,64 @@ export class MSSQLDriver implements DatabaseDriver {
       page,
       pageSize,
       hasMore: offset + pageSize < totalRows,
+    };
+  }
+
+  // ─── Query execution (Phase 4) ───────────────────────────────
+
+  async executeQuery(sqlText: string): Promise<ExecuteQueryResult> {
+    const pool = this.ensurePool();
+    const start = performance.now();
+    const result = await pool.request().query(sqlText);
+    const executionTime = Math.round(performance.now() - start);
+
+    const isModification = /^\s*(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE)/i.test(sqlText);
+
+    const columns = result.recordset?.columns
+      ? Object.keys(result.recordset.columns)
+      : result.recordset?.length > 0
+        ? Object.keys(result.recordset[0])
+        : [];
+
+    return {
+      columns,
+      rows: result.recordset ?? [],
+      rowCount: result.recordset?.length ?? 0,
+      executionTime,
+      isModification,
+      affectedRows: isModification ? result.rowsAffected?.[0] ?? 0 : undefined,
+    };
+  }
+
+  async explainQuery(sqlText: string): Promise<string> {
+    const pool = this.ensurePool();
+    // SQL Server uses SET SHOWPLAN_TEXT for query plans
+    await pool.request().query("SET SHOWPLAN_TEXT ON");
+    try {
+      const result = await pool.request().query(sqlText);
+      return result.recordset.map((r: Record<string, unknown>) =>
+        Object.values(r).join("\n"),
+      ).join("\n");
+    } finally {
+      await pool.request().query("SET SHOWPLAN_TEXT OFF");
+    }
+  }
+
+  async getCompletionItems(): Promise<{ tables: string[]; columns: string[] }> {
+    const pool = this.ensurePool();
+    const tablesResult = await pool.request().query(
+      `SELECT TABLE_SCHEMA + '.' + TABLE_NAME AS name
+       FROM INFORMATION_SCHEMA.TABLES
+       ORDER BY name`,
+    );
+    const columnsResult = await pool.request().query(
+      `SELECT DISTINCT COLUMN_NAME AS name
+       FROM INFORMATION_SCHEMA.COLUMNS
+       ORDER BY name`,
+    );
+    return {
+      tables: tablesResult.recordset.map((r: Record<string, string>) => r.name),
+      columns: columnsResult.recordset.map((r: Record<string, string>) => r.name),
     };
   }
 }

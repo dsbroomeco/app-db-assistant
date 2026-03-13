@@ -6,6 +6,7 @@ import type {
   TableStructure,
   RoutineInfo,
   QueryResult,
+  ExecuteQueryResult,
 } from "../../shared/types/database";
 import type { DatabaseDriver } from "../types";
 
@@ -190,6 +191,54 @@ export class PostgreSQLDriver implements DatabaseDriver {
       page,
       pageSize,
       hasMore: offset + pageSize < totalRows,
+    };
+  }
+
+  // ─── Query execution (Phase 4) ───────────────────────────────
+
+  async executeQuery(sql: string): Promise<ExecuteQueryResult> {
+    const pool = this.ensurePool();
+    const start = performance.now();
+    const result = await pool.query(sql);
+    const executionTime = Math.round(performance.now() - start);
+
+    const isModification = /^\s*(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE)/i.test(sql);
+
+    return {
+      columns: result.fields?.map((f) => f.name) ?? [],
+      rows: result.rows ?? [],
+      rowCount: result.rows?.length ?? 0,
+      executionTime,
+      isModification,
+      affectedRows: isModification ? result.rowCount ?? 0 : undefined,
+    };
+  }
+
+  async explainQuery(sql: string): Promise<string> {
+    const pool = this.ensurePool();
+    const result = await pool.query(`EXPLAIN ANALYZE ${sql}`);
+    return result.rows.map((r) => r["QUERY PLAN"]).join("\n");
+  }
+
+  async getCompletionItems(): Promise<{ tables: string[]; columns: string[] }> {
+    const pool = this.ensurePool();
+    const [tablesResult, columnsResult] = await Promise.all([
+      pool.query(
+        `SELECT table_schema || '.' || table_name AS name
+         FROM information_schema.tables
+         WHERE table_schema NOT IN ('pg_toast', 'pg_catalog', 'information_schema')
+         ORDER BY name`,
+      ),
+      pool.query(
+        `SELECT DISTINCT column_name AS name
+         FROM information_schema.columns
+         WHERE table_schema NOT IN ('pg_toast', 'pg_catalog', 'information_schema')
+         ORDER BY name`,
+      ),
+    ]);
+    return {
+      tables: tablesResult.rows.map((r) => r.name),
+      columns: columnsResult.rows.map((r) => r.name),
     };
   }
 }

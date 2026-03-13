@@ -17,6 +17,12 @@ import {
   getTableStructure,
   getRoutines,
   getTableData,
+  initQueryHistory,
+  executeQuery,
+  explainQuery,
+  getCompletionItems,
+  getQueryHistory,
+  clearQueryHistory,
 } from "../db/connection-manager";
 
 type StoreType = { settings: AppSettings };
@@ -208,9 +214,71 @@ ipcMain.handle(
   },
 );
 
+// Query execution IPC handlers (Phase 4)
+ipcMain.handle(
+  "query:execute",
+  async (
+    _event,
+    payload: { connectionId: string; sql: string },
+  ) => {
+    return executeQuery(payload.connectionId, payload.sql);
+  },
+);
+
+ipcMain.handle(
+  "query:explain",
+  async (
+    _event,
+    payload: { connectionId: string; sql: string },
+  ) => {
+    return explainQuery(payload.connectionId, payload.sql);
+  },
+);
+
+ipcMain.handle("query:history", () => {
+  return getQueryHistory();
+});
+
+ipcMain.handle("query:history:clear", () => {
+  clearQueryHistory();
+});
+
+ipcMain.handle("query:completions", async (_event, connectionId: string) => {
+  return getCompletionItems(connectionId);
+});
+
+ipcMain.handle(
+  "dialog:save-file",
+  async (
+    _event,
+    opts: { title?: string; defaultPath?: string; filters?: { name: string; extensions: string[] }[] },
+  ) => {
+    if (!mainWindow) return null;
+    const result = await dialog.showSaveDialog(mainWindow, {
+      title: opts.title ?? "Save File",
+      defaultPath: opts.defaultPath,
+      filters: opts.filters,
+    });
+    if (result.canceled || !result.filePath) return null;
+    return result.filePath;
+  },
+);
+
+ipcMain.handle(
+  "file:write",
+  async (
+    _event,
+    payload: { filePath: string; content: string },
+  ) => {
+    const fs = await import("fs/promises");
+    await fs.writeFile(payload.filePath, payload.content, "utf-8");
+  },
+);
+
 app.whenReady().then(async () => {
   await initStore();
   await initConnectionManager();
+  await initQueryHistory();
 
   // Apply saved theme on startup
   const settings = store.get("settings");

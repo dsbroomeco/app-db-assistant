@@ -7,6 +7,7 @@ import type {
   TableStructure,
   RoutineInfo,
   QueryResult,
+  ExecuteQueryResult,
 } from "../../shared/types/database";
 import type { DatabaseDriver } from "../types";
 
@@ -195,6 +196,63 @@ export class MySQLDriver implements DatabaseDriver {
       page,
       pageSize,
       hasMore: offset + pageSize < totalRows,
+    };
+  }
+
+  // ─── Query execution (Phase 4) ───────────────────────────────
+
+  async executeQuery(sql: string): Promise<ExecuteQueryResult> {
+    const pool = this.ensurePool();
+    const start = performance.now();
+    const [rows, fields] = await pool.query(sql);
+    const executionTime = Math.round(performance.now() - start);
+
+    const isModification = /^\s*(INSERT|UPDATE|DELETE|CREATE|ALTER|DROP|TRUNCATE)/i.test(sql);
+
+    if (isModification) {
+      const result = rows as mysql.ResultSetHeader;
+      return {
+        columns: [],
+        rows: [],
+        rowCount: 0,
+        executionTime,
+        isModification: true,
+        affectedRows: result.affectedRows ?? 0,
+      };
+    }
+
+    return {
+      columns: (fields as FieldPacket[])?.map((f) => f.name) ?? [],
+      rows: rows as Record<string, unknown>[],
+      rowCount: (rows as Record<string, unknown>[]).length,
+      executionTime,
+      isModification: false,
+    };
+  }
+
+  async explainQuery(sql: string): Promise<string> {
+    const pool = this.ensurePool();
+    const [rows] = await pool.query(`EXPLAIN ${sql}`);
+    return JSON.stringify(rows, null, 2);
+  }
+
+  async getCompletionItems(): Promise<{ tables: string[]; columns: string[] }> {
+    const pool = this.ensurePool();
+    const [tables] = await pool.query(
+      `SELECT CONCAT(TABLE_SCHEMA, '.', TABLE_NAME) AS name
+       FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA NOT IN ('information_schema', 'performance_schema', 'mysql', 'sys')
+       ORDER BY name`,
+    );
+    const [columns] = await pool.query(
+      `SELECT DISTINCT COLUMN_NAME AS name
+       FROM information_schema.COLUMNS
+       WHERE TABLE_SCHEMA NOT IN ('information_schema', 'performance_schema', 'mysql', 'sys')
+       ORDER BY name`,
+    );
+    return {
+      tables: (tables as Record<string, string>[]).map((r) => r.name),
+      columns: (columns as Record<string, string>[]).map((r) => r.name),
     };
   }
 }

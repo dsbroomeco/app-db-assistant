@@ -25,6 +25,12 @@ export type {
   TableStructure,
   RoutineInfo,
   QueryResult,
+  ExecuteQueryRequest,
+  ExecuteQueryResult,
+  ExplainQueryRequest,
+  ExplainQueryResult,
+  QueryHistoryEntry,
+  ExportFormat,
 } from "./types/database";
 
 export interface IpcChannels {
@@ -94,6 +100,28 @@ export interface IpcChannels {
     response: import("./types/database").QueryResult;
   };
 
+  // Query execution (Phase 4)
+  "query:execute": {
+    request: import("./types/database").ExecuteQueryRequest;
+    response: import("./types/database").ExecuteQueryResult;
+  };
+  "query:explain": {
+    request: import("./types/database").ExplainQueryRequest;
+    response: import("./types/database").ExplainQueryResult;
+  };
+  "query:history": {
+    request: void;
+    response: import("./types/database").QueryHistoryEntry[];
+  };
+  "query:history:clear": {
+    request: void;
+    response: void;
+  };
+  "query:completions": {
+    request: string; // connectionId
+    response: { tables: string[]; columns: string[] };
+  };
+
   // Dialogs
   "dialog:open-file": {
     request: {
@@ -101,6 +129,18 @@ export interface IpcChannels {
       filters?: { name: string; extensions: string[] }[];
     };
     response: string | null;
+  };
+  "dialog:save-file": {
+    request: {
+      title?: string;
+      defaultPath?: string;
+      filters?: { name: string; extensions: string[] }[];
+    };
+    response: string | null;
+  };
+  "file:write": {
+    request: { filePath: string; content: string };
+    response: void;
   };
 }
 

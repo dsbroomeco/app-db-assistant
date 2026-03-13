@@ -63,6 +63,9 @@ interface DatabaseDriver {
   getTableStructure(schema: string, table: string): Promise<TableStructure>;
   getRoutines(schema: string): Promise<RoutineInfo[]>;
   getTableData(schema: string, table: string, page: number, pageSize: number): Promise<QueryResult>;
+  executeQuery(sql: string): Promise<ExecuteQueryResult>;
+  explainQuery(sql: string): Promise<string>;
+  getCompletionItems(): Promise<{ tables: string[]; columns: string[] }>;
 }
 ```
 
@@ -77,18 +80,32 @@ This abstraction allows adding new database support without modifying the rest o
 ### 4. Tab System
 
 The renderer uses a tab manager that supports:
-- Query editor tabs
+- Query editor tabs (with CodeMirror SQL editor, results grid, plan viewer, and history)
 - Table data viewer tabs (with pagination, row counts, and column display)
 - Table structure viewer tabs (columns, indexes, constraints)
 - Schema browser tabs (tree view in sidebar with lazy-loading)
 - Each tab maintains its own state and can reference different database connections via metadata
 
-### 5. IPC Communication
+### 5. SQL Editor & Query Execution
+
+The SQL editor uses **CodeMirror 6** with the following features:
+- SQL syntax highlighting via `@codemirror/lang-sql`
+- Autocomplete for table names, column names, and SQL keywords (loaded dynamically per connection)
+- Dark/light theme matching the application theme
+- Keyboard shortcut: Ctrl+Enter (Cmd+Enter) to execute
+- Resizable editor/results split pane
+- Results panel with three tabs: Results grid, Query Plan (EXPLAIN), and History
+- Query history persisted to `electron-store` (last 200 entries)
+- Export results to CSV, JSON, or SQL INSERT format via file save dialog
+
+Security: All SQL execution happens in the main process via the driver layer. The renderer sends raw SQL strings through IPC — the drivers execute them using their native client libraries. No string interpolation is used for parameterized table browsing queries.
+
+### 6. IPC Communication
 
 All main ↔ renderer communication uses typed IPC channels defined in `src/shared/ipc.ts`:
 
 ```typescript
-// Channel definitions include connection management and schema browsing
+// Channel definitions include connection management, schema browsing, and query execution
 type IpcChannels = {
   'conn:connect': { request: string; response: ConnectionStatus };
   'conn:disconnect': { request: string; response: ConnectionStatus };
@@ -97,6 +114,10 @@ type IpcChannels = {
   'db:table-structure': { request: { connectionId: string; schema: string; table: string }; response: TableStructure };
   'db:routines': { request: { connectionId: string; schema: string }; response: RoutineInfo[] };
   'db:table-data': { request: { connectionId: string; schema: string; table: string; page: number; pageSize: number }; response: QueryResult };
+  'query:execute': { request: ExecuteQueryRequest; response: ExecuteQueryResult };
+  'query:explain': { request: ExplainQueryRequest; response: ExplainQueryResult };
+  'query:history': { request: void; response: QueryHistoryEntry[] };
+  'query:completions': { request: string; response: { tables: string[]; columns: string[] } };
 };
 ```
 
@@ -115,7 +136,7 @@ The website is fully static (SSG) and deployed independently from the desktop ap
 | ------------------ | ---------------------------- | -------------------------------------------- |
 | Desktop framework  | Electron                     | Mature, cross-platform, large ecosystem      |
 | UI framework       | React + TypeScript           | Component model, type safety, ecosystem      |
-| SQL Editor         | Monaco Editor or CodeMirror  | Proven code editors with SQL support         |
+| SQL Editor         | CodeMirror 6               | Lightweight, extensible, excellent SQL support   |
 | Database drivers   | pg, mysql2, better-sqlite3, tedious | Native Node.js drivers, well-maintained |
 | NoSQL drivers      | mongodb, ioredis             | Official/community standard drivers          |
 | Build/package      | electron-builder             | Multi-platform packaging and auto-update     |

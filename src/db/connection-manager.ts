@@ -13,6 +13,8 @@ import type {
   TableStructure,
   RoutineInfo,
   QueryResult,
+  ExecuteQueryResult,
+  QueryHistoryEntry,
 } from "../shared/types/database";
 import {
   initCredentialStore,
@@ -223,4 +225,105 @@ export async function getTableData(
   pageSize: number,
 ): Promise<QueryResult> {
   return getDriver(connectionId).getTableData(schema, table, page, pageSize);
+}
+
+// ─── Query execution (Phase 4) ─────────────────────────────────
+
+/** In-memory query history, persisted to store on each mutation. */
+let queryHistory: QueryHistoryEntry[] = [];
+const MAX_HISTORY = 200;
+
+let historyStore: {
+  get(key: "history"): QueryHistoryEntry[];
+  set(key: "history", value: QueryHistoryEntry[]): void;
+};
+
+export async function initQueryHistory(): Promise<void> {
+  const { default: Store } = await import("electron-store");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const instance: any = new Store<{ history: QueryHistoryEntry[] }>({
+    name: "query-history",
+    defaults: { history: [] },
+  });
+  historyStore = {
+    get: (key: "history") => instance.get(key) as QueryHistoryEntry[],
+    set: (key: "history", value: QueryHistoryEntry[]) =>
+      instance.set(key, value),
+  };
+  queryHistory = historyStore.get("history");
+}
+
+function addHistoryEntry(entry: QueryHistoryEntry): void {
+  queryHistory.unshift(entry);
+  if (queryHistory.length > MAX_HISTORY) {
+    queryHistory = queryHistory.slice(0, MAX_HISTORY);
+  }
+  historyStore?.set("history", queryHistory);
+}
+
+export function getQueryHistory(): QueryHistoryEntry[] {
+  return queryHistory;
+}
+
+export function clearQueryHistory(): void {
+  queryHistory = [];
+  historyStore?.set("history", []);
+}
+
+export async function executeQuery(
+  connectionId: string,
+  sql: string,
+): Promise<ExecuteQueryResult> {
+  const driver = getDriver(connectionId);
+  const connName = getConnectionName(connectionId);
+  const startTime = new Date().toISOString();
+
+  try {
+    const result = await driver.executeQuery(sql);
+    addHistoryEntry({
+      id: crypto.randomUUID(),
+      connectionId,
+      connectionName: connName,
+      sql,
+      executedAt: startTime,
+      executionTime: result.executionTime,
+      rowCount: result.rowCount,
+    });
+    return result;
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    addHistoryEntry({
+      id: crypto.randomUUID(),
+      connectionId,
+      connectionName: connName,
+      sql,
+      executedAt: startTime,
+      executionTime: 0,
+      rowCount: 0,
+      error: message,
+    });
+    throw err;
+  }
+}
+
+export async function explainQuery(
+  connectionId: string,
+  sql: string,
+): Promise<{ plan: string; executionTime: number }> {
+  const driver = getDriver(connectionId);
+  const start = performance.now();
+  const plan = await driver.explainQuery(sql);
+  const executionTime = Math.round(performance.now() - start);
+  return { plan, executionTime };
+}
+
+export async function getCompletionItems(
+  connectionId: string,
+): Promise<{ tables: string[]; columns: string[] }> {
+  return getDriver(connectionId).getCompletionItems();
+}
+
+function getConnectionName(connectionId: string): string {
+  const all = configStore.get("connections");
+  return all[connectionId]?.name ?? connectionId;
 }

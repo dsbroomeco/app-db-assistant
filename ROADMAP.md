@@ -30,15 +30,15 @@
 - [x] View, function, and stored procedure listing
 - [x] Refresh and lazy-loading for large schemas
 
-## Phase 4: SQL Editor & Query Execution
+## Phase 4: SQL Editor & Query Execution (Complete)
 
-- [ ] SQL editor with syntax highlighting (CodeMirror or Monaco)
-- [ ] Query execution with result grid
-- [ ] Multiple query tabs
-- [ ] Query history
-- [ ] Autocomplete for table names, columns, and SQL keywords
-- [ ] Explain/analyze query plans
-- [ ] Query result export (CSV, JSON, SQL INSERT)
+- [x] SQL editor with syntax highlighting (CodeMirror)
+- [x] Query execution with result grid
+- [x] Multiple query tabs
+- [x] Query history
+- [x] Autocomplete for table names, columns, and SQL keywords
+- [x] Explain/analyze query plans
+- [x] Query result export (CSV, JSON, SQL INSERT)
 
 ## Phase 5: CRUD Operations & Shortcuts
 
