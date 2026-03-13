@@ -1,6 +1,17 @@
 /** Shared database types used by both main and renderer processes. */
 
-export type DatabaseType = "postgresql" | "mysql" | "sqlite" | "mssql";
+export type DatabaseType = "postgresql" | "mysql" | "sqlite" | "mssql" | "mongodb" | "redis";
+
+export type SqlDatabaseType = "postgresql" | "mysql" | "sqlite" | "mssql";
+export type NoSqlDatabaseType = "mongodb" | "redis";
+
+export function isSqlType(type: DatabaseType): type is SqlDatabaseType {
+  return type === "postgresql" || type === "mysql" || type === "sqlite" || type === "mssql";
+}
+
+export function isNoSqlType(type: DatabaseType): type is NoSqlDatabaseType {
+  return type === "mongodb" || type === "redis";
+}
 
 export interface ConnectionConfig {
   id: string;
@@ -46,6 +57,8 @@ export const DEFAULT_PORTS: Record<Exclude<DatabaseType, "sqlite">, number> = {
   postgresql: 5432,
   mysql: 3306,
   mssql: 1433,
+  mongodb: 27017,
+  redis: 6379,
 };
 
 export const DATABASE_TYPE_LABELS: Record<DatabaseType, string> = {
@@ -53,6 +66,8 @@ export const DATABASE_TYPE_LABELS: Record<DatabaseType, string> = {
   mysql: "MySQL / MariaDB",
   sqlite: "SQLite",
   mssql: "SQL Server",
+  mongodb: "MongoDB",
+  redis: "Redis",
 };
 
 export function newConnectionConfig(
@@ -60,18 +75,19 @@ export function newConnectionConfig(
   partial?: Partial<ConnectionConfig>,
 ): ConnectionConfig {
   const isSqlite = type === "sqlite";
+  const isNoSql = type === "mongodb" || type === "redis";
   return {
     id: "",
     name: "",
     type,
     host: isSqlite ? "" : "localhost",
     port: isSqlite ? 0 : DEFAULT_PORTS[type],
-    database: "",
-    username: "",
+    database: isNoSql ? "" : "",
+    username: type === "redis" ? "" : "",
     ssl: false,
     filepath: "",
     connectionTimeout: 15000,
-    poolSize: 5,
+    poolSize: isNoSql ? 1 : 5,
     ...partial,
   };
 }
@@ -206,4 +222,121 @@ export interface CrudResult {
   success: boolean;
   affectedRows: number;
   message?: string;
+}
+
+// ─── MongoDB types (Phase 6) ────────────────────────────────────
+
+export interface MongoCollectionInfo {
+  name: string;
+  type: "collection" | "view";
+  count: number;
+}
+
+export interface MongoDocument {
+  _id: string;
+  [key: string]: unknown;
+}
+
+export interface MongoFindRequest {
+  connectionId: string;
+  database: string;
+  collection: string;
+  filter: string;
+  page: number;
+  pageSize: number;
+  sort?: string;
+}
+
+export interface MongoFindResult {
+  documents: MongoDocument[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}
+
+export interface MongoInsertRequest {
+  connectionId: string;
+  database: string;
+  collection: string;
+  document: string;
+}
+
+export interface MongoUpdateRequest {
+  connectionId: string;
+  database: string;
+  collection: string;
+  documentId: string;
+  update: string;
+}
+
+export interface MongoDeleteRequest {
+  connectionId: string;
+  database: string;
+  collection: string;
+  documentIds: string[];
+}
+
+export interface MongoAggregateRequest {
+  connectionId: string;
+  database: string;
+  collection: string;
+  pipeline: string;
+}
+
+// ─── Redis types (Phase 6) ──────────────────────────────────────
+
+export type RedisValueType = "string" | "list" | "set" | "zset" | "hash" | "stream" | "unknown";
+
+export interface RedisKeyInfo {
+  key: string;
+  type: RedisValueType;
+  ttl: number;
+}
+
+export interface RedisScanRequest {
+  connectionId: string;
+  pattern: string;
+  cursor: string;
+  count: number;
+}
+
+export interface RedisScanResult {
+  keys: RedisKeyInfo[];
+  cursor: string;
+  hasMore: boolean;
+}
+
+export interface RedisGetRequest {
+  connectionId: string;
+  key: string;
+}
+
+export interface RedisGetResult {
+  key: string;
+  type: RedisValueType;
+  value: unknown;
+  ttl: number;
+}
+
+export interface RedisSetRequest {
+  connectionId: string;
+  key: string;
+  value: string;
+  ttl?: number;
+}
+
+export interface RedisDeleteRequest {
+  connectionId: string;
+  keys: string[];
+}
+
+export interface RedisCommandRequest {
+  connectionId: string;
+  command: string;
+}
+
+export interface RedisCommandResult {
+  result: unknown;
+  executionTime: number;
 }

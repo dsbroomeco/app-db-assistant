@@ -50,14 +50,14 @@
 - [x] Bulk operations (multi-select rows, bulk delete/update)
 - [x] Copy cell / row / column values
 
-## Phase 6: NoSQL Database Support
+## Phase 6: NoSQL Database Support (Complete)
 
-- [ ] MongoDB driver and connection support
-- [ ] MongoDB document viewer and editor (JSON tree view)
-- [ ] MongoDB query builder
-- [ ] Redis driver and connection support
-- [ ] Redis key browser and value viewer
-- [ ] Redis CLI passthrough
+- [x] MongoDB driver and connection support
+- [x] MongoDB document viewer and editor (JSON tree view)
+- [x] MongoDB query builder
+- [x] Redis driver and connection support
+- [x] Redis key browser and value viewer
+- [x] Redis CLI passthrough
 
 ## Phase 7: Advanced Features
 
@@ -244,3 +244,14 @@ Before any public release, the following security items **must** be audited, tes
 - AI-assisted query writing
 - Database migration tooling
 - REST API explorer (for API-backed data sources)
+
+---
+
+## Future Optimizations
+
+- [ ] **Modular / downloadable functionality** — Make the application leaner by packaging database drivers and features as optional modules that users can download on demand rather than shipping everything in the core bundle. Each database engine (PostgreSQL, MySQL, SQLite, SQL Server, MongoDB, Redis) and advanced features (ERD generation, schema diff, import/export wizards) could be offered as installable add-ons, reducing initial download size and memory footprint for users who only need a subset of supported databases.
+- [ ] Lazy-load heavy UI components (CodeMirror editor, chart renderers) to improve startup time
+- [ ] Investigate tree-shaking and code-splitting for the renderer bundle
+- [ ] Profile and optimize IPC serialization for large query result sets
+- [ ] Connection pooling tuning and idle connection cleanup
+- [ ] Investigate WebAssembly-based drivers for in-process performance gains (e.g., SQLite via wa-sqlite)

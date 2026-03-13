@@ -16,7 +16,14 @@ import type {
   ExecuteQueryResult,
   QueryHistoryEntry,
   CrudResult,
+  MongoCollectionInfo,
+  MongoDocument,
+  MongoFindResult,
+  RedisScanResult,
+  RedisGetResult,
+  RedisCommandResult,
 } from "../shared/types/database";
+import { isSqlType } from "../shared/types/database";
 import {
   initCredentialStore,
   savePassword,
@@ -24,8 +31,8 @@ import {
   deletePassword,
   hasPassword,
 } from "./credential-store";
-import { createDriver } from "./drivers";
-import type { DatabaseDriver } from "./types";
+import { createDriver, createMongoDriver, createRedisDriver, createAnyDriver } from "./drivers";
+import type { DatabaseDriver, MongoDBDriver, RedisDriver, BaseDriver } from "./types";
 
 type StoreType = { connections: Record<string, ConnectionConfig> };
 
@@ -35,7 +42,7 @@ let configStore: {
 };
 
 /** Map of connection ID → active driver instance. */
-const activeConnections = new Map<string, DatabaseDriver>();
+const activeConnections = new Map<string, BaseDriver>();
 
 export async function initConnectionManager(): Promise<void> {
   await initCredentialStore();
@@ -107,7 +114,7 @@ export async function connectToDb(id: string): Promise<ConnectionStatus> {
     await disconnectFromDb(id);
   }
 
-  const driver = createDriver(config.type);
+  const driver = createAnyDriver(config.type);
   const password = getPassword(id);
   await driver.connect(config, password);
   activeConnections.set(id, driver);
@@ -130,7 +137,7 @@ export async function testConnection(
   config: ConnectionConfig,
   password?: string,
 ): Promise<TestConnectionResult> {
-  const driver = createDriver(config.type);
+  const driver = createAnyDriver(config.type);
   try {
     await driver.connect(config, password);
     await driver.ping();
@@ -189,7 +196,33 @@ function getDriver(connectionId: string): DatabaseDriver {
   if (!driver) {
     throw new Error(`Connection "${connectionId}" is not active`);
   }
-  return driver;
+  // Verify it's a SQL driver
+  if (!("getSchemas" in driver)) {
+    throw new Error(`Connection "${connectionId}" is not a SQL connection`);
+  }
+  return driver as DatabaseDriver;
+}
+
+function getMongoDriver(connectionId: string): MongoDBDriver {
+  const driver = activeConnections.get(connectionId);
+  if (!driver) {
+    throw new Error(`Connection "${connectionId}" is not active`);
+  }
+  if (!("listDatabases" in driver)) {
+    throw new Error(`Connection "${connectionId}" is not a MongoDB connection`);
+  }
+  return driver as MongoDBDriver;
+}
+
+function getRedisDriver(connectionId: string): RedisDriver {
+  const driver = activeConnections.get(connectionId);
+  if (!driver) {
+    throw new Error(`Connection "${connectionId}" is not active`);
+  }
+  if (!("scanKeys" in driver)) {
+    throw new Error(`Connection "${connectionId}" is not a Redis connection`);
+  }
+  return driver as RedisDriver;
 }
 
 export async function getSchemas(connectionId: string): Promise<SchemaInfo[]> {
@@ -365,4 +398,121 @@ export async function deleteRows(
   primaryKeys: Record<string, unknown>[],
 ): Promise<CrudResult> {
   return getDriver(connectionId).deleteRows(schema, table, primaryKeys);
+}
+
+// ─── MongoDB operations (Phase 6) ───────────────────────────────
+
+export async function mongoListDatabases(
+  connectionId: string,
+): Promise<string[]> {
+  return getMongoDriver(connectionId).listDatabases();
+}
+
+export async function mongoListCollections(
+  connectionId: string,
+  database: string,
+): Promise<MongoCollectionInfo[]> {
+  return getMongoDriver(connectionId).listCollections(database);
+}
+
+export async function mongoFindDocuments(
+  connectionId: string,
+  database: string,
+  collection: string,
+  filter: Record<string, unknown>,
+  page: number,
+  pageSize: number,
+  sort?: Record<string, 1 | -1>,
+): Promise<MongoFindResult> {
+  return getMongoDriver(connectionId).findDocuments(
+    database,
+    collection,
+    filter,
+    page,
+    pageSize,
+    sort,
+  );
+}
+
+export async function mongoInsertDocument(
+  connectionId: string,
+  database: string,
+  collection: string,
+  document: Record<string, unknown>,
+): Promise<CrudResult> {
+  return getMongoDriver(connectionId).insertDocument(database, collection, document);
+}
+
+export async function mongoUpdateDocument(
+  connectionId: string,
+  database: string,
+  collection: string,
+  documentId: string,
+  update: Record<string, unknown>,
+): Promise<CrudResult> {
+  return getMongoDriver(connectionId).updateDocument(
+    database,
+    collection,
+    documentId,
+    update,
+  );
+}
+
+export async function mongoDeleteDocuments(
+  connectionId: string,
+  database: string,
+  collection: string,
+  documentIds: string[],
+): Promise<CrudResult> {
+  return getMongoDriver(connectionId).deleteDocuments(database, collection, documentIds);
+}
+
+export async function mongoAggregate(
+  connectionId: string,
+  database: string,
+  collection: string,
+  pipeline: Record<string, unknown>[],
+): Promise<MongoDocument[]> {
+  return getMongoDriver(connectionId).aggregate(database, collection, pipeline);
+}
+
+// ─── Redis operations (Phase 6) ─────────────────────────────────
+
+export async function redisScanKeys(
+  connectionId: string,
+  pattern: string,
+  cursor: string,
+  count: number,
+): Promise<RedisScanResult> {
+  return getRedisDriver(connectionId).scanKeys(pattern, cursor, count);
+}
+
+export async function redisGetKeyValue(
+  connectionId: string,
+  key: string,
+): Promise<RedisGetResult> {
+  return getRedisDriver(connectionId).getKeyValue(key);
+}
+
+export async function redisSetKeyValue(
+  connectionId: string,
+  key: string,
+  value: string,
+  ttl?: number,
+): Promise<CrudResult> {
+  return getRedisDriver(connectionId).setKeyValue(key, value, ttl);
+}
+
+export async function redisDeleteKeys(
+  connectionId: string,
+  keys: string[],
+): Promise<CrudResult> {
+  return getRedisDriver(connectionId).deleteKeys(keys);
+}
+
+export async function redisExecuteCommand(
+  connectionId: string,
+  command: string,
+): Promise<RedisCommandResult> {
+  return getRedisDriver(connectionId).executeCommand(command);
 }

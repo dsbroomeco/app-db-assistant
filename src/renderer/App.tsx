@@ -7,6 +7,8 @@ import { ConnectionForm } from "./components/ConnectionForm";
 import { TableDataView } from "./components/TableDataView";
 import { TableStructureView } from "./components/TableStructureView";
 import { QueryEditorView } from "./components/QueryEditorView";
+import { MongoCollectionView } from "./components/MongoCollectionView";
+import { RedisBrowserView } from "./components/RedisBrowserView";
 import { ConnectionProvider } from "./context/ConnectionContext";
 import { useTabs } from "./hooks/useTabs";
 import type { Tab } from "./hooks/useTabs";
@@ -91,6 +93,32 @@ function AppContent() {
         [addTab],
     );
 
+    const handleOpenCollection = useCallback(
+        (connectionId: string, database: string, collection: string) => {
+            addTab({
+                id: `mongo-${connectionId}-${database}-${collection}`,
+                title: `${database}.${collection}`,
+                type: "mongo-collection",
+                closable: true,
+                meta: { connectionId, database, collection },
+            });
+        },
+        [addTab],
+    );
+
+    const handleOpenRedisBrowser = useCallback(
+        (connectionId: string) => {
+            addTab({
+                id: `redis-${connectionId}`,
+                title: "Redis Browser",
+                type: "redis-browser",
+                closable: true,
+                meta: { connectionId },
+            });
+        },
+        [addTab],
+    );
+
     return (
         <div className={styles.app}>
             <div className={styles.body}>
@@ -100,6 +128,8 @@ function AppContent() {
                     onEditConnection={handleEditConnection}
                     onOpenTable={handleOpenTable}
                     onOpenStructure={handleOpenStructure}
+                    onOpenCollection={handleOpenCollection}
+                    onOpenRedisBrowser={handleOpenRedisBrowser}
                 />
                 <div className={styles.main}>
                     <TabBar
@@ -131,6 +161,18 @@ function AppContent() {
                                 connectionId={activeTab.meta.connectionId!}
                                 schema={activeTab.meta.schema!}
                                 table={activeTab.meta.table!}
+                            />
+                        )}
+                        {activeTab?.type === "mongo-collection" && activeTab.meta && (
+                            <MongoCollectionView
+                                connectionId={activeTab.meta.connectionId!}
+                                database={activeTab.meta.database!}
+                                collection={activeTab.meta.collection!}
+                            />
+                        )}
+                        {activeTab?.type === "redis-browser" && activeTab.meta && (
+                            <RedisBrowserView
+                                connectionId={activeTab.meta.connectionId!}
                             />
                         )}
                         {!activeTab && (

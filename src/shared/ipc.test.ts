@@ -64,7 +64,19 @@ describe("ipc shared types", () => {
       "dialog:open-file",
       "dialog:save-file",
       "file:write",
+      "mongo:databases",
+      "mongo:collections",
+      "mongo:find",
+      "mongo:insert",
+      "mongo:update",
+      "mongo:delete",
+      "mongo:aggregate",
+      "redis:scan",
+      "redis:get",
+      "redis:set",
+      "redis:delete",
+      "redis:command",
     ];
-    expect(channelKeys).toHaveLength(28);
+    expect(channelKeys).toHaveLength(40);
   });
 });

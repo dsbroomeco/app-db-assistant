@@ -13,12 +13,15 @@ DB Assistant is a cross-platform desktop application built with **Electron** and
 │  │  Tab Manager │  │ SQL      │  │ Table Data    │  │
 │  │  & Navigation│  │ Editor   │  │ Viewer        │  │
 │  └──────┬───────┘  └────┬─────┘  └──────┬────────┘  │
+│  ┌──────┴──────┐  ┌─────┴──────┐                    │
+│  │ Mongo Views │  │ Redis Views│                    │
+│  └──────┬──────┘  └─────┬──────┘                    │
 │         │               │               │            │
 │  ┌──────┴───────────────┴───────────────┴────────┐  │
 │  │              IPC Bridge (typed channels)       │  │
 │  └───────────────────────┬───────────────────────┘  │
 └──────────────────────────┼──────────────────────────┘
-                           │ IPC
+                           │ IPC (40 channels)
 ┌──────────────────────────┼──────────────────────────┐
 │                    Main Process                      │
 │  ┌───────────────────────┴───────────────────────┐  │
@@ -32,9 +35,14 @@ DB Assistant is a cross-platform desktop application built with **Electron** and
 │         │             │                              │
 │  ┌──────┴─────────────┴──────────────────────────┐  │
 │  │           Database Driver Layer                │  │
+│  │  SQL Drivers:                                  │  │
 │  │  ┌──────┐ ┌──────┐ ┌──────┐ ┌──────┐         │  │
-│  │  │ PG   │ │MySQL │ │SQLite│ │MSSQL │  ...     │  │
+│  │  │ PG   │ │MySQL │ │SQLite│ │MSSQL │         │  │
 │  │  └──────┘ └──────┘ └──────┘ └──────┘         │  │
+│  │  NoSQL Drivers:                                │  │
+│  │  ┌──────────┐ ┌──────────┐                    │  │
+│  │  │ MongoDB  │ │  Redis   │                    │  │
+│  │  └──────────┘ └──────────┘                    │  │
 │  └───────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────┘
 ```
@@ -50,14 +58,17 @@ All database connections and queries run in the **main process**. The renderer p
 
 ### 2. Database Driver Layer (`src/db/`)
 
-Each supported database implements a common `DatabaseDriver` interface:
+The driver layer uses a tiered interface hierarchy:
+
+- **`BaseDriver`** — shared by all drivers (connect, disconnect, ping, isConnected)
+- **`DatabaseDriver`** (extends `BaseDriver`) — SQL-specific methods (schemas, tables, queries, CRUD)
+- **`MongoDBDriver`** (extends `BaseDriver`) — MongoDB-specific methods (listDatabases, listCollections, CRUD on documents, aggregation)
+- **`RedisDriver`** (extends `BaseDriver`) — Redis-specific methods (scanKeys, get/set/delete values, CLI command passthrough)
+
+SQL drivers implement the `DatabaseDriver` interface:
 
 ```typescript
-interface DatabaseDriver {
-  connect(config: ConnectionConfig, password?: string): Promise<void>;
-  disconnect(): Promise<void>;
-  ping(): Promise<void>;
-  isConnected(): boolean;
+interface DatabaseDriver extends BaseDriver {
   getSchemas(): Promise<SchemaInfo[]>;
   getTables(schema: string): Promise<TableInfo[]>;
   getTableStructure(schema: string, table: string): Promise<TableStructure>;
@@ -74,7 +85,7 @@ interface DatabaseDriver {
 }
 ```
 
-This abstraction allows adding new database support without modifying the rest of the application.
+NoSQL drivers implement their own interfaces (see `src/db/types.ts` for `MongoDBDriver` and `RedisDriver`). The `createAnyDriver()` factory function dispatches to the correct driver constructor based on database type (`isSqlType()` / `isNoSqlType()`). The connection manager uses duck-typing helpers (`getMongoDriver()`, `getRedisDriver()`) to safely downcast `BaseDriver` references for NoSQL operations.
 
 ### 3. Credential Security
 
@@ -89,6 +100,8 @@ The renderer uses a tab manager that supports:
 - Table data viewer tabs (with pagination, row counts, and column display)
 - Table structure viewer tabs (columns, indexes, constraints)
 - Schema browser tabs (tree view in sidebar with lazy-loading)
+- MongoDB collection viewer tabs (document list with JSON expand/collapse, inline edit, insert, bulk delete, aggregation)
+- Redis browser tabs (key list with pattern search, type-aware value viewer, inline string editing, CLI passthrough)
 - Each tab maintains its own state and can reference different database connections via metadata
 
 ### 5. SQL Editor & Query Execution
@@ -133,28 +146,30 @@ Keyboard shortcuts:
 
 ### 7. IPC Communication
 
-All main ↔ renderer communication uses typed IPC channels defined in `src/shared/ipc.ts`:
+All main ↔ renderer communication uses typed IPC channels defined in `src/shared/ipc.ts` (40 channels total):
 
 ```typescript
-// Channel definitions include connection management, schema browsing, query execution, and CRUD
+// Channel definitions include connection management, schema browsing, query execution, CRUD, and NoSQL operations
 type IpcChannels = {
   'conn:connect': { request: string; response: ConnectionStatus };
   'conn:disconnect': { request: string; response: ConnectionStatus };
   'db:schemas': { request: string; response: SchemaInfo[] };
   'db:tables': { request: { connectionId: string; schema: string }; response: TableInfo[] };
-  'db:table-structure': { request: { connectionId: string; schema: string; table: string }; response: TableStructure };
-  'db:routines': { request: { connectionId: string; schema: string }; response: RoutineInfo[] };
-  'db:table-data': { request: { connectionId: string; schema: string; table: string; page: number; pageSize: number }; response: QueryResult };
-  'query:execute': { request: ExecuteQueryRequest; response: ExecuteQueryResult };
-  'query:explain': { request: ExplainQueryRequest; response: ExplainQueryResult };
-  'query:history': { request: void; response: QueryHistoryEntry[] };
-  'query:completions': { request: string; response: { tables: string[]; columns: string[] } };
-  // CRUD operations (Phase 5)
-  'crud:insert-row': { request: InsertRowRequest; response: CrudResult };
-  'crud:update-row': { request: UpdateRowRequest; response: CrudResult };
-  'crud:delete-rows': { request: DeleteRowsRequest; response: CrudResult };
-  'crud:get-primary-keys': { request: { connectionId: string; schema: string; table: string }; response: string[] };
-};
+  // ... SQL schema/query/CRUD channels ...
+  // MongoDB operations (Phase 6)
+  'mongo:databases': { request: string; response: string[] };
+  'mongo:collections': { request: { connectionId: string; database: string }; response: MongoCollectionInfo[] };
+  'mongo:find': { request: MongoFindRequest; response: MongoFindResult };
+  'mongo:insert': { request: MongoInsertRequest; response: CrudResult };
+  'mongo:update': { request: MongoUpdateRequest; response: CrudResult };
+  'mongo:delete': { request: MongoDeleteRequest; response: CrudResult };
+  'mongo:aggregate': { request: MongoAggregateRequest; response: MongoDocument[] };
+  // Redis operations (Phase 6)
+  'redis:scan': { request: RedisScanRequest; response: RedisScanResult };
+  'redis:get': { request: RedisGetRequest; response: RedisGetResult };
+  'redis:set': { request: RedisSetRequest; response: CrudResult };
+  'redis:delete': { request: RedisDeleteRequest; response: CrudResult };
+  'redis:command': { request: RedisCommandRequest; response: RedisCommandResult };
 };
 ```
 

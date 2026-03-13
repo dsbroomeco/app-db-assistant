@@ -3,12 +3,14 @@ import { useState, useCallback } from "react";
 export interface Tab {
   id: string;
   title: string;
-  type: "welcome" | "query" | "table" | "structure" | "settings";
+  type: "welcome" | "query" | "table" | "structure" | "settings" | "mongo-collection" | "redis-browser";
   closable: boolean;
   meta?: {
     connectionId?: string;
     schema?: string;
     table?: string;
+    database?: string;
+    collection?: string;
   };
 }
 

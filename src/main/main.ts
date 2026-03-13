@@ -27,6 +27,18 @@ import {
   insertRow,
   updateRow,
   deleteRows,
+  mongoListDatabases,
+  mongoListCollections,
+  mongoFindDocuments,
+  mongoInsertDocument,
+  mongoUpdateDocument,
+  mongoDeleteDocuments,
+  mongoAggregate,
+  redisScanKeys,
+  redisGetKeyValue,
+  redisSetKeyValue,
+  redisDeleteKeys,
+  redisExecuteCommand,
 } from "../db/connection-manager";
 
 type StoreType = { settings: AppSettings };
@@ -353,6 +365,188 @@ ipcMain.handle(
   ) => {
     const fs = await import("fs/promises");
     await fs.writeFile(payload.filePath, payload.content, "utf-8");
+  },
+);
+
+// MongoDB IPC handlers (Phase 6)
+ipcMain.handle("mongo:databases", async (_event, connectionId: string) => {
+  return mongoListDatabases(connectionId);
+});
+
+ipcMain.handle(
+  "mongo:collections",
+  async (_event, payload: { connectionId: string; database: string }) => {
+    return mongoListCollections(payload.connectionId, payload.database);
+  },
+);
+
+ipcMain.handle(
+  "mongo:find",
+  async (
+    _event,
+    payload: {
+      connectionId: string;
+      database: string;
+      collection: string;
+      filter: string;
+      page: number;
+      pageSize: number;
+      sort?: string;
+    },
+  ) => {
+    const filter = payload.filter ? JSON.parse(payload.filter) : {};
+    const sort = payload.sort ? JSON.parse(payload.sort) : undefined;
+    return mongoFindDocuments(
+      payload.connectionId,
+      payload.database,
+      payload.collection,
+      filter,
+      payload.page,
+      payload.pageSize,
+      sort,
+    );
+  },
+);
+
+ipcMain.handle(
+  "mongo:insert",
+  async (
+    _event,
+    payload: {
+      connectionId: string;
+      database: string;
+      collection: string;
+      document: string;
+    },
+  ) => {
+    const document = JSON.parse(payload.document);
+    return mongoInsertDocument(
+      payload.connectionId,
+      payload.database,
+      payload.collection,
+      document,
+    );
+  },
+);
+
+ipcMain.handle(
+  "mongo:update",
+  async (
+    _event,
+    payload: {
+      connectionId: string;
+      database: string;
+      collection: string;
+      documentId: string;
+      update: string;
+    },
+  ) => {
+    const update = JSON.parse(payload.update);
+    return mongoUpdateDocument(
+      payload.connectionId,
+      payload.database,
+      payload.collection,
+      payload.documentId,
+      update,
+    );
+  },
+);
+
+ipcMain.handle(
+  "mongo:delete",
+  async (
+    _event,
+    payload: {
+      connectionId: string;
+      database: string;
+      collection: string;
+      documentIds: string[];
+    },
+  ) => {
+    return mongoDeleteDocuments(
+      payload.connectionId,
+      payload.database,
+      payload.collection,
+      payload.documentIds,
+    );
+  },
+);
+
+ipcMain.handle(
+  "mongo:aggregate",
+  async (
+    _event,
+    payload: {
+      connectionId: string;
+      database: string;
+      collection: string;
+      pipeline: string;
+    },
+  ) => {
+    const pipeline = JSON.parse(payload.pipeline);
+    return mongoAggregate(
+      payload.connectionId,
+      payload.database,
+      payload.collection,
+      pipeline,
+    );
+  },
+);
+
+// Redis IPC handlers (Phase 6)
+ipcMain.handle(
+  "redis:scan",
+  async (
+    _event,
+    payload: {
+      connectionId: string;
+      pattern: string;
+      cursor: string;
+      count: number;
+    },
+  ) => {
+    return redisScanKeys(
+      payload.connectionId,
+      payload.pattern,
+      payload.cursor,
+      payload.count,
+    );
+  },
+);
+
+ipcMain.handle(
+  "redis:get",
+  async (_event, payload: { connectionId: string; key: string }) => {
+    return redisGetKeyValue(payload.connectionId, payload.key);
+  },
+);
+
+ipcMain.handle(
+  "redis:set",
+  async (
+    _event,
+    payload: { connectionId: string; key: string; value: string; ttl?: number },
+  ) => {
+    return redisSetKeyValue(
+      payload.connectionId,
+      payload.key,
+      payload.value,
+      payload.ttl,
+    );
+  },
+);
+
+ipcMain.handle(
+  "redis:delete",
+  async (_event, payload: { connectionId: string; keys: string[] }) => {
+    return redisDeleteKeys(payload.connectionId, payload.keys);
+  },
+);
+
+ipcMain.handle(
+  "redis:command",
+  async (_event, payload: { connectionId: string; command: string }) => {
+    return redisExecuteCommand(payload.connectionId, payload.command);
   },
 );
 

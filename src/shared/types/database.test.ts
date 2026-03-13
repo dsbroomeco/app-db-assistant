@@ -3,6 +3,8 @@ import {
   newConnectionConfig,
   DEFAULT_PORTS,
   DATABASE_TYPE_LABELS,
+  isSqlType,
+  isNoSqlType,
 } from "./database";
 import type {
   DatabaseType,
@@ -23,6 +25,22 @@ import type {
   UpdateRowRequest,
   DeleteRowsRequest,
   CrudResult,
+  MongoCollectionInfo,
+  MongoDocument,
+  MongoFindResult,
+  MongoFindRequest,
+  MongoInsertRequest,
+  MongoUpdateRequest,
+  MongoDeleteRequest,
+  MongoAggregateRequest,
+  RedisKeyInfo,
+  RedisScanResult,
+  RedisGetResult,
+  RedisSetRequest,
+  RedisDeleteRequest,
+  RedisCommandRequest,
+  RedisCommandResult,
+  RedisValueType,
 } from "./database";
 
 describe("database types", () => {
@@ -31,16 +49,54 @@ describe("database types", () => {
       expect(DEFAULT_PORTS.postgresql).toBe(5432);
       expect(DEFAULT_PORTS.mysql).toBe(3306);
       expect(DEFAULT_PORTS.mssql).toBe(1433);
+      expect(DEFAULT_PORTS.mongodb).toBe(27017);
+      expect(DEFAULT_PORTS.redis).toBe(6379);
+    });
+
+    it("has 5 entries (all non-SQLite types)", () => {
+      expect(Object.keys(DEFAULT_PORTS)).toHaveLength(5);
     });
   });
 
   describe("DATABASE_TYPE_LABELS", () => {
     it("has labels for all database types", () => {
-      const types: DatabaseType[] = ["postgresql", "mysql", "sqlite", "mssql"];
+      const types: DatabaseType[] = [
+        "postgresql", "mysql", "sqlite", "mssql", "mongodb", "redis",
+      ];
       for (const t of types) {
         expect(DATABASE_TYPE_LABELS[t]).toBeDefined();
         expect(typeof DATABASE_TYPE_LABELS[t]).toBe("string");
       }
+    });
+
+    it("has 6 entries", () => {
+      expect(Object.keys(DATABASE_TYPE_LABELS)).toHaveLength(6);
+    });
+  });
+
+  describe("isSqlType / isNoSqlType helpers", () => {
+    it("isSqlType returns true for SQL types", () => {
+      expect(isSqlType("postgresql")).toBe(true);
+      expect(isSqlType("mysql")).toBe(true);
+      expect(isSqlType("sqlite")).toBe(true);
+      expect(isSqlType("mssql")).toBe(true);
+    });
+
+    it("isSqlType returns false for NoSQL types", () => {
+      expect(isSqlType("mongodb")).toBe(false);
+      expect(isSqlType("redis")).toBe(false);
+    });
+
+    it("isNoSqlType returns true for NoSQL types", () => {
+      expect(isNoSqlType("mongodb")).toBe(true);
+      expect(isNoSqlType("redis")).toBe(true);
+    });
+
+    it("isNoSqlType returns false for SQL types", () => {
+      expect(isNoSqlType("postgresql")).toBe(false);
+      expect(isNoSqlType("mysql")).toBe(false);
+      expect(isNoSqlType("sqlite")).toBe(false);
+      expect(isNoSqlType("mssql")).toBe(false);
     });
   });
 
@@ -113,6 +169,22 @@ describe("database types", () => {
       for (const key of requiredKeys) {
         expect(key in config).toBe(true);
       }
+    });
+
+    it("creates mongodb config with correct defaults", () => {
+      const config = newConnectionConfig("mongodb");
+      expect(config.type).toBe("mongodb");
+      expect(config.host).toBe("localhost");
+      expect(config.port).toBe(27017);
+      expect(config.poolSize).toBe(1);
+    });
+
+    it("creates redis config with correct defaults", () => {
+      const config = newConnectionConfig("redis");
+      expect(config.type).toBe("redis");
+      expect(config.host).toBe("localhost");
+      expect(config.port).toBe(6379);
+      expect(config.poolSize).toBe(1);
     });
   });
 
@@ -352,6 +424,198 @@ describe("database types", () => {
       };
       expect(result.success).toBe(false);
       expect(result.message).toBe("Foreign key violation");
+    });
+  });
+
+  describe("MongoDB types (Phase 6)", () => {
+    it("MongoCollectionInfo has expected shape", () => {
+      const info: MongoCollectionInfo = {
+        name: "users",
+        type: "collection",
+        count: 42,
+      };
+      expect(info.name).toBe("users");
+      expect(info.type).toBe("collection");
+      expect(info.count).toBe(42);
+    });
+
+    it("MongoCollectionInfo supports view type", () => {
+      const info: MongoCollectionInfo = {
+        name: "active_users",
+        type: "view",
+        count: 0,
+      };
+      expect(info.type).toBe("view");
+    });
+
+    it("MongoDocument has _id and dynamic fields", () => {
+      const doc: MongoDocument = {
+        _id: "64a1b2c3d4e5f6a7b8c9d0e1",
+        name: "Alice",
+        age: 30,
+      };
+      expect(doc._id).toBeDefined();
+      expect(doc.name).toBe("Alice");
+    });
+
+    it("MongoFindRequest has expected shape", () => {
+      const req: MongoFindRequest = {
+        connectionId: "conn-1",
+        database: "mydb",
+        collection: "users",
+        filter: '{"active": true}',
+        page: 0,
+        pageSize: 50,
+        sort: '{"name": 1}',
+      };
+      expect(req.database).toBe("mydb");
+      expect(req.sort).toBeDefined();
+    });
+
+    it("MongoFindResult has pagination fields", () => {
+      const result: MongoFindResult = {
+        documents: [{ _id: "abc", name: "Alice" }],
+        totalCount: 100,
+        page: 0,
+        pageSize: 50,
+        hasMore: true,
+      };
+      expect(result.hasMore).toBe(true);
+      expect(result.documents).toHaveLength(1);
+    });
+
+    it("MongoInsertRequest has document as string", () => {
+      const req: MongoInsertRequest = {
+        connectionId: "conn-1",
+        database: "mydb",
+        collection: "users",
+        document: '{"name": "Bob"}',
+      };
+      expect(req.document).toBe('{"name": "Bob"}');
+    });
+
+    it("MongoUpdateRequest has expected shape", () => {
+      const req: MongoUpdateRequest = {
+        connectionId: "conn-1",
+        database: "mydb",
+        collection: "users",
+        documentId: "64a1b2c3d4e5f6a7b8c9d0e1",
+        update: '{"name": "Updated"}',
+      };
+      expect(req.documentId).toBeDefined();
+    });
+
+    it("MongoDeleteRequest supports multiple IDs", () => {
+      const req: MongoDeleteRequest = {
+        connectionId: "conn-1",
+        database: "mydb",
+        collection: "users",
+        documentIds: ["id1", "id2", "id3"],
+      };
+      expect(req.documentIds).toHaveLength(3);
+    });
+
+    it("MongoAggregateRequest has pipeline as string", () => {
+      const req: MongoAggregateRequest = {
+        connectionId: "conn-1",
+        database: "mydb",
+        collection: "users",
+        pipeline: '[{"$match": {"active": true}}]',
+      };
+      expect(req.pipeline).toContain("$match");
+    });
+  });
+
+  describe("Redis types (Phase 6)", () => {
+    it("RedisValueType covers all Redis data types", () => {
+      const types: RedisValueType[] = [
+        "string", "list", "set", "zset", "hash", "stream", "unknown",
+      ];
+      expect(types).toHaveLength(7);
+    });
+
+    it("RedisKeyInfo has expected shape", () => {
+      const key: RedisKeyInfo = {
+        key: "user:1",
+        type: "hash",
+        ttl: 3600,
+      };
+      expect(key.key).toBe("user:1");
+      expect(key.type).toBe("hash");
+      expect(key.ttl).toBe(3600);
+    });
+
+    it("RedisKeyInfo ttl of -1 means no expiry", () => {
+      const key: RedisKeyInfo = {
+        key: "persistent",
+        type: "string",
+        ttl: -1,
+      };
+      expect(key.ttl).toBe(-1);
+    });
+
+    it("RedisScanResult has cursor and pagination", () => {
+      const result: RedisScanResult = {
+        keys: [{ key: "k1", type: "string", ttl: -1 }],
+        cursor: "42",
+        hasMore: true,
+      };
+      expect(result.hasMore).toBe(true);
+      expect(result.cursor).toBe("42");
+    });
+
+    it("RedisGetResult has type-aware value", () => {
+      const result: RedisGetResult = {
+        key: "user:1",
+        type: "hash",
+        value: { name: "Alice", age: "30" },
+        ttl: -1,
+      };
+      expect(result.type).toBe("hash");
+      expect(result.value).toBeDefined();
+    });
+
+    it("RedisSetRequest supports optional TTL", () => {
+      const req: RedisSetRequest = {
+        connectionId: "conn-1",
+        key: "session:abc",
+        value: "data",
+        ttl: 300,
+      };
+      expect(req.ttl).toBe(300);
+    });
+
+    it("RedisSetRequest works without TTL", () => {
+      const req: RedisSetRequest = {
+        connectionId: "conn-1",
+        key: "permanent",
+        value: "data",
+      };
+      expect(req.ttl).toBeUndefined();
+    });
+
+    it("RedisDeleteRequest supports multiple keys", () => {
+      const req: RedisDeleteRequest = {
+        connectionId: "conn-1",
+        keys: ["key1", "key2", "key3"],
+      };
+      expect(req.keys).toHaveLength(3);
+    });
+
+    it("RedisCommandRequest has raw command string", () => {
+      const req: RedisCommandRequest = {
+        connectionId: "conn-1",
+        command: "INFO server",
+      };
+      expect(req.command).toBe("INFO server");
+    });
+
+    it("RedisCommandResult has result and timing", () => {
+      const result: RedisCommandResult = {
+        result: "OK",
+        executionTime: 5,
+      };
+      expect(result.executionTime).toBe(5);
     });
   });
 });

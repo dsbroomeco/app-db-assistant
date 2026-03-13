@@ -18,7 +18,7 @@ interface ConnectionFormProps {
     onClose: () => void;
 }
 
-const DB_TYPES: DatabaseType[] = ["postgresql", "mysql", "sqlite", "mssql"];
+const DB_TYPES: DatabaseType[] = ["postgresql", "mysql", "sqlite", "mssql", "mongodb", "redis"];
 
 export function ConnectionForm({
     editConnection,
@@ -54,6 +54,10 @@ export function ConnectionForm({
     );
 
     const isSqlite = config.type === "sqlite";
+    const isRedis = config.type === "redis";
+    const isMongo = config.type === "mongodb";
+    const isNoSql = isRedis || isMongo;
+    const needsHostPort = !isSqlite;
 
     const update = useCallback(
         (partial: Partial<ConnectionConfig>) => {
@@ -212,30 +216,52 @@ export function ConnectionForm({
                                     </div>
                                 </div>
 
-                                {/* Database */}
-                                <div className={styles.field}>
-                                    <label className={styles.label}>Database</label>
-                                    <input
-                                        className={styles.input}
-                                        type="text"
-                                        value={config.database}
-                                        onChange={(e) => update({ database: e.target.value })}
-                                        placeholder="my_database"
-                                    />
-                                </div>
-
-                                {/* Username & Password */}
-                                <div className={styles.row}>
+                                {/* Database — different label/placeholder for different types */}
+                                {!isRedis && (
                                     <div className={styles.field}>
-                                        <label className={styles.label}>Username</label>
+                                        <label className={styles.label}>
+                                            {isMongo ? "Auth Database" : "Database"}
+                                        </label>
                                         <input
                                             className={styles.input}
                                             type="text"
-                                            value={config.username}
-                                            onChange={(e) => update({ username: e.target.value })}
-                                            placeholder="user"
+                                            value={config.database}
+                                            onChange={(e) => update({ database: e.target.value })}
+                                            placeholder={isMongo ? "admin (optional)" : "my_database"}
                                         />
                                     </div>
+                                )}
+                                {isRedis && (
+                                    <div className={styles.field}>
+                                        <label className={styles.label}>
+                                            Database Index
+                                        </label>
+                                        <input
+                                            className={styles.input}
+                                            type="number"
+                                            min="0"
+                                            max="15"
+                                            value={config.database || "0"}
+                                            onChange={(e) => update({ database: e.target.value })}
+                                            placeholder="0"
+                                        />
+                                    </div>
+                                )}
+
+                                {/* Username & Password */}
+                                <div className={styles.row}>
+                                    {!isRedis && (
+                                        <div className={styles.field}>
+                                            <label className={styles.label}>Username</label>
+                                            <input
+                                                className={styles.input}
+                                                type="text"
+                                                value={config.username}
+                                                onChange={(e) => update({ username: e.target.value })}
+                                                placeholder="user"
+                                            />
+                                        </div>
+                                    )}
                                     <div className={styles.field}>
                                         <label className={styles.label}>Password</label>
                                         <input
@@ -261,7 +287,7 @@ export function ConnectionForm({
                                             checked={config.ssl}
                                             onChange={(e) => update({ ssl: e.target.checked })}
                                         />
-                                        <span>Use SSL / TLS encryption</span>
+                                        <span>{isMongo ? "Use TLS encryption" : "Use SSL / TLS encryption"}</span>
                                     </label>
                                 </div>
                             </>

@@ -14,6 +14,8 @@ A cross-platform desktop database manager for SQL and NoSQL databases.
 - **Table Data Viewer** — Browse table data with pagination and row counts
 - **SQL Editor** — Write and execute SQL queries with syntax highlighting and autocomplete
 - **CRUD Operations** — Create, read, update, and delete records with keyboard shortcuts and right-click context menus
+- **MongoDB Support** — Browse databases and collections, view/edit/insert/delete documents with a JSON tree view, run aggregation pipelines
+- **Redis Support** — Browse and search keys, view type-aware values (strings, lists, sets, hashes, sorted sets, streams), set/edit/delete keys, built-in CLI passthrough
 - **Cross-Platform** — Runs on Windows, Linux, and macOS
 - **Connection Manager** — Save, organize, and securely store database connections
 - **Data Export** — Export query results to CSV, JSON, and other formats
@@ -62,17 +64,17 @@ app-db-assistant/
 │   │   ├── main.ts        # App entry, window management, IPC handlers
 │   │   └── preload.ts     # Context bridge for renderer
 │   ├── renderer/          # React UI (Vite)
-│   │   ├── components/    # React components (Sidebar, TabBar, TreeView, TableData, TableStructure, QueryEditor)
+│   │   ├── components/    # React components (Sidebar, TabBar, TreeView, TableData, TableStructure, QueryEditor, MongoViews, RedisViews)
 │   │   ├── context/       # React context providers (Connection, Settings, Theme)
 │   │   ├── hooks/         # Custom hooks (useTabs)
 │   │   ├── utils/         # Utilities (query result export)
 │   │   ├── styles/        # Global CSS
 │   │   └── App.tsx        # Root app component
 │   ├── shared/            # Shared types and utilities
-│   │   ├── ipc.ts         # Typed IPC channel definitions
+│   │   ├── ipc.ts         # Typed IPC channel definitions (40 channels)
 │   │   └── types/         # Shared type definitions
 │   └── db/                # Database connection drivers
-│       ├── drivers/       # PostgreSQL, MySQL, SQLite, MSSQL drivers
+│       ├── drivers/       # PostgreSQL, MySQL, SQLite, MSSQL, MongoDB, Redis drivers
 │       ├── connection-manager.ts  # Connection lifecycle management
 │       └── credential-store.ts    # Encrypted credential storage
 ├── tests/                 # E2E tests

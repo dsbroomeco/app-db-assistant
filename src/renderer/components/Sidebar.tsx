@@ -1,8 +1,10 @@
 import { useState, useCallback } from "react";
 import { useConnections } from "../context/ConnectionContext";
-import { DATABASE_TYPE_LABELS } from "@shared/types/database";
+import { DATABASE_TYPE_LABELS, isSqlType, isNoSqlType } from "@shared/types/database";
 import type { SavedConnection } from "@shared/types/database";
 import { DatabaseTreeView } from "./DatabaseTreeView";
+import { MongoTreeView } from "./MongoTreeView";
+import { RedisTreeView } from "./RedisTreeView";
 import styles from "./Sidebar.module.css";
 
 interface SidebarProps {
@@ -11,6 +13,8 @@ interface SidebarProps {
     onEditConnection: (conn: SavedConnection) => void;
     onOpenTable: (connectionId: string, schema: string, table: string) => void;
     onOpenStructure: (connectionId: string, schema: string, table: string) => void;
+    onOpenCollection: (connectionId: string, database: string, collection: string) => void;
+    onOpenRedisBrowser: (connectionId: string) => void;
 }
 
 export function Sidebar({
@@ -19,6 +23,8 @@ export function Sidebar({
     onEditConnection,
     onOpenTable,
     onOpenStructure,
+    onOpenCollection,
+    onOpenRedisBrowser,
 }: SidebarProps) {
     const { connections, connect, disconnect, isConnected, deleteConnection } =
         useConnections();
@@ -116,7 +122,25 @@ export function Sidebar({
                                             {busy ? "…" : connected ? "⏏" : "▶"}
                                         </button>
                                     </div>
-                                    {connected && (
+                                    {connected && conn.type === "mongodb" && (
+                                        <MongoTreeView
+                                            connectionId={conn.id}
+                                            connectionName={conn.name}
+                                            onOpenCollection={(database, collection) =>
+                                                onOpenCollection(conn.id, database, collection)
+                                            }
+                                        />
+                                    )}
+                                    {connected && conn.type === "redis" && (
+                                        <RedisTreeView
+                                            connectionId={conn.id}
+                                            connectionName={conn.name}
+                                            onOpenBrowser={() =>
+                                                onOpenRedisBrowser(conn.id)
+                                            }
+                                        />
+                                    )}
+                                    {connected && isSqlType(conn.type) && (
                                         <DatabaseTreeView
                                             connectionId={conn.id}
                                             connectionName={conn.name}

@@ -35,6 +35,23 @@ export type {
   UpdateRowRequest,
   DeleteRowsRequest,
   CrudResult,
+  MongoCollectionInfo,
+  MongoDocument,
+  MongoFindRequest,
+  MongoFindResult,
+  MongoInsertRequest,
+  MongoUpdateRequest,
+  MongoDeleteRequest,
+  MongoAggregateRequest,
+  RedisKeyInfo,
+  RedisScanRequest,
+  RedisScanResult,
+  RedisGetRequest,
+  RedisGetResult,
+  RedisSetRequest,
+  RedisDeleteRequest,
+  RedisCommandRequest,
+  RedisCommandResult,
 } from "./types/database";
 
 export interface IpcChannels {
@@ -163,6 +180,58 @@ export interface IpcChannels {
   "file:write": {
     request: { filePath: string; content: string };
     response: void;
+  };
+
+  // MongoDB operations (Phase 6)
+  "mongo:databases": {
+    request: string; // connectionId
+    response: string[];
+  };
+  "mongo:collections": {
+    request: { connectionId: string; database: string };
+    response: import("./types/database").MongoCollectionInfo[];
+  };
+  "mongo:find": {
+    request: import("./types/database").MongoFindRequest;
+    response: import("./types/database").MongoFindResult;
+  };
+  "mongo:insert": {
+    request: import("./types/database").MongoInsertRequest;
+    response: import("./types/database").CrudResult;
+  };
+  "mongo:update": {
+    request: import("./types/database").MongoUpdateRequest;
+    response: import("./types/database").CrudResult;
+  };
+  "mongo:delete": {
+    request: import("./types/database").MongoDeleteRequest;
+    response: import("./types/database").CrudResult;
+  };
+  "mongo:aggregate": {
+    request: import("./types/database").MongoAggregateRequest;
+    response: import("./types/database").MongoDocument[];
+  };
+
+  // Redis operations (Phase 6)
+  "redis:scan": {
+    request: import("./types/database").RedisScanRequest;
+    response: import("./types/database").RedisScanResult;
+  };
+  "redis:get": {
+    request: import("./types/database").RedisGetRequest;
+    response: import("./types/database").RedisGetResult;
+  };
+  "redis:set": {
+    request: import("./types/database").RedisSetRequest;
+    response: import("./types/database").CrudResult;
+  };
+  "redis:delete": {
+    request: import("./types/database").RedisDeleteRequest;
+    response: import("./types/database").CrudResult;
+  };
+  "redis:command": {
+    request: import("./types/database").RedisCommandRequest;
+    response: import("./types/database").RedisCommandResult;
   };
 }
 

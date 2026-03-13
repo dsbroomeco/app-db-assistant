@@ -83,6 +83,9 @@ const mockDriver: DatabaseDriver = {
 
 vi.mock("./drivers", () => ({
   createDriver: vi.fn(() => ({ ...mockDriver })),
+  createAnyDriver: vi.fn(() => ({ ...mockDriver })),
+  createMongoDriver: vi.fn(() => ({ ...mockDriver })),
+  createRedisDriver: vi.fn(() => ({ ...mockDriver })),
 }));
 
 describe("connection-manager", () => {
@@ -169,8 +172,8 @@ describe("connection-manager", () => {
   });
 
   it("test connection returns failure on error", async () => {
-    const { createDriver } = await import("./drivers");
-    (createDriver as ReturnType<typeof vi.fn>).mockReturnValueOnce({
+    const { createAnyDriver } = await import("./drivers");
+    (createAnyDriver as ReturnType<typeof vi.fn>).mockReturnValueOnce({
       connect: vi.fn().mockRejectedValue(new Error("Connection refused")),
       disconnect: vi.fn().mockResolvedValue(undefined),
       ping: vi.fn(),
