@@ -3,8 +3,13 @@ import { useState, useCallback } from "react";
 export interface Tab {
   id: string;
   title: string;
-  type: "welcome" | "query" | "table" | "settings";
+  type: "welcome" | "query" | "table" | "structure" | "settings";
   closable: boolean;
+  meta?: {
+    connectionId?: string;
+    schema?: string;
+    table?: string;
+  };
 }
 
 export function useTabs(initialTabs: Tab[] = []) {

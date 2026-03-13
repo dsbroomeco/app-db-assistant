@@ -1,5 +1,12 @@
 import { Pool } from "pg";
 import type { ConnectionConfig } from "../../shared/types/database";
+import type {
+  SchemaInfo,
+  TableInfo,
+  TableStructure,
+  RoutineInfo,
+  QueryResult,
+} from "../../shared/types/database";
 import type { DatabaseDriver } from "../types";
 
 export class PostgreSQLDriver implements DatabaseDriver {
@@ -42,5 +49,147 @@ export class PostgreSQLDriver implements DatabaseDriver {
 
   isConnected(): boolean {
     return this.pool !== null;
+  }
+
+  private ensurePool(): Pool {
+    if (!this.pool) throw new Error("Not connected");
+    return this.pool;
+  }
+
+  async getSchemas(): Promise<SchemaInfo[]> {
+    const pool = this.ensurePool();
+    const result = await pool.query(
+      `SELECT schema_name AS name FROM information_schema.schemata
+       WHERE schema_name NOT IN ('pg_toast', 'pg_catalog', 'information_schema')
+       ORDER BY schema_name`,
+    );
+    return result.rows;
+  }
+
+  async getTables(schema: string): Promise<TableInfo[]> {
+    const pool = this.ensurePool();
+    const result = await pool.query(
+      `SELECT table_name AS name, table_schema AS schema,
+              CASE WHEN table_type = 'VIEW' THEN 'view' ELSE 'table' END AS type
+       FROM information_schema.tables
+       WHERE table_schema = $1
+       ORDER BY table_type, table_name`,
+      [schema],
+    );
+    return result.rows;
+  }
+
+  async getTableStructure(
+    schema: string,
+    table: string,
+  ): Promise<TableStructure> {
+    const pool = this.ensurePool();
+
+    const [colResult, idxResult, conResult] = await Promise.all([
+      pool.query(
+        `SELECT c.column_name AS name, c.data_type AS "dataType",
+                (c.is_nullable = 'YES') AS nullable,
+                c.column_default AS "defaultValue",
+                c.ordinal_position AS "ordinalPosition",
+                EXISTS (
+                  SELECT 1 FROM information_schema.key_column_usage kcu
+                  JOIN information_schema.table_constraints tc
+                    ON kcu.constraint_name = tc.constraint_name
+                    AND kcu.table_schema = tc.table_schema
+                  WHERE tc.constraint_type = 'PRIMARY KEY'
+                    AND kcu.table_schema = $1
+                    AND kcu.table_name = $2
+                    AND kcu.column_name = c.column_name
+                ) AS "isPrimaryKey"
+         FROM information_schema.columns c
+         WHERE c.table_schema = $1 AND c.table_name = $2
+         ORDER BY c.ordinal_position`,
+        [schema, table],
+      ),
+      pool.query(
+        `SELECT i.relname AS name,
+                array_agg(a.attname ORDER BY k.n) AS columns,
+                ix.indisunique AS unique,
+                ix.indisprimary AS primary
+         FROM pg_index ix
+         JOIN pg_class t ON t.oid = ix.indrelid
+         JOIN pg_class i ON i.oid = ix.indexrelid
+         JOIN pg_namespace n ON n.oid = t.relnamespace
+         CROSS JOIN LATERAL unnest(ix.indkey) WITH ORDINALITY AS k(attnum, n)
+         JOIN pg_attribute a ON a.attrelid = t.oid AND a.attnum = k.attnum
+         WHERE n.nspname = $1 AND t.relname = $2
+         GROUP BY i.relname, ix.indisunique, ix.indisprimary
+         ORDER BY i.relname`,
+        [schema, table],
+      ),
+      pool.query(
+        `SELECT tc.constraint_name AS name,
+                tc.constraint_type AS type,
+                array_agg(DISTINCT kcu.column_name) AS columns,
+                ccu.table_name AS "referencedTable",
+                array_agg(DISTINCT ccu.column_name) FILTER (WHERE tc.constraint_type = 'FOREIGN KEY') AS "referencedColumns"
+         FROM information_schema.table_constraints tc
+         JOIN information_schema.key_column_usage kcu
+           ON tc.constraint_name = kcu.constraint_name
+           AND tc.table_schema = kcu.table_schema
+         LEFT JOIN information_schema.constraint_column_usage ccu
+           ON tc.constraint_name = ccu.constraint_name
+           AND tc.table_schema = ccu.table_schema
+           AND tc.constraint_type = 'FOREIGN KEY'
+         WHERE tc.table_schema = $1 AND tc.table_name = $2
+         GROUP BY tc.constraint_name, tc.constraint_type, ccu.table_name
+         ORDER BY tc.constraint_name`,
+        [schema, table],
+      ),
+    ]);
+
+    return {
+      columns: colResult.rows,
+      indexes: idxResult.rows,
+      constraints: conResult.rows,
+    };
+  }
+
+  async getRoutines(schema: string): Promise<RoutineInfo[]> {
+    const pool = this.ensurePool();
+    const result = await pool.query(
+      `SELECT routine_name AS name, routine_schema AS schema,
+              CASE WHEN routine_type = 'FUNCTION' THEN 'function' ELSE 'procedure' END AS type
+       FROM information_schema.routines
+       WHERE routine_schema = $1
+       ORDER BY routine_type, routine_name`,
+      [schema],
+    );
+    return result.rows;
+  }
+
+  async getTableData(
+    schema: string,
+    table: string,
+    page: number,
+    pageSize: number,
+  ): Promise<QueryResult> {
+    const pool = this.ensurePool();
+    const offset = page * pageSize;
+
+    // Use quoted identifiers to handle special characters safely
+    const countResult = await pool.query(
+      `SELECT COUNT(*)::int AS total FROM "${schema}"."${table}"`,
+    );
+    const totalRows: number = countResult.rows[0].total;
+
+    const dataResult = await pool.query(
+      `SELECT * FROM "${schema}"."${table}" LIMIT $1 OFFSET $2`,
+      [pageSize, offset],
+    );
+
+    return {
+      columns: dataResult.fields.map((f) => f.name),
+      rows: dataResult.rows,
+      totalRows,
+      page,
+      pageSize,
+      hasMore: offset + pageSize < totalRows,
+    };
   }
 }

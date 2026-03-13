@@ -9,6 +9,9 @@ A cross-platform desktop database manager for SQL and NoSQL databases.
 
 - **Multi-Database Support** — Connect to PostgreSQL, MySQL/MariaDB, SQLite, Microsoft SQL Server, MongoDB, and Redis
 - **Tabbed Interface** — Browse multiple databases, tables, and query results in tabs
+- **Schema Browser** — Tree view for exploring databases, schemas, tables, views, and routines
+- **Table Structure Viewer** — Inspect columns, data types, indexes, and constraints
+- **Table Data Viewer** — Browse table data with pagination and row counts
 - **SQL Editor** — Write and execute SQL queries with syntax highlighting and autocomplete
 - **CRUD Operations** — Create, read, update, and delete records with keyboard shortcuts and right-click context menus
 - **Cross-Platform** — Runs on Windows, Linux, and macOS
@@ -59,9 +62,9 @@ app-db-assistant/
 │   │   ├── main.ts        # App entry, window management, IPC handlers
 │   │   └── preload.ts     # Context bridge for renderer
 │   ├── renderer/          # React UI (Vite)
-│   │   ├── components/    # React components
-│   │   ├── context/       # React context providers
-│   │   ├── hooks/         # Custom hooks
+│   │   ├── components/    # React components (Sidebar, TabBar, TreeView, TableData, TableStructure)
+│   │   ├── context/       # React context providers (Connection, Settings, Theme)
+│   │   ├── hooks/         # Custom hooks (useTabs)
 │   │   ├── styles/        # Global CSS
 │   │   └── App.tsx        # Root app component
 │   ├── shared/            # Shared types and utilities

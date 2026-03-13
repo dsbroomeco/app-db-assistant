@@ -75,3 +75,60 @@ export function newConnectionConfig(
     ...partial,
   };
 }
+
+// ─── Schema browsing types (Phase 3) ─────────────────────────────
+
+export interface SchemaInfo {
+  name: string;
+}
+
+export interface TableInfo {
+  name: string;
+  schema: string;
+  type: "table" | "view";
+}
+
+export interface ColumnInfo {
+  name: string;
+  dataType: string;
+  nullable: boolean;
+  defaultValue: string | null;
+  isPrimaryKey: boolean;
+  ordinalPosition: number;
+}
+
+export interface IndexInfo {
+  name: string;
+  columns: string[];
+  unique: boolean;
+  primary: boolean;
+}
+
+export interface ConstraintInfo {
+  name: string;
+  type: "PRIMARY KEY" | "FOREIGN KEY" | "UNIQUE" | "CHECK";
+  columns: string[];
+  referencedTable?: string;
+  referencedColumns?: string[];
+}
+
+export interface RoutineInfo {
+  name: string;
+  schema: string;
+  type: "function" | "procedure";
+}
+
+export interface TableStructure {
+  columns: ColumnInfo[];
+  indexes: IndexInfo[];
+  constraints: ConstraintInfo[];
+}
+
+export interface QueryResult {
+  columns: string[];
+  rows: Record<string, unknown>[];
+  totalRows: number;
+  page: number;
+  pageSize: number;
+  hasMore: boolean;
+}

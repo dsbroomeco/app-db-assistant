@@ -8,6 +8,11 @@ import type {
   SavedConnection,
   ConnectionStatus,
   TestConnectionResult,
+  SchemaInfo,
+  TableInfo,
+  TableStructure,
+  RoutineInfo,
+  QueryResult,
 } from "../shared/types/database";
 import {
   initCredentialStore,
@@ -172,4 +177,50 @@ function toSavedConnection(config: ConnectionConfig): SavedConnection {
     poolSize: config.poolSize,
     hasPassword: hasPassword(config.id),
   };
+}
+
+// ─── Schema introspection (Phase 3) ─────────────────────────────
+
+function getDriver(connectionId: string): DatabaseDriver {
+  const driver = activeConnections.get(connectionId);
+  if (!driver) {
+    throw new Error(`Connection "${connectionId}" is not active`);
+  }
+  return driver;
+}
+
+export async function getSchemas(connectionId: string): Promise<SchemaInfo[]> {
+  return getDriver(connectionId).getSchemas();
+}
+
+export async function getTables(
+  connectionId: string,
+  schema: string,
+): Promise<TableInfo[]> {
+  return getDriver(connectionId).getTables(schema);
+}
+
+export async function getTableStructure(
+  connectionId: string,
+  schema: string,
+  table: string,
+): Promise<TableStructure> {
+  return getDriver(connectionId).getTableStructure(schema, table);
+}
+
+export async function getRoutines(
+  connectionId: string,
+  schema: string,
+): Promise<RoutineInfo[]> {
+  return getDriver(connectionId).getRoutines(schema);
+}
+
+export async function getTableData(
+  connectionId: string,
+  schema: string,
+  table: string,
+  page: number,
+  pageSize: number,
+): Promise<QueryResult> {
+  return getDriver(connectionId).getTableData(schema, table, page, pageSize);
 }

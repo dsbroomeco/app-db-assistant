@@ -22,13 +22,13 @@
 - [x] Microsoft SQL Server driver and connection support
 - [x] Connection pooling and timeout management
 
-## Phase 3: Database Browsing & Schema Viewer
+## Phase 3: Database Browsing & Schema Viewer (Complete)
 
-- [ ] Database tree view (sidebar) — databases → schemas → tables → columns
-- [ ] Table structure viewer (columns, types, constraints, indexes)
-- [ ] Table data viewer with pagination
-- [ ] View, function, and stored procedure listing
-- [ ] Refresh and lazy-loading for large schemas
+- [x] Database tree view (sidebar) — databases → schemas → tables → columns
+- [x] Table structure viewer (columns, types, constraints, indexes)
+- [x] Table data viewer with pagination
+- [x] View, function, and stored procedure listing
+- [x] Refresh and lazy-loading for large schemas
 
 ## Phase 4: SQL Editor & Query Execution
 

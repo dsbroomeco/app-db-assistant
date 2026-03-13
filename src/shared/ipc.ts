@@ -20,6 +20,11 @@ export type {
   ConnectionStatus,
   TestConnectionResult,
   DatabaseType,
+  SchemaInfo,
+  TableInfo,
+  TableStructure,
+  RoutineInfo,
+  QueryResult,
 } from "./types/database";
 
 export interface IpcChannels {
@@ -59,6 +64,34 @@ export interface IpcChannels {
   "conn:statuses": {
     request: void;
     response: import("./types/database").ConnectionStatus[];
+  };
+
+  // Schema browsing (Phase 3)
+  "db:schemas": {
+    request: string; // connectionId
+    response: import("./types/database").SchemaInfo[];
+  };
+  "db:tables": {
+    request: { connectionId: string; schema: string };
+    response: import("./types/database").TableInfo[];
+  };
+  "db:table-structure": {
+    request: { connectionId: string; schema: string; table: string };
+    response: import("./types/database").TableStructure;
+  };
+  "db:routines": {
+    request: { connectionId: string; schema: string };
+    response: import("./types/database").RoutineInfo[];
+  };
+  "db:table-data": {
+    request: {
+      connectionId: string;
+      schema: string;
+      table: string;
+      page: number;
+      pageSize: number;
+    };
+    response: import("./types/database").QueryResult;
   };
 
   // Dialogs

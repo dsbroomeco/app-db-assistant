@@ -4,7 +4,18 @@ import {
   DEFAULT_PORTS,
   DATABASE_TYPE_LABELS,
 } from "./database";
-import type { DatabaseType, ConnectionConfig } from "./database";
+import type {
+  DatabaseType,
+  ConnectionConfig,
+  SchemaInfo,
+  TableInfo,
+  ColumnInfo,
+  IndexInfo,
+  ConstraintInfo,
+  RoutineInfo,
+  TableStructure,
+  QueryResult,
+} from "./database";
 
 describe("database types", () => {
   describe("DEFAULT_PORTS", () => {
@@ -94,6 +105,119 @@ describe("database types", () => {
       for (const key of requiredKeys) {
         expect(key in config).toBe(true);
       }
+    });
+  });
+
+  describe("Schema browsing types (Phase 3)", () => {
+    it("SchemaInfo has expected shape", () => {
+      const schema: SchemaInfo = { name: "public" };
+      expect(schema.name).toBe("public");
+    });
+
+    it("TableInfo has expected shape", () => {
+      const table: TableInfo = { name: "users", schema: "public", type: "table" };
+      expect(table.name).toBe("users");
+      expect(table.schema).toBe("public");
+      expect(table.type).toBe("table");
+    });
+
+    it("TableInfo supports view type", () => {
+      const view: TableInfo = { name: "active_users", schema: "public", type: "view" };
+      expect(view.type).toBe("view");
+    });
+
+    it("ColumnInfo has expected shape", () => {
+      const col: ColumnInfo = {
+        name: "id",
+        dataType: "integer",
+        nullable: false,
+        defaultValue: null,
+        isPrimaryKey: true,
+        ordinalPosition: 1,
+      };
+      expect(col.isPrimaryKey).toBe(true);
+      expect(col.nullable).toBe(false);
+    });
+
+    it("IndexInfo has expected shape", () => {
+      const idx: IndexInfo = {
+        name: "pk_users",
+        columns: ["id"],
+        unique: true,
+        primary: true,
+      };
+      expect(idx.columns).toEqual(["id"]);
+    });
+
+    it("ConstraintInfo supports foreign keys", () => {
+      const fk: ConstraintInfo = {
+        name: "fk_orders_user",
+        type: "FOREIGN KEY",
+        columns: ["user_id"],
+        referencedTable: "users",
+        referencedColumns: ["id"],
+      };
+      expect(fk.type).toBe("FOREIGN KEY");
+      expect(fk.referencedTable).toBe("users");
+    });
+
+    it("RoutineInfo has expected shape", () => {
+      const routine: RoutineInfo = {
+        name: "get_user",
+        schema: "public",
+        type: "function",
+      };
+      expect(routine.type).toBe("function");
+    });
+
+    it("TableStructure combines columns, indexes, constraints", () => {
+      const structure: TableStructure = {
+        columns: [
+          {
+            name: "id",
+            dataType: "integer",
+            nullable: false,
+            defaultValue: null,
+            isPrimaryKey: true,
+            ordinalPosition: 1,
+          },
+        ],
+        indexes: [
+          { name: "pk_users", columns: ["id"], unique: true, primary: true },
+        ],
+        constraints: [
+          { name: "pk_users", type: "PRIMARY KEY", columns: ["id"] },
+        ],
+      };
+      expect(structure.columns).toHaveLength(1);
+      expect(structure.indexes).toHaveLength(1);
+      expect(structure.constraints).toHaveLength(1);
+    });
+
+    it("QueryResult has expected shape with pagination", () => {
+      const result: QueryResult = {
+        columns: ["id", "name"],
+        rows: [{ id: 1, name: "Alice" }],
+        totalRows: 100,
+        page: 0,
+        pageSize: 50,
+        hasMore: true,
+      };
+      expect(result.hasMore).toBe(true);
+      expect(result.page).toBe(0);
+      expect(result.totalRows).toBe(100);
+    });
+
+    it("QueryResult hasMore is false on last page", () => {
+      const result: QueryResult = {
+        columns: ["id"],
+        rows: [{ id: 1 }],
+        totalRows: 1,
+        page: 0,
+        pageSize: 50,
+        hasMore: false,
+      };
+      expect(result.hasMore).toBe(false);
     });
   });
 });

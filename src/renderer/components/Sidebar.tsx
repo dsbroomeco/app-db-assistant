@@ -2,18 +2,23 @@ import { useState, useCallback } from "react";
 import { useConnections } from "../context/ConnectionContext";
 import { DATABASE_TYPE_LABELS } from "@shared/types/database";
 import type { SavedConnection } from "@shared/types/database";
+import { DatabaseTreeView } from "./DatabaseTreeView";
 import styles from "./Sidebar.module.css";
 
 interface SidebarProps {
     onOpenSettings: () => void;
     onNewConnection: () => void;
     onEditConnection: (conn: SavedConnection) => void;
+    onOpenTable: (connectionId: string, schema: string, table: string) => void;
+    onOpenStructure: (connectionId: string, schema: string, table: string) => void;
 }
 
 export function Sidebar({
     onOpenSettings,
     onNewConnection,
     onEditConnection,
+    onOpenTable,
+    onOpenStructure,
 }: SidebarProps) {
     const { connections, connect, disconnect, isConnected, deleteConnection } =
         useConnections();
@@ -91,25 +96,38 @@ export function Sidebar({
                             const connected = isConnected(conn.id);
                             const busy = connectingId === conn.id;
                             return (
-                                <div
-                                    key={conn.id}
-                                    className={styles.connItem}
-                                    onContextMenu={(e) => handleContextMenu(e, conn)}
-                                    onDoubleClick={() => handleToggleConnect(conn.id)}
-                                    title={`${DATABASE_TYPE_LABELS[conn.type]}${conn.type !== "sqlite" ? ` — ${conn.host}:${conn.port}` : ` — ${conn.filepath}`}`}
-                                >
-                                    <span
-                                        className={`${styles.statusDot} ${connected ? styles.dotConnected : styles.dotDisconnected}`}
-                                    />
-                                    <span className={styles.connName}>{conn.name}</span>
-                                    <button
-                                        className={styles.connToggle}
-                                        onClick={() => handleToggleConnect(conn.id)}
-                                        disabled={busy}
-                                        title={connected ? "Disconnect" : "Connect"}
+                                <div key={conn.id}>
+                                    <div
+                                        className={styles.connItem}
+                                        onContextMenu={(e) => handleContextMenu(e, conn)}
+                                        onDoubleClick={() => handleToggleConnect(conn.id)}
+                                        title={`${DATABASE_TYPE_LABELS[conn.type]}${conn.type !== "sqlite" ? ` — ${conn.host}:${conn.port}` : ` — ${conn.filepath}`}`}
                                     >
-                                        {busy ? "…" : connected ? "⏏" : "▶"}
-                                    </button>
+                                        <span
+                                            className={`${styles.statusDot} ${connected ? styles.dotConnected : styles.dotDisconnected}`}
+                                        />
+                                        <span className={styles.connName}>{conn.name}</span>
+                                        <button
+                                            className={styles.connToggle}
+                                            onClick={() => handleToggleConnect(conn.id)}
+                                            disabled={busy}
+                                            title={connected ? "Disconnect" : "Connect"}
+                                        >
+                                            {busy ? "…" : connected ? "⏏" : "▶"}
+                                        </button>
+                                    </div>
+                                    {connected && (
+                                        <DatabaseTreeView
+                                            connectionId={conn.id}
+                                            connectionName={conn.name}
+                                            onOpenTable={(schema, table) =>
+                                                onOpenTable(conn.id, schema, table)
+                                            }
+                                            onOpenStructure={(schema, table) =>
+                                                onOpenStructure(conn.id, schema, table)
+                                            }
+                                        />
+                                    )}
                                 </div>
                             );
                         })}

@@ -70,6 +70,8 @@ function getTabIcon(type: Tab["type"]): string {
             return "⚡";
         case "table":
             return "📋";
+        case "structure":
+            return "🔧";
         case "settings":
             return "⚙️";
         default:

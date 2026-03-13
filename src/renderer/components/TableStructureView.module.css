@@ -1,0 +1,140 @@
+.container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  padding: 16px;
+  overflow: hidden;
+}
+
+.header {
+  margin-bottom: 12px;
+}
+
+.title {
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.tab {
+  padding: 6px 14px;
+  font-size: 13px;
+  border-radius: var(--radius) var(--radius) 0 0;
+  color: var(--text-secondary);
+}
+
+.tab:hover {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+}
+
+.activeTab {
+  color: var(--accent);
+  background: var(--accent-subtle);
+  font-weight: 500;
+}
+
+.tableWrapper {
+  flex: 1;
+  overflow: auto;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.table th {
+  text-align: left;
+  padding: 8px 12px;
+  font-weight: 600;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--text-muted);
+  border-bottom: 2px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: var(--bg-primary);
+  z-index: 1;
+}
+
+.table td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.table tbody tr:hover {
+  background: var(--bg-tertiary);
+}
+
+.mono {
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 12px;
+}
+
+.columnName {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.keyIcon {
+  font-size: 12px;
+}
+
+.yes {
+  color: var(--success);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.no {
+  color: var(--text-muted);
+  font-size: 11px;
+}
+
+.null {
+  color: var(--text-muted);
+  font-style: italic;
+  font-size: 11px;
+}
+
+.badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+}
+
+.emptyRow {
+  text-align: center;
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 20px !important;
+}
+
+.loading {
+  color: var(--text-muted);
+  font-style: italic;
+  padding: 40px;
+  text-align: center;
+}
+
+.error {
+  color: var(--danger);
+  padding: 40px;
+  text-align: center;
+}

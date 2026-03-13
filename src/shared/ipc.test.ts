@@ -40,7 +40,20 @@ describe("ipc shared types", () => {
       "settings:set",
       "app:get-version",
       "theme:get-system",
+      "conn:list",
+      "conn:save",
+      "conn:delete",
+      "conn:test",
+      "conn:connect",
+      "conn:disconnect",
+      "conn:statuses",
+      "db:schemas",
+      "db:tables",
+      "db:table-structure",
+      "db:routines",
+      "db:table-data",
+      "dialog:open-file",
     ];
-    expect(channelKeys).toHaveLength(4);
+    expect(channelKeys).toHaveLength(17);
   });
 });

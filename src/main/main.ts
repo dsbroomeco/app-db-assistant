@@ -12,6 +12,11 @@ import {
   testConnection,
   getConnectionStatuses,
   disconnectAll,
+  getSchemas,
+  getTables,
+  getTableStructure,
+  getRoutines,
+  getTableData,
 } from "../db/connection-manager";
 
 type StoreType = { settings: AppSettings };
@@ -145,6 +150,61 @@ ipcMain.handle(
     });
     if (result.canceled || result.filePaths.length === 0) return null;
     return result.filePaths[0];
+  },
+);
+
+// Schema browsing IPC handlers (Phase 3)
+ipcMain.handle("db:schemas", async (_event, connectionId: string) => {
+  return getSchemas(connectionId);
+});
+
+ipcMain.handle(
+  "db:tables",
+  async (_event, payload: { connectionId: string; schema: string }) => {
+    return getTables(payload.connectionId, payload.schema);
+  },
+);
+
+ipcMain.handle(
+  "db:table-structure",
+  async (
+    _event,
+    payload: { connectionId: string; schema: string; table: string },
+  ) => {
+    return getTableStructure(
+      payload.connectionId,
+      payload.schema,
+      payload.table,
+    );
+  },
+);
+
+ipcMain.handle(
+  "db:routines",
+  async (_event, payload: { connectionId: string; schema: string }) => {
+    return getRoutines(payload.connectionId, payload.schema);
+  },
+);
+
+ipcMain.handle(
+  "db:table-data",
+  async (
+    _event,
+    payload: {
+      connectionId: string;
+      schema: string;
+      table: string;
+      page: number;
+      pageSize: number;
+    },
+  ) => {
+    return getTableData(
+      payload.connectionId,
+      payload.schema,
+      payload.table,
+      payload.page,
+      payload.pageSize,
+    );
   },
 );
 

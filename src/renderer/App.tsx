@@ -4,6 +4,8 @@ import { Sidebar } from "./components/Sidebar";
 import { WelcomeView } from "./components/WelcomeView";
 import { SettingsView } from "./components/SettingsView";
 import { ConnectionForm } from "./components/ConnectionForm";
+import { TableDataView } from "./components/TableDataView";
+import { TableStructureView } from "./components/TableStructureView";
 import { ConnectionProvider } from "./context/ConnectionContext";
 import { useTabs } from "./hooks/useTabs";
 import type { Tab } from "./hooks/useTabs";
@@ -62,6 +64,32 @@ function AppContent() {
         setEditingConnection(null);
     }, []);
 
+    const handleOpenTable = useCallback(
+        (connectionId: string, schema: string, table: string) => {
+            addTab({
+                id: `table-${connectionId}-${schema}-${table}`,
+                title: `${schema}.${table}`,
+                type: "table",
+                closable: true,
+                meta: { connectionId, schema, table },
+            });
+        },
+        [addTab],
+    );
+
+    const handleOpenStructure = useCallback(
+        (connectionId: string, schema: string, table: string) => {
+            addTab({
+                id: `structure-${connectionId}-${schema}-${table}`,
+                title: `${schema}.${table} (structure)`,
+                type: "structure",
+                closable: true,
+                meta: { connectionId, schema, table },
+            });
+        },
+        [addTab],
+    );
+
     return (
         <div className={styles.app}>
             <div className={styles.body}>
@@ -69,6 +97,8 @@ function AppContent() {
                     onOpenSettings={handleOpenSettings}
                     onNewConnection={handleNewConnection}
                     onEditConnection={handleEditConnection}
+                    onOpenTable={handleOpenTable}
+                    onOpenStructure={handleOpenStructure}
                 />
                 <div className={styles.main}>
                     <TabBar
@@ -93,14 +123,19 @@ function AppContent() {
                                 </p>
                             </div>
                         )}
-                        {activeTab?.type === "table" && (
-                            <div className={styles.placeholder}>
-                                <span className={styles.placeholderIcon}>📋</span>
-                                <p>Table Data Viewer</p>
-                                <p className={styles.placeholderHint}>
-                                    Coming in Phase 3 — browse table data with pagination.
-                                </p>
-                            </div>
+                        {activeTab?.type === "table" && activeTab.meta && (
+                            <TableDataView
+                                connectionId={activeTab.meta.connectionId!}
+                                schema={activeTab.meta.schema!}
+                                table={activeTab.meta.table!}
+                            />
+                        )}
+                        {activeTab?.type === "structure" && activeTab.meta && (
+                            <TableStructureView
+                                connectionId={activeTab.meta.connectionId!}
+                                schema={activeTab.meta.schema!}
+                                table={activeTab.meta.table!}
+                            />
                         )}
                         {!activeTab && (
                             <div className={styles.placeholder}>

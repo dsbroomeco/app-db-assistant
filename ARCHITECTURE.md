@@ -54,11 +54,15 @@ Each supported database implements a common `DatabaseDriver` interface:
 
 ```typescript
 interface DatabaseDriver {
-  connect(config: ConnectionConfig): Promise<Connection>;
-  disconnect(connection: Connection): Promise<void>;
-  query(connection: Connection, sql: string, params?: unknown[]): Promise<QueryResult>;
-  getTables(connection: Connection): Promise<TableInfo[]>;
-  getSchema(connection: Connection, table: string): Promise<ColumnInfo[]>;
+  connect(config: ConnectionConfig, password?: string): Promise<void>;
+  disconnect(): Promise<void>;
+  ping(): Promise<void>;
+  isConnected(): boolean;
+  getSchemas(): Promise<SchemaInfo[]>;
+  getTables(schema: string): Promise<TableInfo[]>;
+  getTableStructure(schema: string, table: string): Promise<TableStructure>;
+  getRoutines(schema: string): Promise<RoutineInfo[]>;
+  getTableData(schema: string, table: string, page: number, pageSize: number): Promise<QueryResult>;
 }
 ```
 
@@ -74,20 +78,25 @@ This abstraction allows adding new database support without modifying the rest o
 
 The renderer uses a tab manager that supports:
 - Query editor tabs
-- Table data viewer tabs
-- Schema browser tabs
-- Each tab maintains its own state and can reference different database connections
+- Table data viewer tabs (with pagination, row counts, and column display)
+- Table structure viewer tabs (columns, indexes, constraints)
+- Schema browser tabs (tree view in sidebar with lazy-loading)
+- Each tab maintains its own state and can reference different database connections via metadata
 
 ### 5. IPC Communication
 
 All main ↔ renderer communication uses typed IPC channels defined in `src/shared/ipc.ts`:
 
 ```typescript
-// Example channel definitions
+// Channel definitions include connection management and schema browsing
 type IpcChannels = {
-  'db:connect': { request: ConnectionConfig; response: ConnectionId };
-  'db:query': { request: { connId: ConnectionId; sql: string; params?: unknown[] }; response: QueryResult };
-  'db:tables': { request: ConnectionId; response: TableInfo[] };
+  'conn:connect': { request: string; response: ConnectionStatus };
+  'conn:disconnect': { request: string; response: ConnectionStatus };
+  'db:schemas': { request: string; response: SchemaInfo[] };
+  'db:tables': { request: { connectionId: string; schema: string }; response: TableInfo[] };
+  'db:table-structure': { request: { connectionId: string; schema: string; table: string }; response: TableStructure };
+  'db:routines': { request: { connectionId: string; schema: string }; response: RoutineInfo[] };
+  'db:table-data': { request: { connectionId: string; schema: string; table: string; page: number; pageSize: number }; response: QueryResult };
 };
 ```
 
