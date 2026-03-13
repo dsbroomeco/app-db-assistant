@@ -1,14 +1,16 @@
 # DB Assistant — Roadmap
 
-## Phase 1: Foundation (Current)
+## Phase 1: Foundation (Complete)
 
 - [x] Project scaffolding and repository setup
 - [x] AGENTS.md, README, ROADMAP, ARCHITECTURE docs
 - [x] Marketing website (Next.js) with download page
-- [ ] Electron + React app shell with basic window management
-- [ ] Tab system for multiple views
-- [ ] Dark / light theme with system preference detection
-- [ ] Application settings and preferences storage
+- [x] Electron + React app shell with basic window management
+- [x] Tab system for multiple views
+- [x] Dark / light theme with system preference detection
+- [x] Application settings and preferences storage
+- [x] ESLint, Prettier, Vitest tooling
+- [x] Typed IPC channels (main ↔ renderer)
 
 ## Phase 2: Core Database Connectivity
 

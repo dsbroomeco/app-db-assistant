@@ -53,27 +53,40 @@ cd website && npm run dev
 
 ```
 app-db-assistant/
-├── website/           # Next.js marketing site
-├── src/               # Electron + React desktop app
-│   ├── main/          # Electron main process
-│   ├── renderer/      # React UI
-│   ├── shared/        # Shared types and utilities
-│   └── db/            # Database driver layer
-├── tests/             # E2E tests
-├── AGENTS.md          # Agent coding instructions
-├── ROADMAP.md         # Development roadmap
-└── ARCHITECTURE.md    # Technical architecture
+├── website/               # Next.js marketing site
+├── src/                   # Electron + React desktop app
+│   ├── main/              # Electron main process
+│   │   ├── main.ts        # App entry, window management, IPC handlers
+│   │   └── preload.ts     # Context bridge for renderer
+│   ├── renderer/          # React UI (Vite)
+│   │   ├── components/    # React components
+│   │   ├── context/       # React context providers
+│   │   ├── hooks/         # Custom hooks
+│   │   ├── styles/        # Global CSS
+│   │   └── App.tsx        # Root app component
+│   ├── shared/            # Shared types and utilities
+│   │   └── ipc.ts         # Typed IPC channel definitions
+│   └── db/                # Database connection drivers (future)
+├── tests/                 # E2E tests
+├── AGENTS.md              # Agent coding instructions
+├── ROADMAP.md             # Development roadmap
+└── ARCHITECTURE.md        # Technical architecture
 ```
 
 ### Scripts
 
-| Command            | Description                    |
-| ------------------ | ------------------------------ |
-| `npm run dev`      | Start desktop app (dev mode)   |
-| `npm run build`    | Build desktop app for production |
-| `npm test`         | Run unit tests                 |
-| `npm run test:e2e` | Run end-to-end tests           |
-| `npm run lint`     | Lint all source files          |
+| Command              | Description                         |
+| -------------------- | ----------------------------------- |
+| `npm run dev`        | Start desktop app (dev mode)        |
+| `npm run build`      | Build main process + renderer       |
+| `npm run build:electron` | Build + package with electron-builder |
+| `npm test`           | Run unit tests                      |
+| `npm run test:watch` | Run unit tests in watch mode        |
+| `npm run test:e2e`   | Run end-to-end tests                |
+| `npm run lint`       | Lint all source files               |
+| `npm run lint:fix`   | Lint and auto-fix                   |
+| `npm run format`     | Format with Prettier                |
+| `npm run typecheck`  | TypeScript type checking only       |
 
 ## Contributing
 
