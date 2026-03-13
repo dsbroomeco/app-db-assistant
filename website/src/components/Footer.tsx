@@ -46,7 +46,7 @@ export function Footer() {
                         <ul className="space-y-2 text-sm">
                             <li>
                                 <Link
-                                    href="https://github.com/your-org/app-db-assistant"
+                                    href="https://github.com/dsbroomeco/app-db-assistant"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
@@ -56,7 +56,7 @@ export function Footer() {
                             </li>
                             <li>
                                 <Link
-                                    href="https://github.com/your-org/app-db-assistant/issues"
+                                    href="https://github.com/dsbroomeco/app-db-assistant/issues"
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"

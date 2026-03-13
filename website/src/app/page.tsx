@@ -165,7 +165,7 @@ export default function HomePage() {
         <div className="absolute inset-0 -z-10 bg-gradient-to-b from-blue-50 to-white dark:from-gray-900 dark:to-gray-950" />
         <div className="mx-auto max-w-6xl px-6 pb-20 pt-24 text-center lg:pt-32">
           <div className="mb-6 inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-4 py-1.5 text-sm font-medium text-blue-700 dark:border-blue-800 dark:bg-blue-950 dark:text-blue-300">
-            v0.1.0 — Now in early development
+            v0.1.1-beta.0 — Beta
           </div>
           <h1 className="mx-auto max-w-3xl text-4xl font-extrabold tracking-tight sm:text-5xl lg:text-6xl">
             The database manager{" "}
@@ -186,7 +186,7 @@ export default function HomePage() {
               Download for Free
             </Link>
             <Link
-              href="https://github.com/your-org/app-db-assistant"
+              href="https://github.com/dsbroomeco/app-db-assistant"
               target="_blank"
               rel="noopener noreferrer"
               className="rounded-lg border border-gray-300 bg-white px-8 py-3 text-base font-semibold text-gray-700 hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800"

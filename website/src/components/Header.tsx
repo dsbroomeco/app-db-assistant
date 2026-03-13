@@ -55,7 +55,7 @@ export function Header() {
                         Download
                     </Link>
                     <Link
-                        href="https://github.com/your-org/app-db-assistant"
+                        href="https://github.com/dsbroomeco/app-db-assistant"
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white"
@@ -119,7 +119,7 @@ export function Header() {
                             Download
                         </Link>
                         <Link
-                            href="https://github.com/your-org/app-db-assistant"
+                            href="https://github.com/dsbroomeco/app-db-assistant"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="text-sm text-gray-600 dark:text-gray-400"
