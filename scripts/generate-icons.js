@@ -69,26 +69,26 @@ const BUILD_DIR = path.resolve(__dirname, "..", "build");
 const ICONS_DIR = path.join(BUILD_DIR, "icons");
 
 async function main() {
-  // Ensure directories exist
-  fs.mkdirSync(ICONS_DIR, { recursive: true });
+    // Ensure directories exist
+    fs.mkdirSync(ICONS_DIR, { recursive: true });
 
-  const svgBuffer = Buffer.from(SVG);
+    const svgBuffer = Buffer.from(SVG);
 
-  // 1. Master 1024x1024 icon
-  await sharp(svgBuffer).resize(1024, 1024).png().toFile(path.join(BUILD_DIR, "icon.png"));
-  console.log("  build/icon.png (1024x1024)");
+    // 1. Master 1024x1024 icon
+    await sharp(svgBuffer).resize(1024, 1024).png().toFile(path.join(BUILD_DIR, "icon.png"));
+    console.log("  build/icon.png (1024x1024)");
 
-  // 2. Sized PNGs for Linux
-  for (const size of LINUX_SIZES) {
-    const outPath = path.join(ICONS_DIR, `${size}x${size}.png`);
-    await sharp(svgBuffer).resize(size, size).png().toFile(outPath);
-    console.log(`  build/icons/${size}x${size}.png`);
-  }
+    // 2. Sized PNGs for Linux
+    for (const size of LINUX_SIZES) {
+        const outPath = path.join(ICONS_DIR, `${size}x${size}.png`);
+        await sharp(svgBuffer).resize(size, size).png().toFile(outPath);
+        console.log(`  build/icons/${size}x${size}.png`);
+    }
 
-  console.log("\nDone. electron-builder will auto-convert icon.png to .ico / .icns at build time.");
+    console.log("\nDone. electron-builder will auto-convert icon.png to .ico / .icns at build time.");
 }
 
 main().catch((err) => {
-  console.error("Icon generation failed:", err);
-  process.exit(1);
+    console.error("Icon generation failed:", err);
+    process.exit(1);
 });

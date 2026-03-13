@@ -144,14 +144,14 @@ The pipeline scaffolding exists but has never been exercised on a real tag push.
 
 > **Policy:** All pipeline build/test steps must be validated locally in Docker containers before pushing to CI. Dockerfiles for each platform target live in `docker/` and are used to replicate the GitHub Actions matrix locally.
 
-- [x] **GitHub Actions workflow** — `release.yml` exists: lint → typecheck → test → build (matrix) → upload → GitHub Release
+- [x] **GitHub Actions workflow** — `release.yml` exists: lint → typecheck → test → e2e → build (matrix) → upload → GitHub Release
 - [x] **Auto-update (electron-updater)** — Implemented in `src/main/auto-updater.ts`, points to GitHub Releases, user-initiated download + restart
 - [x] **electron-builder config** — `build` section in `package.json` complete for all 3 platforms (NSIS/MSI, AppImage/deb/rpm, DMG with universal arch)
-- [ ] **Create Docker build containers** — Add `docker/Dockerfile.linux` and `docker/Dockerfile.win` for local build testing that mirrors the CI matrix. Add `docker-compose.yml` for one-command local pipeline runs.
-- [ ] **Validate builds locally in Docker** — Run the full build and packaging for Linux (and cross-compile check for Windows) in Docker before any CI push
+- [x] **Create Docker build containers** — `docker/Dockerfile.linux` and `docker/Dockerfile.win` with `docker-compose.yml` for one-command local pipeline runs
+- [x] **Validate builds locally in Docker** — Full Linux pipeline (typecheck → test → build → package AppImage/deb/rpm) validated in Docker. Windows builds validated natively.
 - [ ] **Dry-run the pipeline** — Push a `v0.1.0-beta.1` tag and verify the full CI flow produces artifacts for all platforms
-- [ ] **Add e2e test stage to CI** — The workflow runs unit tests but skips `npm run test:e2e`; add a Playwright step (at minimum on Linux) or explicitly skip with a comment
-- [ ] **Semantic versioning tooling** — Install `standard-version` or `semantic-release` for automated version bumps and changelog generation
+- [x] **Add e2e test stage to CI** — Playwright step added to `release.yml` on `ubuntu-latest` with `continue-on-error: true` until test suite is stable
+- [x] **Semantic versioning tooling** — `standard-version` installed; `npm run release`, `npm run release:beta`, `npm run release:dry` scripts added
 
 ### Batch 3: Remaining Security Items
 

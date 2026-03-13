@@ -105,8 +105,11 @@ NoSQL drivers implement their own interfaces (see `src/db/types.ts` for `MongoDB
 
 - GitHub Actions workflow (`.github/workflows/release.yml`) triggered on version tags (`v*.*.*`)
 - Matrix build strategy: Windows, Linux, macOS
-- Pipeline: lint → typecheck → test → build → package → create GitHub Release
+- Pipeline: typecheck → test → e2e (Linux) → build → package → create GitHub Release
+- Unsigned dev builds: `CSC_IDENTITY_AUTO_DISCOVERY=false` and `sign: null` in win config
+- Docker containers (`docker/Dockerfile.linux`, `docker/Dockerfile.win`) for local pipeline validation before pushing to CI
 - Dependabot configured for automated dependency updates (`.github/dependabot.yml`)
+- `standard-version` for automated semver bumps, changelog generation, and git tagging
 
 ### 6. Tab System
 

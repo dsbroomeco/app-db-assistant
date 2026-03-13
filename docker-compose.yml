@@ -1,0 +1,23 @@
+# Local CI pipeline — mirrors the GitHub Actions release.yml matrix.
+#
+# Usage:
+#   docker compose run --rm build-linux    # Full pipeline: lint → test → build → package
+#   docker compose run --rm build-win      # Cross-compile Windows from Linux
+#   docker compose up                      # Run all builds in parallel
+#
+# Output artifacts land in ./release/ (mounted volume).
+
+services:
+  build-linux:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.linux
+    volumes:
+      - ./release:/app/release
+
+  build-win:
+    build:
+      context: .
+      dockerfile: docker/Dockerfile.win
+    volumes:
+      - ./release:/app/release
