@@ -200,10 +200,12 @@ export function DatabaseTreeView({
     );
 
     return (
-        <div className={styles.treeView}>
+        <div className={styles.treeView} role="tree" aria-label={`${connectionName} database tree`}>
             <div
                 className={styles.treeNode}
                 onClick={toggleExpand}
+                role="treeitem"
+                aria-expanded={expanded}
             >
                 <span className={styles.arrow}>
                     {expanded ? "▾" : "▸"}

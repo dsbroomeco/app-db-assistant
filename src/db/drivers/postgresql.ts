@@ -26,7 +26,7 @@ export class PostgreSQLDriver implements DatabaseDriver {
       database: config.database,
       user: config.username,
       password: password ?? "",
-      ssl: config.ssl ? { rejectUnauthorized: false } : false,
+      ssl: config.ssl ? { rejectUnauthorized: config.sslRejectUnauthorized } : false,
       max: config.poolSize,
       connectionTimeoutMillis: config.connectionTimeout,
       idleTimeoutMillis: 30000,

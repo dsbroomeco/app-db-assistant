@@ -732,12 +732,13 @@ describe("database types", () => {
       expect(diff.columnDiffs).toHaveLength(1);
     });
 
-    it("SchemaDiffResult has summary", () => {
+    it("SchemaDiffResult has tableDiffs", () => {
       const result: SchemaDiffResult = {
-        tables: [],
-        summary: { added: 1, removed: 0, modified: 2, unchanged: 5 },
+        tableDiffs: [],
+        sourceSchema: "public",
+        targetSchema: "public",
       };
-      expect(result.summary.added).toBe(1);
+      expect(result.tableDiffs).toHaveLength(0);
     });
   });
 
@@ -747,8 +748,8 @@ describe("database types", () => {
         id: "sq-1",
         name: "Get all users",
         sql: "SELECT * FROM users",
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       expect(query.name).toBe("Get all users");
       expect(query.connectionId).toBeUndefined();
@@ -761,8 +762,8 @@ describe("database types", () => {
         sql: "SELECT * FROM users WHERE active = true",
         connectionId: "conn-1",
         folder: "reports",
-        createdAt: Date.now(),
-        updatedAt: Date.now(),
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
       };
       expect(query.connectionId).toBe("conn-1");
       expect(query.folder).toBe("reports");

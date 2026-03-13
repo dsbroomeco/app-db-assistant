@@ -8,6 +8,8 @@ export const metadata: Metadata = {
 };
 
 const CURRENT_VERSION = "0.1.0";
+const GITHUB_REPO = "your-org/app-db-assistant";
+const RELEASE_BASE = `https://github.com/${GITHUB_REPO}/releases/download/v${CURRENT_VERSION}`;
 
 const platforms = [
     {
@@ -18,8 +20,8 @@ const platforms = [
             </svg>
         ),
         downloads: [
-            { label: "Installer (.exe)", href: "#", size: "~85 MB" },
-            { label: "MSI Package (.msi)", href: "#", size: "~85 MB" },
+            { label: "Installer (.exe)", href: `${RELEASE_BASE}/DB-Assistant-Setup-${CURRENT_VERSION}.exe`, size: "~85 MB" },
+            { label: "MSI Package (.msi)", href: `${RELEASE_BASE}/DB-Assistant-${CURRENT_VERSION}.msi`, size: "~85 MB" },
         ],
     },
     {
@@ -30,9 +32,9 @@ const platforms = [
             </svg>
         ),
         downloads: [
-            { label: "AppImage", href: "#", size: "~90 MB" },
-            { label: "Debian (.deb)", href: "#", size: "~88 MB" },
-            { label: "RPM (.rpm)", href: "#", size: "~88 MB" },
+            { label: "AppImage", href: `${RELEASE_BASE}/DB-Assistant-${CURRENT_VERSION}.AppImage`, size: "~90 MB" },
+            { label: "Debian (.deb)", href: `${RELEASE_BASE}/db-assistant_${CURRENT_VERSION}_amd64.deb`, size: "~88 MB" },
+            { label: "RPM (.rpm)", href: `${RELEASE_BASE}/db-assistant-${CURRENT_VERSION}.x86_64.rpm`, size: "~88 MB" },
         ],
     },
     {
@@ -43,8 +45,7 @@ const platforms = [
             </svg>
         ),
         downloads: [
-            { label: "DMG (Apple Silicon)", href: "#", size: "~92 MB" },
-            { label: "DMG (Intel)", href: "#", size: "~95 MB" },
+            { label: "DMG (Universal)", href: `${RELEASE_BASE}/DB-Assistant-${CURRENT_VERSION}-universal.dmg`, size: "~95 MB" },
         ],
     },
 ];
@@ -139,16 +140,24 @@ export default function DownloadPage() {
                 </div>
 
                 {/* Previous versions */}
-                <div className="mt-8 text-center text-sm text-gray-500">
-                    Looking for a previous version?{" "}
-                    <Link
-                        href="https://github.com/your-org/app-db-assistant/releases"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="font-medium text-blue-600 hover:underline dark:text-blue-400"
-                    >
-                        View all releases on GitHub
-                    </Link>
+                <div className="mt-8 flex flex-col items-center gap-2 text-sm text-gray-500">
+                    <div>
+                        <Link
+                            href="/changelog"
+                            className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                            View changelog
+                        </Link>
+                        {" · "}
+                        <Link
+                            href={`https://github.com/${GITHUB_REPO}/releases`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                            All releases on GitHub
+                        </Link>
+                    </div>
                 </div>
             </section>
         </>

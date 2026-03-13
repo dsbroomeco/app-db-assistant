@@ -22,6 +22,8 @@ export interface ConnectionConfig {
   database: string;
   username: string;
   ssl: boolean;
+  /** Whether to verify the server's SSL/TLS certificate (default: false for self-signed certs) */
+  sslRejectUnauthorized: boolean;
   filepath: string;
   connectionTimeout: number;
   poolSize: number;
@@ -45,6 +47,7 @@ export interface SavedConnection {
   database: string;
   username: string;
   ssl: boolean;
+  sslRejectUnauthorized: boolean;
   filepath: string;
   connectionTimeout: number;
   poolSize: number;
@@ -100,6 +103,7 @@ export function newConnectionConfig(
     database: isNoSql ? "" : "",
     username: type === "redis" ? "" : "",
     ssl: false,
+    sslRejectUnauthorized: false,
     filepath: "",
     connectionTimeout: 15000,
     poolSize: isNoSql ? 1 : 5,
@@ -453,7 +457,7 @@ export interface SavedQuery {
   /** Optional connection ID to associate with */
   connectionId?: string;
   /** Folder/category for organization */
-  folder: string;
+  folder?: string;
   createdAt: string;
   updatedAt: string;
 }

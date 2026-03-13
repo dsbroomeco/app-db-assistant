@@ -19,7 +19,7 @@ export class RedisDriverImpl implements RedisDriver {
       port: config.port,
       password: password || undefined,
       db: config.database ? parseInt(config.database, 10) || 0 : 0,
-      tls: config.ssl ? {} : undefined,
+      tls: config.ssl ? { rejectUnauthorized: config.sslRejectUnauthorized } : undefined,
       connectTimeout: config.connectionTimeout,
       lazyConnect: true,
     });

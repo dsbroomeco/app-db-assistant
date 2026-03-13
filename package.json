@@ -15,6 +15,10 @@
     "dev:main": "wait-on http://localhost:5173 && tsc -p tsconfig.main.json && electron .",
     "build": "tsc -p tsconfig.main.json && vite build",
     "build:electron": "npm run build && electron-builder",
+    "build:win": "npm run build && electron-builder --win",
+    "build:linux": "npm run build && electron-builder --linux",
+    "build:mac": "npm run build && electron-builder --mac",
+    "pack": "npm run build && electron-builder --dir",
     "preview": "vite preview",
     "test": "vitest run",
     "test:watch": "vitest",
@@ -37,6 +41,7 @@
     "better-sqlite3": "^12.6.2",
     "codemirror": "^6.0.2",
     "electron-store": "^10.0.0",
+    "electron-updater": "^6.8.3",
     "ioredis": "^5.10.0",
     "mongodb": "^7.1.0",
     "mssql": "^12.2.0",
@@ -74,6 +79,7 @@
   "build": {
     "appId": "com.dbassistant.app",
     "productName": "DB Assistant",
+    "copyright": "Copyright © 2025 DB Assistant",
     "directories": {
       "output": "release"
     },
@@ -81,11 +87,40 @@
       "dist/**/*",
       "node_modules/**/*"
     ],
+    "fileAssociations": [
+      {
+        "ext": "sqlite",
+        "name": "SQLite Database",
+        "role": "Viewer"
+      },
+      {
+        "ext": "db",
+        "name": "Database File",
+        "role": "Viewer"
+      },
+      {
+        "ext": "sqlite3",
+        "name": "SQLite3 Database",
+        "role": "Viewer"
+      }
+    ],
+    "publish": {
+      "provider": "github",
+      "releaseType": "release"
+    },
     "win": {
       "target": [
         "nsis",
         "msi"
-      ]
+      ],
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
     },
     "linux": {
       "target": [
@@ -93,12 +128,25 @@
         "deb",
         "rpm"
       ],
-      "category": "Development"
+      "category": "Development",
+      "icon": "build/icons",
+      "mimeTypes": [
+        "application/x-sqlite3",
+        "application/vnd.sqlite3"
+      ],
+      "desktop": {
+        "StartupWMClass": "db-assistant"
+      }
     },
     "mac": {
       "target": [
-        "dmg"
-      ]
+        {
+          "target": "dmg",
+          "arch": ["x64", "arm64"]
+        }
+      ],
+      "icon": "build/icon.icns",
+      "category": "public.app-category.developer-tools"
     }
   }
 }

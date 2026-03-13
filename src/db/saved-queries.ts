@@ -25,10 +25,10 @@ export function listSavedQueries(): SavedQuery[] {
 
 export function saveSavedQuery(query: Omit<SavedQuery, "id" | "createdAt" | "updatedAt">): SavedQuery {
   const queries = queriesStore.get("savedQueries");
-  const now = Date.now();
+  const now = new Date().toISOString();
   const newQuery: SavedQuery = {
     ...query,
-    id: `sq-${now}-${Math.random().toString(36).slice(2, 8)}`,
+    id: `sq-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     createdAt: now,
     updatedAt: now,
   };
@@ -41,7 +41,7 @@ export function updateSavedQuery(id: string, updates: Partial<Pick<SavedQuery, "
   const queries = queriesStore.get("savedQueries");
   const idx = queries.findIndex((q) => q.id === id);
   if (idx === -1) throw new Error(`Saved query "${id}" not found`);
-  queries[idx] = { ...queries[idx], ...updates, updatedAt: Date.now() };
+  queries[idx] = { ...queries[idx], ...updates, updatedAt: new Date().toISOString() };
   queriesStore.set("savedQueries", queries);
   return queries[idx];
 }

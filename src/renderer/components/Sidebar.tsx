@@ -73,7 +73,7 @@ export function Sidebar({
     );
 
     return (
-        <aside className={styles.sidebar} onClick={closeContextMenu}>
+        <aside className={styles.sidebar} onClick={closeContextMenu} role="navigation" aria-label="Database connections">
             <div className={styles.header}>
                 <span className={styles.logo}>⬡</span>
                 <span className={styles.title}>DB Assistant</span>
@@ -86,6 +86,7 @@ export function Sidebar({
                         className={styles.addBtn}
                         onClick={onNewConnection}
                         title="New connection"
+                        aria-label="Add new connection"
                     >
                         +
                     </button>
@@ -103,12 +104,12 @@ export function Sidebar({
                         </button>
                     </div>
                 ) : (
-                    <div className={styles.list}>
+                    <div className={styles.list} role="list" aria-label="Database connections">
                         {connections.map((conn) => {
                             const connected = isConnected(conn.id);
                             const busy = connectingId === conn.id;
                             return (
-                                <div key={conn.id}>
+                                <div key={conn.id} role="listitem">
                                     <div
                                         className={styles.connItem}
                                         onContextMenu={(e) => handleContextMenu(e, conn)}
@@ -201,6 +202,8 @@ export function Sidebar({
                     className={styles.contextMenu}
                     style={{ top: contextMenu.y, left: contextMenu.x }}
                     onClick={closeContextMenu}
+                    role="menu"
+                    aria-label="Connection actions"
                 >
                     <button
                         className={styles.contextMenuItem}

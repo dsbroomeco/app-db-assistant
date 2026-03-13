@@ -168,7 +168,7 @@ function AppContent() {
                     onOpenSchemaDiff={handleOpenSchemaDiff}
                     onOpenErd={handleOpenErd}
                 />
-                <div className={styles.main}>
+                <div className={styles.main} role="main">
                     <TabBar
                         tabs={tabs}
                         activeTabId={activeTabId}
@@ -176,7 +176,7 @@ function AppContent() {
                         onClose={closeTab}
                         onNewTab={handleNewQueryTab}
                     />
-                    <div className={styles.content}>
+                    <div className={styles.content} role="region" aria-label="Active view">
                         {activeTab?.type === "welcome" && (
                             <WelcomeView onNewConnection={handleNewConnection} />
                         )}

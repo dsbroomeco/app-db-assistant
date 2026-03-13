@@ -34,7 +34,7 @@ export function SchemaDiffView() {
             setResult(res);
             // Auto-expand non-unchanged tables
             const expanded = new Set<string>();
-            for (const td of res.tables) {
+            for (const td of res.tableDiffs) {
                 if (td.status !== "unchanged") expanded.add(td.tableName);
             }
             setExpandedTables(expanded);
@@ -126,7 +126,7 @@ export function SchemaDiffView() {
             {result && (
                 <>
                     <div className={styles.results}>
-                        {result.tables.map((td) => (
+                        {result.tableDiffs.map((td) => (
                             <div key={td.tableName} className={styles.tableGroup}>
                                 <div
                                     className={styles.tableGroupHeader}
@@ -183,25 +183,25 @@ export function SchemaDiffView() {
                     <div className={styles.summary}>
                         <span className={styles.summaryItem}>
                             <span className={`${styles.statusBadge} ${styles.added}`}>
-                                {result.summary.added}
+                                {result.tableDiffs.filter((t) => t.status === "added").length}
                             </span>
                             added
                         </span>
                         <span className={styles.summaryItem}>
                             <span className={`${styles.statusBadge} ${styles.removed}`}>
-                                {result.summary.removed}
+                                {result.tableDiffs.filter((t) => t.status === "removed").length}
                             </span>
                             removed
                         </span>
                         <span className={styles.summaryItem}>
                             <span className={`${styles.statusBadge} ${styles.modified}`}>
-                                {result.summary.modified}
+                                {result.tableDiffs.filter((t) => t.status === "modified").length}
                             </span>
                             modified
                         </span>
                         <span className={styles.summaryItem}>
                             <span className={`${styles.statusBadge} ${styles.unchanged}`}>
-                                {result.summary.unchanged}
+                                {result.tableDiffs.filter((t) => t.status === "unchanged").length}
                             </span>
                             unchanged
                         </span>

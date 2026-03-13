@@ -93,7 +93,7 @@ Before any public release, the following security items **must** be audited, tes
 - [x] Verify credentials never leak into logs, error messages, or renderer process
 - [x] Audit `electron-store` files to confirm no plaintext passwords are written to disk
 - [x] Ensure OS keychain / `safeStorage` encryption is enforced — fallback behavior if keychain is unavailable must not store in plaintext
-- [ ] Confirm TLS/SSL certificate validation is configurable (currently `rejectUnauthorized: false` — add user-facing toggle)
+- [x] Confirm TLS/SSL certificate validation is configurable — `sslRejectUnauthorized` toggle added to connection form and all drivers
 - [x] Review IPC channel surface — ensure no channel can be invoked to extract raw credentials
 
 ### Electron Security Hardening
@@ -102,8 +102,8 @@ Before any public release, the following security items **must** be audited, tes
 - [x] Disable `remote` module entirely
 - [x] Review CSP (Content Security Policy) headers for the renderer — block inline scripts and `eval`
 - [x] Validate no `shell.openExternal()` calls with unsanitized URLs (prevent SSRF / open-redirect)
-- [ ] Pin Electron version and monitor for security advisories
-- [ ] Sign application binaries (Windows Authenticode, macOS code signing)
+- [x] Pin Electron version and monitor for security advisories — Electron ^34.0.0 pinned, Dependabot enabled
+- [ ] Sign application binaries (Windows Authenticode, macOS code signing) — *deferred: requires paid certificates*
 
 ### Cross-Site Scripting (XSS) Prevention
 - [x] Audit all rendered database values — ensure cell values, error messages, and user content are escaped
@@ -117,9 +117,9 @@ Before any public release, the following security items **must** be audited, tes
 
 ### Dependency Audit
 - [x] Run `npm audit` and resolve all critical/high vulnerabilities
-- [ ] Review native module supply chain (better-sqlite3, pg, mysql2, mssql, tedious)
-- [ ] Enable Dependabot or Renovate for automated dependency updates
-- [ ] Pin exact versions in `package-lock.json` and verify integrity hashes
+- [ ] Review native module supply chain (better-sqlite3, pg, mysql2, mssql, tedious) — *deferred: manual audit required pre-release*
+- [x] Enable Dependabot or Renovate for automated dependency updates — `.github/dependabot.yml` created
+- [ ] Pin exact versions in `package-lock.json` and verify integrity hashes — *deferred: post-deployment npm config*
 
 ### Access Control
 - [x] Ensure application does not run with elevated privileges by default

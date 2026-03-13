@@ -68,6 +68,7 @@ export interface IpcChannels {
   "settings:get": { request: void; response: AppSettings };
   "settings:set": { request: Partial<AppSettings>; response: AppSettings };
   "app:get-version": { request: void; response: string };
+  "app:check-for-updates": { request: void; response: void };
   "theme:get-system": { request: void; response: "light" | "dark" };
 
   // Connection management
@@ -79,6 +80,7 @@ export interface IpcChannels {
     request: {
       config: import("./types/database").ConnectionConfig;
       password?: string;
+      sshPassword?: string;
     };
     response: import("./types/database").SavedConnection;
   };
@@ -87,6 +89,7 @@ export interface IpcChannels {
     request: {
       config: import("./types/database").ConnectionConfig;
       password?: string;
+      sshPassword?: string;
     };
     response: import("./types/database").TestConnectionResult;
   };
@@ -266,7 +269,7 @@ export interface IpcChannels {
     response: import("./types/database").SavedQuery[];
   };
   "queries:save": {
-    request: import("./types/database").SavedQuery;
+    request: Omit<import("./types/database").SavedQuery, "id" | "createdAt" | "updatedAt">;
     response: import("./types/database").SavedQuery;
   };
   "queries:delete": {

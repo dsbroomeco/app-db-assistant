@@ -79,7 +79,7 @@ export async function createTunnel(
         localPort,
         remoteHost,
         remotePort,
-        (err, stream) => {
+        (err: Error | undefined, stream: NodeJS.ReadWriteStream) => {
           if (err) {
             socket.end();
             return;

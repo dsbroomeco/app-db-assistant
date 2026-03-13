@@ -37,6 +37,7 @@ export function ConnectionForm({
                 database: editConnection.database,
                 username: editConnection.username,
                 ssl: editConnection.ssl,
+                sslRejectUnauthorized: editConnection.sslRejectUnauthorized,
                 filepath: editConnection.filepath,
                 connectionTimeout: editConnection.connectionTimeout,
                 poolSize: editConnection.poolSize,
@@ -316,6 +317,18 @@ export function ConnectionForm({
                                         <span>{isMongo ? "Use TLS encryption" : "Use SSL / TLS encryption"}</span>
                                     </label>
                                 </div>
+                                {config.ssl && (
+                                    <div className={styles.field}>
+                                        <label className={styles.checkboxLabel}>
+                                            <input
+                                                type="checkbox"
+                                                checked={config.sslRejectUnauthorized}
+                                                onChange={(e) => update({ sslRejectUnauthorized: e.target.checked })}
+                                            />
+                                            <span>Verify server certificate (disable for self-signed certs)</span>
+                                        </label>
+                                    </div>
+                                )}
                             </>
                         )}
 

@@ -1,5 +1,4 @@
 import { describe, it, expect } from "vitest";
-import { renderHook, act } from "vitest";
 
 // Since renderHook requires a DOM environment, we test the logic directly
 describe("useTabs logic", () => {

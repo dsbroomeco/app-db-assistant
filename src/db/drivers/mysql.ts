@@ -29,7 +29,7 @@ export class MySQLDriver implements DatabaseDriver {
       database: config.database,
       user: config.username,
       password: password ?? "",
-      ssl: config.ssl ? { rejectUnauthorized: false } : undefined,
+      ssl: config.ssl ? { rejectUnauthorized: config.sslRejectUnauthorized } : undefined,
       connectionLimit: config.poolSize,
       connectTimeout: config.connectionTimeout,
       waitForConnections: true,

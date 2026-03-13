@@ -79,6 +79,7 @@ const mockDriver: DatabaseDriver = {
   insertRow: vi.fn().mockResolvedValue({ success: true, affectedRows: 1 }),
   updateRow: vi.fn().mockResolvedValue({ success: true, affectedRows: 1 }),
   deleteRows: vi.fn().mockResolvedValue({ success: true, affectedRows: 1 }),
+  escapeIdentifier: vi.fn((id: string) => `"${id}"`),
 };
 
 vi.mock("./drivers", () => ({
@@ -107,9 +108,16 @@ describe("connection-manager", () => {
     database: "testdb",
     username: "user",
     ssl: false,
+    sslRejectUnauthorized: false,
     filepath: "",
     connectionTimeout: 15000,
     poolSize: 5,
+    sshEnabled: false,
+    sshHost: "",
+    sshPort: 22,
+    sshUsername: "",
+    sshAuthMethod: "password",
+    sshPrivateKeyPath: "",
   };
 
   it("lists no connections initially", () => {

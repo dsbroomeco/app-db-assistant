@@ -33,7 +33,7 @@ export class MSSQLDriver implements DatabaseDriver {
       },
       options: {
         encrypt: config.ssl,
-        trustServerCertificate: true,
+        trustServerCertificate: !config.sslRejectUnauthorized,
         connectTimeout: config.connectionTimeout,
       },
     };

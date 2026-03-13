@@ -160,7 +160,8 @@ export async function testConnection(
   const tunnelId = `test-${Date.now()}`;
   try {
     if (config.sshEnabled) {
-      effectiveConfig = await createTunnel({ ...config, id: tunnelId }, sshPassword);
+      const { tunnelConfig } = await createTunnel({ ...config, id: tunnelId }, sshPassword);
+      effectiveConfig = tunnelConfig;
     }
     const driver = createAnyDriver(config.type);
     try {
@@ -211,6 +212,7 @@ function toSavedConnection(config: ConnectionConfig): SavedConnection {
     database: config.database,
     username: config.username,
     ssl: config.ssl,
+    sslRejectUnauthorized: config.sslRejectUnauthorized,
     filepath: config.filepath,
     connectionTimeout: config.connectionTimeout,
     poolSize: config.poolSize,

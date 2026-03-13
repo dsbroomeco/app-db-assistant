@@ -52,6 +52,7 @@ import {
   saveSavedQuery,
   deleteSavedQuery,
 } from "../db/saved-queries";
+import { initAutoUpdater, checkForUpdates } from "./auto-updater";
 
 type StoreType = { settings: AppSettings; shortcuts: KeyboardShortcut[] };
 
@@ -139,6 +140,10 @@ ipcMain.handle(
 
 ipcMain.handle("app:get-version", (): string => {
   return app.getVersion();
+});
+
+ipcMain.handle("app:check-for-updates", async () => {
+  await checkForUpdates();
 });
 
 ipcMain.handle("theme:get-system", (): "light" | "dark" => {
@@ -673,6 +678,13 @@ app.whenReady().then(async () => {
   nativeTheme.themeSource = settings.theme;
 
   createWindow();
+
+  // Initialize auto-updater in packaged builds
+  if (app.isPackaged && mainWindow) {
+    initAutoUpdater(mainWindow).catch(() => {
+      // Ignore auto-updater init errors
+    });
+  }
 
   app.on("activate", () => {
     if (BrowserWindow.getAllWindows().length === 0) {

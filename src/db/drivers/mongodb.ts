@@ -20,6 +20,7 @@ export class MongoDBDriverImpl implements MongoDBDriver {
       connectTimeoutMS: config.connectionTimeout,
       serverSelectionTimeoutMS: config.connectionTimeout,
       tls: config.ssl,
+      tlsAllowInvalidCertificates: config.ssl ? !config.sslRejectUnauthorized : undefined,
     });
 
     await this.client.connect();
