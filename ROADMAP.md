@@ -71,13 +71,13 @@
 ## Phase 8: Polish & Distribution
 
 - [x] Auto-update mechanism (electron-updater)
-- [x] Windows installer (`.exe` / `.msi` via electron-builder)
-- [x] Linux packages (`.AppImage`, `.deb`, `.rpm`)
-- [x] macOS build (`.dmg`) — stretch goal
-- [x] CI/CD pipeline for automated builds and releases
+- [x] electron-builder configuration (Windows NSIS/MSI, Linux AppImage/deb/rpm, macOS DMG universal)
+- [x] CI/CD pipeline for automated builds and releases (GitHub Actions `release.yml`)
 - [x] Marketing website: release notes, changelog integration
-- [ ] Performance profiling and optimization
 - [x] Accessibility audit (keyboard navigation, screen readers)
+- [x] App icons for all platforms — `build/icon.png` (master), `build/icons/` (Linux PNGs). Generated via `scripts/generate-icons.js`.
+- [ ] Performance profiling and optimization
+- [ ] E2E test suite (`tests/e2e/`) — directory does not exist yet
 
 ## Pre-Deployment: Security Audit & Vulnerability Review
 
@@ -130,58 +130,58 @@ Before any public release, the following security items **must** be audited, tes
 
 ## Deployment
 
-### Build & Packaging
+### Batch 1: Build Prerequisites (blocking everything else)
 
-- [ ] **Configure electron-builder** — Set up `electron-builder.yml` or `build` config in `package.json` with:
-  - App ID, product name, and copyright
-  - File associations (e.g., `.sqlite`, `.db` files)
-  - Platform-specific icons (`.ico` for Windows, `.icns` for macOS, `.png` for Linux)
-- [ ] **Windows** — Build `.exe` (NSIS installer) and `.msi` (WiX) via `electron-builder --win`
-  - Test on Windows 10 and Windows 11
-  - Configure auto-elevation for install, per-user vs per-machine install options
-  - Sign the installer with an Authenticode certificate (EV recommended for SmartScreen trust)
-- [ ] **Linux** — Build `.AppImage`, `.deb`, and `.rpm` via `electron-builder --linux`
-  - Test on Ubuntu 22.04+, Fedora 38+, and an Arch-based distro
-  - Add desktop entry and icons for GNOME/KDE integration
-  - Register appropriate MIME types
-- [ ] **macOS** — Build `.dmg` and `.zip` via `electron-builder --mac`
-  - Sign with Apple Developer certificate
-  - Notarize the app with Apple's notarization service
-  - Test on macOS 13+ (Ventura and later)
-  - Handle Apple Silicon (arm64) and Intel (x64) universal builds
+These items must be completed first — without them, no build will succeed.
 
-### CI/CD Pipeline
+- [x] **Create app icons** — `build/icon.png` (1024×1024 master), `build/icons/` with sized PNGs (16–512px, Linux). electron-builder auto-converts to `.ico`/`.icns`. Generated via `scripts/generate-icons.js`.
+- [x] **Fix GitHub repo URL** — Updated `GITHUB_REPO` in `website/src/app/download/page.tsx` to `dsbroomeco/app-db-assistant`
+- [x] **Verify local build** — `npm run build:win` produces `DB Assistant Setup 0.1.0.exe` (89 MB) and `DB Assistant 0.1.0.msi` (98 MB) in `release/`. Unsigned builds work with `sign: null` in electron-builder config (`CSC_IDENTITY_AUTO_DISCOVERY=false`). Code signing deferred to Batch 3.
 
-- [ ] **GitHub Actions workflow** — Set up `release.yml` triggered on version tags (`v*.*.*`):
-  1. Checkout and install dependencies (with frozen lockfile)
-  2. Run linting, type checking, and unit tests
-  3. Build for all target platforms (use matrix strategy: `windows-latest`, `ubuntu-latest`, `macos-latest`)
-  4. Run e2e tests on each platform
-  5. Upload artifacts and create a GitHub Release with built binaries
-- [ ] **Auto-update (electron-updater)** — Configure `autoUpdater` in the main process:
-  - Point to GitHub Releases (or a custom update server / S3 bucket)
-  - Present update notification in-app (download + restart prompt)
-  - Support differential updates where possible to reduce download size
-  - Verify update signature before applying
-- [ ] **Release channels** — Set up `latest` (stable), `beta`, and `alpha` channels
-  - Use pre-release version tags (e.g., `v1.0.0-beta.1`) for beta/alpha
-- [ ] **Semantic versioning** — Automate version bumps using `standard-version` or `semantic-release`
+### Batch 2: CI/CD Validation & Release Pipeline
 
-### Marketing Website Updates
+The pipeline scaffolding exists but has never been exercised on a real tag push.
 
-- [ ] **Download page** — Auto-populate download links with latest release asset URLs from GitHub Releases API
-- [ ] **Changelog / Release notes** — Generate from Conventional Commits and display on the website
+> **Policy:** All pipeline build/test steps must be validated locally in Docker containers before pushing to CI. Dockerfiles for each platform target live in `docker/` and are used to replicate the GitHub Actions matrix locally.
+
+- [x] **GitHub Actions workflow** — `release.yml` exists: lint → typecheck → test → build (matrix) → upload → GitHub Release
+- [x] **Auto-update (electron-updater)** — Implemented in `src/main/auto-updater.ts`, points to GitHub Releases, user-initiated download + restart
+- [x] **electron-builder config** — `build` section in `package.json` complete for all 3 platforms (NSIS/MSI, AppImage/deb/rpm, DMG with universal arch)
+- [ ] **Create Docker build containers** — Add `docker/Dockerfile.linux` and `docker/Dockerfile.win` for local build testing that mirrors the CI matrix. Add `docker-compose.yml` for one-command local pipeline runs.
+- [ ] **Validate builds locally in Docker** — Run the full build and packaging for Linux (and cross-compile check for Windows) in Docker before any CI push
+- [ ] **Dry-run the pipeline** — Push a `v0.1.0-beta.1` tag and verify the full CI flow produces artifacts for all platforms
+- [ ] **Add e2e test stage to CI** — The workflow runs unit tests but skips `npm run test:e2e`; add a Playwright step (at minimum on Linux) or explicitly skip with a comment
+- [ ] **Semantic versioning tooling** — Install `standard-version` or `semantic-release` for automated version bumps and changelog generation
+
+### Batch 3: Remaining Security Items
+
+These are deferred from the security audit and should be addressed before stable release (a beta can ship without them).
+
+- [ ] **Native module supply chain review** — Manual audit of `better-sqlite3`, `pg`, `mysql2`, `mssql`, `tedious`, `mongodb`, `ioredis`, `ssh2` for known vulnerabilities beyond what `npm audit` catches
+- [ ] **Pin exact versions** — Run `npm shrinkwrap` or configure `package-lock.json` with `--save-exact`; verify integrity hashes
+- [ ] **Sign application binaries** — Windows Authenticode + macOS code signing / notarization (requires paid certificates; can be deferred to post-beta)
+
+### Batch 4: Remaining Polish
+
+- [ ] **Performance profiling and optimization** — Profile startup time, large-table rendering, and query execution. Target <3s cold start.
+- [ ] **Create e2e test suite** — `tests/e2e/` directory does not exist yet; add at least smoke tests for app launch, connection form, and query execution
+
+### Batch 5: Marketing Website Updates
+
+- [x] **Update `GITHUB_REPO`** — Fixed to `dsbroomeco/app-db-assistant`
+- [ ] **Keep `CURRENT_VERSION` in sync** — Update download page version string on each release
 - [ ] **Platform detection** — Auto-detect visitor's OS and highlight the correct download button
 - [ ] **Hash verification** — Publish SHA-256 checksums alongside each binary for user verification
+- [x] **Changelog integration** — `website/src/app/changelog/page.tsx` reads from `CHANGELOG.md` and renders it
 
-### Pre-Release Checklist
+### Batch 6: Pre-Release Checklist (gate for v1.0.0 stable)
 
-- [ ] Bump version in `package.json`
-- [ ] Update `CHANGELOG.md`
+- [ ] Bump version in `package.json` to `1.0.0`
+- [ ] Update `CHANGELOG.md` with all changes since `0.1.0`
 - [ ] Run full test suite (unit + e2e) on all target platforms
-- [ ] Complete security audit items above
-- [ ] Test fresh install on a clean VM for each platform
-- [ ] Test upgrade from previous version (if applicable)
+- [ ] Complete remaining security audit items (Batch 3)
+- [ ] Test fresh install on a clean VM for each platform (Windows 10/11, Ubuntu 22.04+, Fedora 38+)
+- [ ] Test upgrade path from beta → stable
 - [ ] Verify auto-update flow end-to-end
 - [ ] Review all error messages for user-friendliness (no stack traces in production)
 - [ ] Confirm telemetry/analytics are opt-in only (if applicable)

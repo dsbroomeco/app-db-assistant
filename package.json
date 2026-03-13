@@ -70,6 +70,7 @@
     "eslint-plugin-react-hooks": "^5.0.0",
     "globals": "^15.0.0",
     "prettier": "^3.4.0",
+    "sharp": "^0.34.5",
     "typescript": "^5.7.0",
     "typescript-eslint": "^8.0.0",
     "vite": "^6.0.0",
@@ -79,7 +80,7 @@
   "build": {
     "appId": "com.dbassistant.app",
     "productName": "DB Assistant",
-    "copyright": "Copyright © 2025 DB Assistant",
+    "copyright": "Copyright © 2025-2026 DB Assistant",
     "directories": {
       "output": "release"
     },
@@ -113,7 +114,9 @@
         "nsis",
         "msi"
       ],
-      "icon": "build/icon.ico"
+      "icon": "build/icon.png",
+      "signDlls": false,
+      "sign": null
     },
     "nsis": {
       "oneClick": false,
@@ -142,10 +145,13 @@
       "target": [
         {
           "target": "dmg",
-          "arch": ["x64", "arm64"]
+          "arch": [
+            "x64",
+            "arm64"
+          ]
         }
       ],
-      "icon": "build/icon.icns",
+      "icon": "build/icon.png",
       "category": "public.app-category.developer-tools"
     }
   }

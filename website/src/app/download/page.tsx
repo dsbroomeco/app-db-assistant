@@ -8,7 +8,7 @@ export const metadata: Metadata = {
 };
 
 const CURRENT_VERSION = "0.1.0";
-const GITHUB_REPO = "your-org/app-db-assistant";
+const GITHUB_REPO = "dsbroomeco/app-db-assistant";
 const RELEASE_BASE = `https://github.com/${GITHUB_REPO}/releases/download/v${CURRENT_VERSION}`;
 
 const platforms = [
