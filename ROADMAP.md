@@ -161,17 +161,76 @@ These are deferred from the security audit and should be addressed before stable
 - [x] **Pin exact versions** — `npm config set save-exact true` configured; future installs use pinned versions
 - [ ] **Sign application binaries** — Windows Authenticode + macOS code signing / notarization (requires paid certificates; can be deferred to post-beta)
 
-### Batch 4: Remaining Polish
+### Batch 4: Performance Profiling & Optimization
 
-- [ ] **Performance profiling and optimization** — Profile startup time, large-table rendering, and query execution. Target <3s cold start.
-- [x] **Create e2e test suite** — Playwright smoke tests scaffolded in `tests/e2e/`: `app-launch.test.ts` (launch + window size), `connection-form.test.ts` (form fields render)
+All binaries flow through GitHub Releases; there is no separate CDN to worry about. Performance work is the only remaining polish blocker.
 
-### Batch 5: Marketing Website Updates
+#### Startup Time (target: < 3s cold start on mid-range hardware)
 
+- [ ] **Baseline startup measurement** — Add `performance.now()` timestamps around each `app.whenReady()` init step (`initStore`, `initConnectionManager`, `initQueryHistory`, `initSavedQueries`) and log them in dev mode. Capture time-to-first-paint via Playwright's `page.waitForSelector` timing
+- [ ] **Parallelize independent init calls** — `initQueryHistory()` and `initSavedQueries()` have no dependency on each other; run both with `Promise.all` alongside `initConnectionManager()` where safe
+- [ ] **Measure and document baseline** — Record cold-start and warm-start times before any optimization so improvements are quantifiable
+
+#### Query Result Grid — Virtual Scrolling (highest risk, no row cap today)
+
+- [ ] **Add `MAX_RESULT_ROWS` cap** — Free-form `query:execute` results currently have no row limit; a `SELECT * FROM huge_table` serializes everything over IPC and renders all rows in the DOM. Add a configurable cap (default 10,000) with a visible truncation warning in `ResultsView` in `QueryEditorView.tsx`
+- [ ] **Add virtual scrolling to result grid** — Replace the plain `<table>` render in `ResultsView` with `@tanstack/react-virtual` (MIT). Only render visible rows; DOM node count stays constant regardless of result size
+- [ ] **Add virtual scrolling to table data view** — `TableDataView.tsx` paginates at 50 rows (already safe) but re-renders all rows on every selection/edit state change; add `React.memo` on the row component and stabilize row keys
+
+#### Table Data View — COUNT(*) Cost
+
+- [ ] **Replace exact COUNT(*) with fast estimates where acceptable** — On large PostgreSQL tables, `SELECT COUNT(*)` does a full sequential scan. Use `pg_class.reltuples` for the row estimate when `totalRows` is only needed for pagination UI. Add a `exactCount: boolean` option to `getTableData()` driver interface; default to estimate for browsing, exact for export
+- [ ] **MySQL equivalent** — Use `information_schema.TABLES.TABLE_ROWS` as the estimate for MySQL/MariaDB; fall back to `COUNT(*)` only when user explicitly requests it
+
+#### ERD View — Concurrent IPC Flood
+
+- [ ] **Add concurrency limit to ERD table structure fetches** — `ErdView.tsx` fires one `db:table-structure` IPC call per table simultaneously via `Promise.all`. For schemas with 100+ tables this overwhelms the connection pool. Add concurrency limiting (max 8 parallel) using `p-limit` (MIT, 1KB) or a simple semaphore implementation
+- [ ] **Cache `db:table-structure` results in main process** — Table structure rarely changes during a session; cache per `(connectionId, schema, table)` and invalidate only on disconnect or manual refresh. Eliminates redundant DB queries when the same table appears in both the tree view and ERD
+- [ ] **Add per-table progress indicator to ERD** — Show `Fetching X of Y tables…` during generation instead of a static spinner
+
+#### Autocomplete — Live DB Queries on Every Keystroke
+
+- [ ] **Cache `getCompletionItems()` per connection** — Currently called on every CodeMirror completion trigger; each call runs live DB queries for all table and column names. Cache the result in main process memory after first fetch per `connectionId`, invalidated only on disconnect or `db:refresh`
+- [ ] **Measure and log completion latency** — Add timing in dev mode to confirm cache hit vs miss behavior
+
+#### IPC Payload Size
+
+- [ ] **Log IPC payload sizes in dev mode** — Add serialized byte size logging for `query:execute` and `db:table-data` responses in development builds to establish a baseline and catch regressions
+- [ ] **Stream large exports directly to disk** — The CSV/JSON/SQL export feature currently transfers the full dataset to the renderer, then back to main via `save-file`. For large exports, write directly from main process to a `fs.createWriteStream` without going through the renderer
+
+#### React Render Profiling
+
+- [ ] **Profile with React DevTools Profiler** — Record a session of: opening a large table, editing a cell, multi-selecting rows, switching tabs. Identify components with disproportionate render time and add `React.memo`, `useMemo`, or `useCallback` where the profiler shows clear wins (not speculatively)
+- [ ] **Confirm no unnecessary re-renders on tab switch** — The tab system should unmount/remount inactive tabs, not keep all tab contents live in the DOM
+
+---
+
+### Batch 5: Website & Distribution
+
+**Distribution strategy:** All binary downloads already point directly to GitHub Releases (`github.com/dsbroomeco/app-db-assistant/releases/download/...`). GitHub handles the actual file hosting. The marketing website (`/website`) is a Next.js app that provides a polished landing page and OS-detection on the download page — it does not host any binaries itself.
+
+**Recommendation: Deploy the website to GitHub Pages as a static export (free, zero separate hosting required).** The Next.js site can be statically exported (`next export`) and served from `gh-pages` branch or the `docs/` folder. This eliminates any hosting cost while keeping the polished landing page and OS detection.
+
+**What GitHub provides without the website:**
+- GitHub Releases: all binary downloads, release notes, version history ✓
+- GitHub README: feature overview and install instructions ✓
+- GitHub Discussions: community Q&A ✓
+- `CHANGELOG.md`: rendered natively on GitHub ✓
+
+**What the website adds on top:**
+- Polished marketing landing page with feature cards and database pills
+- OS auto-detection on the download page (sorts the correct platform first)
+- Nicer changelog rendering than raw Markdown
+- SEO/discoverability via search engines
+
+- [ ] **Add `next export` static build** — Add `output: 'export'` to `website/next.config.ts` and a `build:static` script to `website/package.json`. Verify the changelog page (currently reads `CHANGELOG.md` at runtime via `readFileSync`) is converted to read at build time
+- [ ] **Deploy to GitHub Pages** — Add `.github/workflows/website.yml`: trigger on push to `main`, run `npm run build:static` in `website/`, deploy `out/` directory to GitHub Pages. Set custom domain if desired
+- [ ] **Automate version sync** — Currently `CURRENT_VERSION` in `website/src/app/download/page.tsx` must be manually updated on each release. Add a `scripts/sync-version.js` that reads `package.json` version and rewrites the constant; run it as part of `npm run release`
+- [ ] **Create missing legal pages** — The footer links to `/privacy` and `/terms` which don't exist yet (would be 404s); add minimal stub pages or remove the links until they are written
+- [ ] **Add SHA-256 checksums** — Publish a `checksums.txt` file alongside each GitHub Release containing SHA-256 hashes for all platform binaries; add a link to it from the download page
 - [x] **Update `GITHUB_REPO`** — Fixed to `dsbroomeco/app-db-assistant`
 - [x] **Keep `CURRENT_VERSION` in sync** — Updated to `0.1.1-beta.0` in `download/page.tsx`; version badge updated on landing page
 - [x] **Platform detection** — `DownloadCards` client component auto-detects visitor OS via `navigator.userAgent`, highlights matching platform card, and sorts it first
-- [ ] **Hash verification** — Publish SHA-256 checksums alongside each binary for user verification
 - [x] **Changelog integration** — `website/src/app/changelog/page.tsx` reads from `CHANGELOG.md` and renders it
 
 ### Batch 6: Pre-Release Checklist (gate for v1.0.0 stable)
