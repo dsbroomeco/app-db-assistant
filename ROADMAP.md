@@ -178,29 +178,29 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 #### Startup Time (target: < 3s cold start on mid-range hardware)
 
 - [ ] **Baseline startup measurement** — Add `performance.now()` timestamps around each `app.whenReady()` init step (`initStore`, `initConnectionManager`, `initQueryHistory`, `initSavedQueries`) and log them in dev mode. Capture time-to-first-paint via Playwright's `page.waitForSelector` timing
-- [ ] **Parallelize independent init calls** — `initQueryHistory()` and `initSavedQueries()` have no dependency on each other; run both with `Promise.all` alongside `initConnectionManager()` where safe
+- [x] **Parallelize independent init calls** — `initQueryHistory()` and `initSavedQueries()` have no dependency on each other; run both with `Promise.all` alongside `initConnectionManager()` where safe
 - [ ] **Measure and document baseline** — Record cold-start and warm-start times before any optimization so improvements are quantifiable
 
 #### Query Result Grid — Virtual Scrolling (highest risk, no row cap today)
 
-- [ ] **Add `MAX_RESULT_ROWS` cap** — Free-form `query:execute` results currently have no row limit; a `SELECT * FROM huge_table` serializes everything over IPC and renders all rows in the DOM. Add a configurable cap (default 10,000) with a visible truncation warning in `ResultsView` in `QueryEditorView.tsx`
+- [x] **Add `MAX_RESULT_ROWS` cap** — Free-form `query:execute` results currently have no row limit; a `SELECT * FROM huge_table` serializes everything over IPC and renders all rows in the DOM. Add a configurable cap (default 10,000) with a visible truncation warning in `ResultsView` in `QueryEditorView.tsx`
 - [ ] **Add virtual scrolling to result grid** — Replace the plain `<table>` render in `ResultsView` with `@tanstack/react-virtual` (MIT). Only render visible rows; DOM node count stays constant regardless of result size
 - [ ] **Add virtual scrolling to table data view** — `TableDataView.tsx` paginates at 50 rows (already safe) but re-renders all rows on every selection/edit state change; add `React.memo` on the row component and stabilize row keys
 
 #### Table Data View — COUNT(*) Cost
 
-- [ ] **Replace exact COUNT(*) with fast estimates where acceptable** — On large PostgreSQL tables, `SELECT COUNT(*)` does a full sequential scan. Use `pg_class.reltuples` for the row estimate when `totalRows` is only needed for pagination UI. Add a `exactCount: boolean` option to `getTableData()` driver interface; default to estimate for browsing, exact for export
-- [ ] **MySQL equivalent** — Use `information_schema.TABLES.TABLE_ROWS` as the estimate for MySQL/MariaDB; fall back to `COUNT(*)` only when user explicitly requests it
+- [x] **Replace exact COUNT(*) with fast estimates where acceptable** — On large PostgreSQL tables, `SELECT COUNT(*)` does a full sequential scan. Use `pg_class.reltuples` for the row estimate when `totalRows` is only needed for pagination UI. Add a `exactCount: boolean` option to `getTableData()` driver interface; default to estimate for browsing, exact for export
+- [x] **MySQL equivalent** — Use `information_schema.TABLES.TABLE_ROWS` as the estimate for MySQL/MariaDB; fall back to `COUNT(*)` only when user explicitly requests it
 
 #### ERD View — Concurrent IPC Flood
 
-- [ ] **Add concurrency limit to ERD table structure fetches** — `ErdView.tsx` fires one `db:table-structure` IPC call per table simultaneously via `Promise.all`. For schemas with 100+ tables this overwhelms the connection pool. Add concurrency limiting (max 8 parallel) using `p-limit` (MIT, 1KB) or a simple semaphore implementation
+- [x] **Add concurrency limit to ERD table structure fetches** — `ErdView.tsx` fires one `db:table-structure` IPC call per table simultaneously via `Promise.all`. For schemas with 100+ tables this overwhelms the connection pool. Add concurrency limiting (max 8 parallel) using a simple worker-pool semaphore
 - [ ] **Cache `db:table-structure` results in main process** — Table structure rarely changes during a session; cache per `(connectionId, schema, table)` and invalidate only on disconnect or manual refresh. Eliminates redundant DB queries when the same table appears in both the tree view and ERD
 - [ ] **Add per-table progress indicator to ERD** — Show `Fetching X of Y tables…` during generation instead of a static spinner
 
 #### Autocomplete — Live DB Queries on Every Keystroke
 
-- [ ] **Cache `getCompletionItems()` per connection** — Currently called on every CodeMirror completion trigger; each call runs live DB queries for all table and column names. Cache the result in main process memory after first fetch per `connectionId`, invalidated only on disconnect or `db:refresh`
+- [x] **Cache `getCompletionItems()` per connection** — Currently called on every CodeMirror completion trigger; each call runs live DB queries for all table and column names. Cache the result in main process memory after first fetch per `connectionId`, invalidated only on disconnect or `db:refresh`
 - [ ] **Measure and log completion latency** — Add timing in dev mode to confirm cache hit vs miss behavior
 
 #### IPC Payload Size
@@ -264,7 +264,7 @@ This phase covers everything required to make the repository public and ready fo
 ### License & Legal
 
 - [x] **Verify license compatibility** — All direct and transitive dependencies are MIT, Apache-2.0, or ISC. No GPL/LGPL/AGPL/commercial-only packages. Confirmed: safe to publish under MIT. *(completed April 2026)*
-- [ ] **Add `LICENSE` file** — MIT license text with current copyright year at repo root
+- [x] **Add `LICENSE` file** — MIT license text with current copyright year at repo root
 - [ ] **Audit git history for secrets** — Run `git log --all --full-history` + `trufflehog` or `gitleaks` to confirm no credentials, API keys, or private URLs were ever committed; rewrite history if needed
 - [ ] **Audit assets for proprietary content** — Confirm all icons, fonts, and images are either original or licensed for open distribution; replace any that are not
 
