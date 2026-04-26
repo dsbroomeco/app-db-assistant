@@ -188,6 +188,55 @@ These are deferred from the security audit and should be addressed before stable
 
 ---
 
+## Open Source Release
+
+This phase covers everything required to make the repository public and ready for external contributions.
+
+### License & Legal
+
+- [x] **Verify license compatibility** — All direct and transitive dependencies are MIT, Apache-2.0, or ISC. No GPL/LGPL/AGPL/commercial-only packages. Confirmed: safe to publish under MIT. *(completed April 2026)*
+- [ ] **Add `LICENSE` file** — MIT license text with current copyright year at repo root
+- [ ] **Audit git history for secrets** — Run `git log --all --full-history` + `trufflehog` or `gitleaks` to confirm no credentials, API keys, or private URLs were ever committed; rewrite history if needed
+- [ ] **Audit assets for proprietary content** — Confirm all icons, fonts, and images are either original or licensed for open distribution; replace any that are not
+
+### Community Infrastructure
+
+- [ ] **Add `CODE_OF_CONDUCT.md`** — Contributor Covenant v2.1 at repo root
+- [ ] **Add `SECURITY.md`** — Private vulnerability disclosure instructions (email or GitHub private advisory); do not direct reporters to public issues
+- [ ] **Add GitHub issue templates** (`.github/ISSUE_TEMPLATE/`) — Bug report, Feature request, and Question templates
+- [ ] **Add GitHub PR template** (`.github/pull_request_template.md`) — Checklist: tests pass, lint clean, docs updated, breaking changes noted
+- [ ] **Add `CODEOWNERS`** (`.github/CODEOWNERS`) — Define code ownership for review routing
+- [ ] **Configure branch protection** — Require PR + CI pass before merge to `main`; no force-push
+
+### Repository Hygiene
+
+- [ ] **Scrub `README.md` for internal references** — Remove any internal emails, Slack links, or private URLs; ensure all links are publicly accessible
+- [ ] **Confirm `.gitignore` is complete** — `.env`, `*.env`, credential files, and OS artifacts (`.DS_Store`, `Thumbs.db`) are excluded
+- [ ] **Verify `.env.example` is up to date** — All required environment variables documented with placeholder values; no real values committed
+- [ ] **Remove or anonymize internal identifiers** — Check author email in `package.json` and git config; use a public contact address
+
+### CI/CD for Contributors
+
+- [ ] **Add PR check workflow** — `.github/workflows/pr-check.yml`: lint → typecheck → unit tests on every pull request (all platforms in matrix)
+- [ ] **Add issue/PR labels** — Define standard label set: `bug`, `enhancement`, `good first issue`, `help wanted`, `needs review`, `breaking change`
+- [ ] **Add stale issue bot** — Close inactive issues after 60 days of no response; warn at 45 days
+
+### Documentation for External Contributors
+
+- [ ] **Expand `CONTRIBUTING.md`** — Add: local dev environment setup end-to-end, how to run Docker CI locally, native module rebuild instructions, how to add a new database driver
+- [ ] **Add `ARCHITECTURE.md` contributor section** — Quick-start guide explaining IPC flow, main/renderer boundary, and driver interface for new contributors
+- [ ] **Add troubleshooting section to `README.md`** — Common setup issues (node-gyp failures, electron rebuild, platform differences)
+
+### Go Public
+
+- [ ] **Final pre-publish audit** — Run `npm audit`, check for any new CVEs; confirm 0 high/critical vulnerabilities
+- [ ] **Make GitHub repository public**
+- [ ] **Enable GitHub Discussions** — Create initial categories: Announcements, Q&A, Feature Requests, Show and Tell
+- [ ] **Create `v0.1.0` or `v1.0.0` release** — Tag, build artifacts for all platforms, publish release notes from `CHANGELOG.md`
+- [ ] **Announce** — Post to relevant communities (Reddit r/programming, Hacker News Show HN, dev.to, etc.)
+
+---
+
 ## Maintenance
 
 ### Ongoing Security
