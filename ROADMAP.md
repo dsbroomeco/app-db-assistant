@@ -1,5 +1,13 @@
 # DB Assistant — Roadmap
 
+## Pre-Launch: Open-Source Cleanup
+
+Items that **must** be completed before the repository is made public.
+
+- [ ] Remove `testdb/` folder — this directory contains a dev-only Docker Compose setup with hardcoded credentials for local PostgreSQL and MySQL test instances. It must not be included in the public open-source repo. Verify it is absent from the final public branch and that no commit history exposes the credentials.
+
+---
+
 ## Phase 1: Foundation (Complete)
 
 - [x] Project scaffolding and repository setup
