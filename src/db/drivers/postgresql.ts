@@ -181,10 +181,26 @@ export class PostgreSQLDriver implements DatabaseDriver {
 
     const sSchema = escapePgId(schema);
     const sTable = escapePgId(table);
-    const countResult = await pool.query(
-      `SELECT COUNT(*)::int AS total FROM ${sSchema}.${sTable}`,
+
+    // Use pg_class statistics for a fast row-count estimate; fall back to
+    // COUNT(*) only when the table has never been analyzed (reltuples < 0).
+    const estimateResult = await pool.query(
+      `SELECT reltuples::bigint AS estimate
+       FROM pg_class c
+       JOIN pg_namespace n ON n.oid = c.relnamespace
+       WHERE n.nspname = $1 AND c.relname = $2`,
+      [schema, table],
     );
-    const totalRows: number = countResult.rows[0].total;
+    let totalRows: number;
+    const estimate = estimateResult.rows[0]?.estimate ?? -1;
+    if (estimate >= 0) {
+      totalRows = Number(estimate);
+    } else {
+      const countResult = await pool.query(
+        `SELECT COUNT(*)::int AS total FROM ${sSchema}.${sTable}`,
+      );
+      totalRows = countResult.rows[0].total;
+    }
 
     const dataResult = await pool.query(
       `SELECT * FROM ${sSchema}.${sTable} LIMIT $1 OFFSET $2`,

@@ -585,28 +585,35 @@ function ResultsView({
     }
 
     return (
-        <table className={styles.table}>
-            <thead>
-                <tr>
-                    <th className={styles.rowNumHeader}>#</th>
-                    {result.columns.map((col) => (
-                        <th key={col}>{col}</th>
-                    ))}
-                </tr>
-            </thead>
-            <tbody>
-                {result.rows.map((row, i) => (
-                    <tr key={i}>
-                        <td className={styles.rowNum}>{i + 1}</td>
+        <>
+            {result.truncated && (
+                <div style={{ padding: "6px 12px", background: "var(--warning-bg, #fffbeb)", color: "var(--warning-text, #92400e)", borderBottom: "1px solid var(--warning-border, #fcd34d)", fontSize: 12 }}>
+                    Results truncated to 10,000 rows. Use <code>LIMIT</code> to retrieve a specific range.
+                </div>
+            )}
+            <table className={styles.table}>
+                <thead>
+                    <tr>
+                        <th className={styles.rowNumHeader}>#</th>
                         {result.columns.map((col) => (
-                            <td key={col}>
-                                <CellValue value={row[col]} />
-                            </td>
+                            <th key={col}>{col}</th>
                         ))}
                     </tr>
-                ))}
-            </tbody>
-        </table>
+                </thead>
+                <tbody>
+                    {result.rows.map((row, i) => (
+                        <tr key={i}>
+                            <td className={styles.rowNum}>{i + 1}</td>
+                            {result.columns.map((col) => (
+                                <td key={col}>
+                                    <CellValue value={row[col]} />
+                                </td>
+                            ))}
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </>
     );
 }
 

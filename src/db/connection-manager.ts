@@ -241,6 +241,7 @@ const schemaCache = new Map<string, CacheEntry<SchemaInfo[]>>();
 const tableCache = new Map<string, CacheEntry<TableInfo[]>>();
 const routineCache = new Map<string, CacheEntry<RoutineInfo[]>>();
 const structureCache = new Map<string, CacheEntry<TableStructure>>();
+const completionCache = new Map<string, CacheEntry<{ tables: string[]; columns: string[] }>>();
 
 function tableCacheKey(connectionId: string, schema: string): string {
   return `${connectionId}::${schema}`;
@@ -254,6 +255,7 @@ function structureCacheKey(connectionId: string, schema: string, table: string):
 
 function invalidateConnectionCache(id: string): void {
   schemaCache.delete(id);
+  completionCache.delete(id);
   for (const key of tableCache.keys()) {
     if (key.startsWith(`${id}::`)) tableCache.delete(key);
   }
@@ -360,7 +362,8 @@ export async function getTableData(
 
 // ─── Query execution (Phase 4) ─────────────────────────────────
 
-/** In-memory query history, persisted to store on each mutation. */
+/** Maximum number of rows returned by executeQuery before truncating. */
+const MAX_RESULT_ROWS = 10_000;
 let queryHistory: QueryHistoryEntry[] = [];
 const MAX_HISTORY = 200;
 
@@ -410,7 +413,11 @@ export async function executeQuery(
   const startTime = new Date().toISOString();
 
   try {
-    const result = await driver.executeQuery(sql);
+    const raw = await driver.executeQuery(sql);
+    const truncated = !raw.isModification && raw.rows.length > MAX_RESULT_ROWS;
+    const result: ExecuteQueryResult = truncated
+      ? { ...raw, rows: raw.rows.slice(0, MAX_RESULT_ROWS), rowCount: MAX_RESULT_ROWS, truncated: true }
+      : raw;
     addHistoryEntry({
       id: crypto.randomUUID(),
       connectionId,
@@ -451,7 +458,11 @@ export async function explainQuery(
 export async function getCompletionItems(
   connectionId: string,
 ): Promise<{ tables: string[]; columns: string[] }> {
-  return getDriver(connectionId).getCompletionItems();
+  const cached = completionCache.get(connectionId);
+  if (cached && cached.expires > Date.now()) return cached.data;
+  const data = await getDriver(connectionId).getCompletionItems();
+  completionCache.set(connectionId, { data, expires: Date.now() + SCHEMA_CACHE_TTL_MS });
+  return data;
 }
 
 function getConnectionName(connectionId: string): string {

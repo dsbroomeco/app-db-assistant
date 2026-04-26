@@ -669,9 +669,11 @@ ipcMain.handle("shortcuts:reset", (): KeyboardShortcut[] => {
 
 app.whenReady().then(async () => {
   await initStore();
-  await initConnectionManager();
-  await initQueryHistory();
-  await initSavedQueries();
+  await Promise.all([
+    initConnectionManager(),
+    initQueryHistory(),
+    initSavedQueries(),
+  ]);
 
   // Apply saved theme on startup
   const settings = store.get("settings");

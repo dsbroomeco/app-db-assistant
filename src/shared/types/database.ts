@@ -191,6 +191,8 @@ export interface ExecuteQueryResult {
   isModification: boolean;
   /** Number of rows affected for modification queries */
   affectedRows?: number;
+  /** True when the result set was truncated to MAX_RESULT_ROWS */
+  truncated?: boolean;
 }
 
 export interface ExplainQueryRequest {

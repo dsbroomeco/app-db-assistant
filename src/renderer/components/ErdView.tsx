@@ -46,16 +46,29 @@ export function ErdView() {
             const positions: TablePosition[] = [];
             const rels: Relationship[] = [];
 
-            // Fetch structure for each table
-            const structures = await Promise.all(
-                tableList.map(async (t) => {
-                    const structure = await window.electronAPI.invoke(
-                        "db:table-structure",
-                        { connectionId, schema, table: t.name },
-                    );
-                    return { name: t.name, ...structure };
-                }),
+            // Fetch structure for each table with a concurrency limit to avoid
+            // flooding the main process with hundreds of simultaneous IPC calls.
+            const CONCURRENCY = 8;
+            const tasks = tableList.map((t) => async () => {
+                const structure = await window.electronAPI.invoke(
+                    "db:table-structure",
+                    { connectionId, schema, table: t.name },
+                );
+                return { name: t.name, ...structure };
+            });
+
+            const results: Awaited<ReturnType<typeof tasks[0]>>[] = new Array(tasks.length);
+            let nextIdx = 0;
+            async function worker() {
+                while (nextIdx < tasks.length) {
+                    const i = nextIdx++;
+                    results[i] = await tasks[i]();
+                }
+            }
+            await Promise.all(
+                Array.from({ length: Math.min(CONCURRENCY, tasks.length) }, worker),
             );
+            const structures = results;
 
             // Layout tables in a grid
             const cols = Math.ceil(Math.sqrt(structures.length));

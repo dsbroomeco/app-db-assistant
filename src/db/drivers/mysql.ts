@@ -187,10 +187,26 @@ export class MySQLDriver implements DatabaseDriver {
 
     const sSchema = escapeMysqlId(schema);
     const sTable = escapeMysqlId(table);
-    const [countRows] = await pool.query(
-      `SELECT COUNT(*) AS total FROM ${sSchema}.${sTable}`,
+
+    // Use information_schema statistics for a fast row-count estimate; fall
+    // back to COUNT(*) only when the estimate is NULL (e.g. InnoDB on very
+    // small tables or after a fresh CREATE TABLE).
+    const [estRows] = await pool.query(
+      `SELECT TABLE_ROWS AS estimate
+       FROM information_schema.TABLES
+       WHERE TABLE_SCHEMA = ? AND TABLE_NAME = ?`,
+      [schema, table],
     );
-    const totalRows = (countRows as Record<string, number>[])[0].total;
+    let totalRows: number;
+    const estimate = (estRows as Record<string, number | null>[])[0]?.estimate;
+    if (estimate != null) {
+      totalRows = Number(estimate);
+    } else {
+      const [countRows] = await pool.query(
+        `SELECT COUNT(*) AS total FROM ${sSchema}.${sTable}`,
+      );
+      totalRows = (countRows as Record<string, number>[])[0].total;
+    }
 
     const [dataRows, fields] = await pool.query(
       `SELECT * FROM ${sSchema}.${sTable} LIMIT ? OFFSET ?`,
