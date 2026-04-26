@@ -85,6 +85,7 @@ Items that **must** be completed before the repository is made public.
 - [x] Accessibility audit (keyboard navigation, screen readers)
 - [x] App icons for all platforms — `build/icon.png` (master), `build/icons/` (Linux PNGs). Generated via `scripts/generate-icons.js`.
 - [x] Resizable table columns — drag the right edge of any column header to resize; widths reset on table change
+- [x] Deferred row editing — changes stage locally, highlighted in yellow (row) and darker yellow (modified cells); saved in batch on Ctrl+S; blocked per-row on DB errors
 - [ ] Performance profiling and optimization
 - [x] E2E test suite (`tests/e2e/`) — Playwright smoke tests scaffolded: `app-launch.test.ts`, `connection-form.test.ts`
 

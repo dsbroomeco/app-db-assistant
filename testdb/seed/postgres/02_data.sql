@@ -151,3 +151,27 @@ INSERT INTO order_items (order_id, product_id, quantity, unit_price) VALUES
     -- Order 20 (Jake, $55.00): standing desk mat
     (20, 29, 1, 49.00),
     (20, 24, 1, 18.00);
+
+-- Reviews (~20 rows — tests multi-FK table, SET NULL on user delete, cascade on product delete)
+-- Columns: product_id, user_id (nullable), rating, title, body, verified
+INSERT INTO reviews (product_id, user_id, rating, title, body, verified, created_at) VALUES
+    (1,  1,  5, 'Great keyboard',         'Solid build, pairs instantly. Love it.',           TRUE,  '2026-01-10 08:00:00+00'),
+    (1,  2,  4, 'Good but pricey',        'Works well, a bit expensive for what it is.',      FALSE, '2026-01-12 09:30:00+00'),
+    (3,  3,  5, 'Best headphones ever',   'ANC is superb, battery lasts forever.',            TRUE,  '2026-01-16 10:00:00+00'),
+    (3,  7,  4, 'Very good ANC',          'Comfortable for long sessions.',                   TRUE,  '2026-01-20 14:00:00+00'),
+    (3,  NULL, 2, 'Disappointed',         'Hurt my ears after an hour. Not for everyone.',   FALSE, '2026-01-22 11:00:00+00'),
+    (5,  4,  5, 'Fast and reliable',      'Speeds are as advertised. Great for backups.',     TRUE,  '2026-01-25 09:00:00+00'),
+    (7,  1,  5, 'Changed how I code',     'Essential reading for any developer.',             TRUE,  '2026-01-21 16:00:00+00'),
+    (7,  5,  4, 'Classic for a reason',   'Dense but worth it. Some examples feel dated.',   FALSE, '2026-01-29 13:00:00+00'),
+    (8,  2,  5, 'Must-read',              'Kleppmann explains distributed systems brilliantly.', TRUE, '2026-01-19 10:00:00+00'),
+    (10, 9,  4, 'Deep and thorough',      'Not for beginners but incredibly detailed.',       FALSE, '2026-01-23 11:30:00+00'),
+    (13, 3,  3, 'Decent jacket',          'Keeps warm but the zip feels a bit flimsy.',       TRUE,  '2026-02-04 09:00:00+00'),
+    (15, NULL, 5, 'Fantastic boots',      'Totally waterproof, very comfortable on trails.',  FALSE, '2026-02-06 15:00:00+00'),
+    (21, 6,  4, 'Good grip',              'Nice and thick. Does not slip on hardwood.',       TRUE,  '2026-01-11 08:00:00+00'),
+    (22, 7,  5, 'Game changer',           'Replaced my entire dumbbell rack. Highly recommend.', TRUE, '2026-01-14 12:00:00+00'),
+    (23, 10, 4, 'Accurate GPS',           'GPS lock is fast. Battery outlasts the claim.',    TRUE,  '2026-02-15 10:00:00+00'),
+    (23, NULL, 1, 'Stopped syncing',      'Lost all data after a firmware update.',           FALSE, '2026-02-17 09:00:00+00'),
+    (26, 11, 5, 'Satisfying to type on',  'Clicky switches are perfect, RGB is a bonus.',     TRUE,  '2026-01-19 17:00:00+00'),
+    (29, 14, 4, 'Good anti-fatigue',      'My back feels better after a week of use.',        TRUE,  '2026-02-01 08:30:00+00'),
+    (6,  13, 3, 'Does the job',           'Nothing special but reliable.',                   FALSE, '2026-01-30 14:00:00+00'),
+    (24, 15, 5, 'Great value',            'Five bands, door anchor, all solid quality.',      TRUE,  '2026-01-27 11:00:00+00');

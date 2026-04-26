@@ -90,3 +90,21 @@ BEGIN
     ORDER BY o.created_at DESC;
 END //
 DELIMITER ;
+
+-- Reviews (demonstrates multi-FK table — useful for FK browser and ERD testing)
+CREATE TABLE reviews (
+    id          INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+    product_id  INT UNSIGNED NOT NULL,
+    user_id     INT UNSIGNED,
+    rating      TINYINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    title       VARCHAR(200),
+    body        TEXT,
+    verified    TINYINT(1) NOT NULL DEFAULT 0,
+    created_at  DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_review_product FOREIGN KEY (product_id) REFERENCES products(id) ON DELETE CASCADE,
+    CONSTRAINT fk_review_user    FOREIGN KEY (user_id)    REFERENCES users(id)    ON DELETE SET NULL,
+    INDEX idx_reviews_product (product_id),
+    INDEX idx_reviews_user    (user_id),
+    INDEX idx_reviews_rating  (rating)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+

@@ -73,6 +73,21 @@
   color: #fff;
 }
 
+.saveButton:hover:not(:disabled) {
+  background: #16a34a;
+  color: #fff;
+}
+
+.dirtyBadge {
+  font-size: 11px;
+  font-weight: 600;
+  color: #b45309;
+  background: rgba(234, 179, 8, 0.18);
+  padding: 2px 8px;
+  border-radius: var(--radius);
+  white-space: nowrap;
+}
+
 .pagination {
   display: flex;
   align-items: center;
@@ -198,6 +213,20 @@
 
 .selectedRow:hover {
   background: var(--accent-subtle) !important;
+}
+
+/* Dirty (unsaved) row and cell highlighting */
+
+.dirtyRow {
+  background: rgba(234, 179, 8, 0.12) !important;
+}
+
+.dirtyRow:hover {
+  background: rgba(234, 179, 8, 0.18) !important;
+}
+
+.dirtyCell {
+  background: rgba(202, 138, 4, 0.28) !important;
 }
 
 .checkboxHeader {

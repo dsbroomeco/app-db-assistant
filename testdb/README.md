@@ -54,6 +54,7 @@ Both databases are seeded with an identical logical schema representing a small 
 | `users`       | 15   | Customer accounts — includes inactive users for filter testing |
 | `orders`      | 20   | Orders in all statuses — tests ENUM columns (PG) / ENUM type (MySQL) |
 | `order_items` | 44   | Line items — tests FK relationships and JOIN queries   |
+| `reviews`     | 20   | Multi-FK table (→ products + → users) — tests FK browser, ERD, SET NULL on user delete, CASCADE on product delete |
 
 ### Views
 

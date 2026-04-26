@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import type { QueryResult, CrudResult } from "@shared/types/database";
+import { parseEditValue } from "../utils/tableDataUtils";
 import styles from "./TableDataView.module.css";
 
 interface TableDataViewProps {
@@ -42,9 +43,18 @@ export function TableDataView({
         column?: string;
     } | null>(null);
     const [colWidths, setColWidths] = useState<Record<string, number>>({});
+    // localEdits: staged changes not yet persisted — rowIndex → { colName: parsedValue }
+    const [localEdits, setLocalEdits] = useState<Record<number, Record<string, unknown>>>({});
+    // dirtyCols: which columns are dirty per row — rowIndex → Set<colName>
+    const [dirtyCols, setDirtyCols] = useState<Record<number, Set<string>>>({});
 
     const tableRef = useRef<HTMLDivElement>(null);
     const editInputRef = useRef<HTMLInputElement>(null);
+    // Refs for reading latest dirty state inside callbacks without stale closures
+    const localEditsRef = useRef(localEdits);
+    const dirtyColsRef = useRef(dirtyCols);
+    localEditsRef.current = localEdits;
+    dirtyColsRef.current = dirtyCols;
 
     // Load primary keys once
     useEffect(() => {
@@ -56,6 +66,16 @@ export function TableDataView({
 
     const fetchData = useCallback(
         async (p: number) => {
+            // Guard: warn before discarding unsaved edits
+            if (Object.keys(dirtyColsRef.current).length > 0) {
+                const count = Object.keys(dirtyColsRef.current).length;
+                const ok = confirm(
+                    `You have ${count} unsaved change${count !== 1 ? "s" : ""}. Discard and reload?`,
+                );
+                if (!ok) return;
+            }
+            setLocalEdits({});
+            setDirtyCols({});
             setLoading(true);
             setError(null);
             try {
@@ -158,7 +178,9 @@ export function TableDataView({
             if (!hasPrimaryKeys) return;
             const row = result?.rows[rowIndex];
             if (!row) return;
-            const val = row[column];
+            // Use the locally-staged value if present, otherwise the DB value
+            const effective = localEditsRef.current[rowIndex]?.[column];
+            const val = effective !== undefined ? effective : row[column];
             setEditingCell({
                 rowIndex,
                 column,
@@ -173,70 +195,35 @@ export function TableDataView({
         setEditingCell(null);
     }, []);
 
-    const commitEdit = useCallback(async () => {
+    const commitEdit = useCallback(() => {
         if (!editingCell || !result) return;
         const row = result.rows[editingCell.rowIndex];
         if (!row) return;
 
-        const originalValue = row[editingCell.column];
-        const originalStr =
-            originalValue === null || originalValue === undefined
-                ? ""
-                : String(originalValue);
+        // Compare against the currently displayed value (may already be locally edited)
+        const effective = localEditsRef.current[editingCell.rowIndex]?.[editingCell.column];
+        const displayVal = effective !== undefined ? effective : row[editingCell.column];
+        const displayStr =
+            displayVal === null || displayVal === undefined ? "" : String(displayVal);
 
-        if (editingCell.value === originalStr) {
-            cancelEditing();
-            return;
-        }
-
-        // Parse the value — convert "NULL" (case-insensitive) to null
-        let parsedValue: unknown = editingCell.value;
-        if (editingCell.value.toLowerCase() === "null" || editingCell.value === "") {
-            parsedValue = null;
-        } else if (!isNaN(Number(editingCell.value)) && editingCell.value.trim() !== "") {
-            parsedValue = Number(editingCell.value);
-        }
-
-        try {
-            const res: CrudResult = await window.electronAPI.invoke(
-                "crud:update-row",
-                {
-                    connectionId,
-                    schema,
-                    table,
-                    primaryKey: getRowPK(row),
-                    changes: { [editingCell.column]: parsedValue },
+        if (editingCell.value !== displayStr) {
+            const parsedValue = parseEditValue(editingCell.value);
+            setLocalEdits((prev) => ({
+                ...prev,
+                [editingCell.rowIndex]: {
+                    ...(prev[editingCell.rowIndex] ?? {}),
+                    [editingCell.column]: parsedValue,
                 },
-            );
-            if (res.success) {
-                showStatus(`Updated ${res.affectedRows} row(s)`);
-                // Optimistically update the local data
-                setResult((prev) => {
-                    if (!prev) return prev;
-                    const newRows = [...prev.rows];
-                    newRows[editingCell.rowIndex] = {
-                        ...newRows[editingCell.rowIndex],
-                        [editingCell.column]: parsedValue,
-                    };
-                    return { ...prev, rows: newRows };
-                });
-            }
-        } catch (err) {
-            showStatus(
-                `Update failed: ${err instanceof Error ? err.message : String(err)}`,
-            );
+            }));
+            setDirtyCols((prev) => {
+                const cols = new Set(prev[editingCell.rowIndex] ?? []);
+                cols.add(editingCell.column);
+                return { ...prev, [editingCell.rowIndex]: cols };
+            });
         }
+
         cancelEditing();
-    }, [
-        editingCell,
-        result,
-        connectionId,
-        schema,
-        table,
-        getRowPK,
-        cancelEditing,
-        showStatus,
-    ]);
+    }, [editingCell, result, cancelEditing]);
 
     // ─── Add row ────────────────────────────────────────────────
 
@@ -257,19 +244,11 @@ export function TableDataView({
 
     const submitNewRow = useCallback(async () => {
         if (!result) return;
-        // Build the row, converting empty strings to null and numbers
+        // Build the row using the shared parser (empty → null, numeric → number, etc.)
         const parsedRow: Record<string, unknown> = {};
         for (const col of result.columns) {
             const val = newRow[col];
-            if (val === "" || val === undefined) {
-                parsedRow[col] = null;
-            } else if (!isNaN(Number(val)) && val.trim() !== "") {
-                parsedRow[col] = Number(val);
-            } else if (val.toLowerCase() === "null") {
-                parsedRow[col] = null;
-            } else {
-                parsedRow[col] = val;
-            }
+            parsedRow[col] = val === undefined ? null : parseEditValue(val);
         }
 
         // Filter out null values so the DB can use defaults
@@ -354,6 +333,87 @@ export function TableDataView({
         showStatus,
         fetchData,
         page,
+    ]);
+
+    // ─── Save all dirty rows (Ctrl+S) ──────────────────────────
+
+    const saveAllDirty = useCallback(async () => {
+        if (!result || !hasPrimaryKeys) return;
+        const entries = Object.entries(dirtyCols);
+        if (entries.length === 0) return;
+
+        const errors: string[] = [];
+        const savedRows: number[] = [];
+
+        for (const [rowIdxStr] of entries) {
+            const rowIdx = Number(rowIdxStr);
+            const row = result.rows[rowIdx];
+            if (!row) continue;
+            const changes = localEdits[rowIdx] ?? {};
+            if (Object.keys(changes).length === 0) continue;
+
+            try {
+                const res: CrudResult = await window.electronAPI.invoke(
+                    "crud:update-row",
+                    {
+                        connectionId,
+                        schema,
+                        table,
+                        primaryKey: getRowPK(row),
+                        changes,
+                    },
+                );
+                if (res.success) {
+                    savedRows.push(rowIdx);
+                } else {
+                    errors.push(`Row ${rowIdx + 1}: save did not succeed`);
+                }
+            } catch (err) {
+                errors.push(
+                    `Row ${rowIdx + 1}: ${err instanceof Error ? err.message : String(err)}`,
+                );
+            }
+        }
+
+        if (savedRows.length > 0) {
+            // Apply saved edits into result rows and clear dirty state for those rows
+            setResult((prev) => {
+                if (!prev) return prev;
+                const newRows = [...prev.rows];
+                for (const rowIdx of savedRows) {
+                    newRows[rowIdx] = { ...newRows[rowIdx], ...(localEdits[rowIdx] ?? {}) };
+                }
+                return { ...prev, rows: newRows };
+            });
+            setLocalEdits((prev) => {
+                const next = { ...prev };
+                for (const rowIdx of savedRows) delete next[rowIdx];
+                return next;
+            });
+            setDirtyCols((prev) => {
+                const next = { ...prev };
+                for (const rowIdx of savedRows) delete next[rowIdx];
+                return next;
+            });
+        }
+
+        if (errors.length > 0) {
+            showStatus(
+                `⚠ ${errors.length} row(s) failed to save: ${errors[0]}${errors.length > 1 ? ` (+${errors.length - 1} more)` : ""}`,
+            );
+        } else {
+            showStatus(`Saved ${savedRows.length} row(s)`);
+        }
+    }, [
+        result,
+        hasPrimaryKeys,
+        dirtyCols,
+        localEdits,
+        connectionId,
+        schema,
+        table,
+        getRowPK,
+        showStatus,
     ]);
 
     // ─── Copy operations ────────────────────────────────────────
@@ -516,6 +576,13 @@ export function TableDataView({
                 return;
             }
 
+            // Ctrl+S: save all pending edits
+            if (isMod && e.key === "s") {
+                e.preventDefault();
+                saveAllDirty();
+                return;
+            }
+
             // Delete or Backspace: delete selected rows
             if (
                 (e.key === "Delete" || e.key === "Backspace") &&
@@ -570,18 +637,22 @@ export function TableDataView({
         closeContextMenu,
         commitEdit,
         handleAddRow,
+        saveAllDirty,
         handleDeleteSelected,
         selectAll,
         copySelectedRows,
         startEditing,
     ]);
 
-    // ─── Memoized selection state ───────────────────────────────
+    // ─── Derived state ──────────────────────────────────────────
 
     const allSelected = useMemo(
         () => result !== null && result.rows.length > 0 && selectedRows.size === result.rows.length,
         [result, selectedRows.size],
     );
+
+    const dirtyCount = Object.keys(dirtyCols).length;
+    const hasDirtyRows = dirtyCount > 0;
 
     // ─── Render ─────────────────────────────────────────────────
 
@@ -611,6 +682,11 @@ export function TableDataView({
                             {selectedRows.size} selected
                         </span>
                     )}
+                    {hasDirtyRows && (
+                        <span className={styles.dirtyBadge}>
+                            {dirtyCount} unsaved change{dirtyCount !== 1 ? "s" : ""}
+                        </span>
+                    )}
                 </div>
                 <div className={styles.actions}>
                     {hasPrimaryKeys && (
@@ -623,6 +699,16 @@ export function TableDataView({
                             >
                                 ＋ Add Row
                             </button>
+                            {hasDirtyRows && (
+                                <button
+                                    className={`${styles.actionButton} ${styles.saveButton}`}
+                                    onClick={saveAllDirty}
+                                    disabled={loading}
+                                    title="Save all pending changes (Ctrl+S)"
+                                >
+                                    💾 Save ({dirtyCount})
+                                </button>
+                            )}
                             <button
                                 className={`${styles.actionButton} ${styles.dangerButton}`}
                                 onClick={handleDeleteSelected}
@@ -799,9 +885,12 @@ export function TableDataView({
                                 <tr
                                     key={i}
                                     className={
-                                        selectedRows.has(i)
-                                            ? styles.selectedRow
-                                            : undefined
+                                        [
+                                            selectedRows.has(i) ? styles.selectedRow : "",
+                                            dirtyCols[i] ? styles.dirtyRow : "",
+                                        ]
+                                            .filter(Boolean)
+                                            .join(" ") || undefined
                                     }
                                     onClick={(e) => toggleRowSelect(i, e)}
                                     onContextMenu={(e) =>
@@ -829,10 +918,17 @@ export function TableDataView({
                                                 handleContextMenu(e, i, col)
                                             }
                                             className={
-                                                editingCell?.rowIndex === i &&
-                                                    editingCell?.column === col
-                                                    ? styles.editingCell
-                                                    : undefined
+                                                [
+                                                    editingCell?.rowIndex === i &&
+                                                        editingCell?.column === col
+                                                        ? styles.editingCell
+                                                        : "",
+                                                    dirtyCols[i]?.has(col)
+                                                        ? styles.dirtyCell
+                                                        : "",
+                                                ]
+                                                    .filter(Boolean)
+                                                    .join(" ") || undefined
                                             }
                                             style={
                                                 colWidths[col] !== undefined
@@ -870,7 +966,13 @@ export function TableDataView({
                                                     }
                                                 />
                                             ) : (
-                                                <CellValue value={row[col]} />
+                                                <CellValue
+                                                    value={
+                                                        localEdits[i]?.[col] !== undefined
+                                                            ? localEdits[i]![col]
+                                                            : row[col]
+                                                    }
+                                                />
                                             )}
                                         </td>
                                     ))}
@@ -900,6 +1002,7 @@ export function TableDataView({
                     <span>Double-click cell to edit</span>
                     <span>F2 — Edit</span>
                     <span>Ctrl+N — Add row</span>
+                    <span>Ctrl+S — Save changes</span>
                     <span>Del — Delete selected</span>
                     <span>Ctrl+A — Select all</span>
                     <span>Ctrl+C — Copy</span>

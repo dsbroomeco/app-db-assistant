@@ -85,3 +85,19 @@ RETURNS NUMERIC AS $$
     WHERE user_id = p_user_id
       AND status NOT IN ('cancelled');
 $$ LANGUAGE SQL STABLE;
+
+-- Reviews (demonstrates multi-FK table — useful for FK browser and ERD testing)
+CREATE TABLE reviews (
+    id          SERIAL PRIMARY KEY,
+    product_id  INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    user_id     INTEGER REFERENCES users(id) ON DELETE SET NULL,
+    rating      SMALLINT NOT NULL CHECK (rating BETWEEN 1 AND 5),
+    title       VARCHAR(200),
+    body        TEXT,
+    verified    BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at  TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE INDEX idx_reviews_product ON reviews(product_id);
+CREATE INDEX idx_reviews_user    ON reviews(user_id);
+CREATE INDEX idx_reviews_rating  ON reviews(rating);
