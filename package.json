@@ -70,8 +70,8 @@
     "@types/ssh2": "^1.15.5",
     "@vitejs/plugin-react": "^4.3.0",
     "concurrently": "^9.1.0",
-    "electron": "^34.0.0",
-    "electron-builder": "^25.1.0",
+    "electron": "^41.0.0",
+    "electron-builder": "^26.8.1",
     "eslint": "^9.0.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "globals": "^15.0.0",
@@ -161,5 +161,8 @@
       "icon": "build/icon.png",
       "category": "public.app-category.developer-tools"
     }
+  },
+  "overrides": {
+    "uuid": ">=14.0.0"
   }
 }
