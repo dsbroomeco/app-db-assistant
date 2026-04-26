@@ -163,12 +163,14 @@
   font-size: 12px;
   color: var(--text-secondary);
   border-bottom: 2px solid var(--border);
+  border-right: 1px solid var(--border);
   position: sticky;
   top: 0;
   background: var(--bg-primary);
   z-index: 1;
   white-space: nowrap;
   user-select: none;
+  position: relative;
 }
 
 .table td {
@@ -404,4 +406,27 @@
   height: 1px;
   margin: 4px 0;
   background: var(--border);
+}
+
+/* Column resize handle */
+
+.resizeHandle {
+  position: absolute;
+  top: 0;
+  right: -1px;
+  bottom: 0;
+  width: 5px;
+  cursor: col-resize;
+  z-index: 2;
+  border-right: 2px solid transparent;
+  transition: border-color 0.15s;
+}
+
+.resizeHandle:hover {
+  border-right-color: var(--accent);
+}
+
+.resizeHandle:active {
+  border-right-color: var(--accent);
+  opacity: 1;
 }

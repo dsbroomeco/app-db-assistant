@@ -41,6 +41,7 @@ export function TableDataView({
         rowIndex: number;
         column?: string;
     } | null>(null);
+    const [colWidths, setColWidths] = useState<Record<string, number>>({});
 
     const tableRef = useRef<HTMLDivElement>(null);
     const editInputRef = useRef<HTMLInputElement>(null);
@@ -441,6 +442,39 @@ export function TableDataView({
         return () => document.removeEventListener("click", handler);
     }, [contextMenu, closeContextMenu]);
 
+    // ─── Column resize ──────────────────────────────────────────
+
+    const startResize = useCallback(
+        (col: string, e: React.MouseEvent<HTMLDivElement>) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const th = (e.currentTarget as HTMLDivElement).closest(
+                "th",
+            ) as HTMLElement;
+            const startWidth = th.offsetWidth;
+            const startX = e.clientX;
+
+            const onMove = (ev: MouseEvent) => {
+                const delta = ev.clientX - startX;
+                const newWidth = Math.max(60, startWidth + delta);
+                setColWidths((prev) => ({ ...prev, [col]: newWidth }));
+            };
+
+            const onUp = () => {
+                document.removeEventListener("mousemove", onMove);
+                document.removeEventListener("mouseup", onUp);
+                document.body.style.cursor = "";
+                document.body.style.userSelect = "";
+            };
+
+            document.addEventListener("mousemove", onMove);
+            document.addEventListener("mouseup", onUp);
+            document.body.style.cursor = "col-resize";
+            document.body.style.userSelect = "none";
+        },
+        [],
+    );
+
     // ─── Keyboard shortcuts ─────────────────────────────────────
 
     useEffect(() => {
@@ -683,6 +717,7 @@ export function TableDataView({
                                 {result.columns.map((col) => (
                                     <th
                                         key={col}
+                                        style={{ width: colWidths[col] || undefined }}
                                         onContextMenu={(e) => {
                                             e.preventDefault();
                                             copyColumn(col);
@@ -697,6 +732,12 @@ export function TableDataView({
                                             <span className={styles.pkIcon}>🔑</span>
                                         )}
                                         {col}
+                                        <div
+                                            className={styles.resizeHandle}
+                                            onMouseDown={(e) =>
+                                                startResize(col, e)
+                                            }
+                                        />
                                     </th>
                                 ))}
                             </tr>
@@ -722,7 +763,14 @@ export function TableDataView({
                                         </button>
                                     </td>
                                     {result.columns.map((col) => (
-                                        <td key={col}>
+                                        <td
+                                            key={col}
+                                            style={
+                                                colWidths[col] !== undefined
+                                                    ? { maxWidth: colWidths[col] }
+                                                    : undefined
+                                            }
+                                        >
                                             <input
                                                 className={styles.cellInput}
                                                 value={newRow[col] ?? ""}
@@ -784,6 +832,11 @@ export function TableDataView({
                                                 editingCell?.rowIndex === i &&
                                                     editingCell?.column === col
                                                     ? styles.editingCell
+                                                    : undefined
+                                            }
+                                            style={
+                                                colWidths[col] !== undefined
+                                                    ? { maxWidth: colWidths[col] }
                                                     : undefined
                                             }
                                         >

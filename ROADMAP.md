@@ -84,6 +84,7 @@ Items that **must** be completed before the repository is made public.
 - [x] Marketing website: release notes, changelog integration
 - [x] Accessibility audit (keyboard navigation, screen readers)
 - [x] App icons for all platforms — `build/icon.png` (master), `build/icons/` (Linux PNGs). Generated via `scripts/generate-icons.js`.
+- [x] Resizable table columns — drag the right edge of any column header to resize; widths reset on table change
 - [ ] Performance profiling and optimization
 - [x] E2E test suite (`tests/e2e/`) — Playwright smoke tests scaffolded: `app-launch.test.ts`, `connection-form.test.ts`
 
