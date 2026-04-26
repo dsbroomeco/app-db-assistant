@@ -147,6 +147,7 @@ export async function disconnectFromDb(id: string): Promise<ConnectionStatus> {
     activeConnections.delete(id);
   }
   await closeTunnel(id);
+  invalidateConnectionCache(id);
   return { id, connected: false };
 }
 
@@ -227,7 +228,44 @@ function toSavedConnection(config: ConnectionConfig): SavedConnection {
   };
 }
 
-// ─── Schema introspection (Phase 3) ─────────────────────────────
+// ─── Schema metadata cache ───────────────────────────────────────────────────
+
+const SCHEMA_CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
+
+interface CacheEntry<T> {
+  data: T;
+  expires: number;
+}
+
+const schemaCache = new Map<string, CacheEntry<SchemaInfo[]>>();
+const tableCache = new Map<string, CacheEntry<TableInfo[]>>();
+const routineCache = new Map<string, CacheEntry<RoutineInfo[]>>();
+const structureCache = new Map<string, CacheEntry<TableStructure>>();
+
+function tableCacheKey(connectionId: string, schema: string): string {
+  return `${connectionId}::${schema}`;
+}
+function routineCacheKey(connectionId: string, schema: string): string {
+  return `${connectionId}::routines::${schema}`;
+}
+function structureCacheKey(connectionId: string, schema: string, table: string): string {
+  return `${connectionId}::${schema}::${table}`;
+}
+
+function invalidateConnectionCache(id: string): void {
+  schemaCache.delete(id);
+  for (const key of tableCache.keys()) {
+    if (key.startsWith(`${id}::`)) tableCache.delete(key);
+  }
+  for (const key of routineCache.keys()) {
+    if (key.startsWith(`${id}::`)) routineCache.delete(key);
+  }
+  for (const key of structureCache.keys()) {
+    if (key.startsWith(`${id}::`)) structureCache.delete(key);
+  }
+}
+
+// ─── Schema introspection helpers ────────────────────────────────
 
 function getDriver(connectionId: string): DatabaseDriver {
   const driver = activeConnections.get(connectionId);
@@ -263,15 +301,26 @@ function getRedisDriver(connectionId: string): RedisDriver {
   return driver as RedisDriver;
 }
 
+// ─── Schema introspection (Phase 3) ─────────────────────────────
+
 export async function getSchemas(connectionId: string): Promise<SchemaInfo[]> {
-  return getDriver(connectionId).getSchemas();
+  const cached = schemaCache.get(connectionId);
+  if (cached && cached.expires > Date.now()) return cached.data;
+  const data = await getDriver(connectionId).getSchemas();
+  schemaCache.set(connectionId, { data, expires: Date.now() + SCHEMA_CACHE_TTL_MS });
+  return data;
 }
 
 export async function getTables(
   connectionId: string,
   schema: string,
 ): Promise<TableInfo[]> {
-  return getDriver(connectionId).getTables(schema);
+  const key = tableCacheKey(connectionId, schema);
+  const cached = tableCache.get(key);
+  if (cached && cached.expires > Date.now()) return cached.data;
+  const data = await getDriver(connectionId).getTables(schema);
+  tableCache.set(key, { data, expires: Date.now() + SCHEMA_CACHE_TTL_MS });
+  return data;
 }
 
 export async function getTableStructure(
@@ -279,14 +328,24 @@ export async function getTableStructure(
   schema: string,
   table: string,
 ): Promise<TableStructure> {
-  return getDriver(connectionId).getTableStructure(schema, table);
+  const key = structureCacheKey(connectionId, schema, table);
+  const cached = structureCache.get(key);
+  if (cached && cached.expires > Date.now()) return cached.data;
+  const data = await getDriver(connectionId).getTableStructure(schema, table);
+  structureCache.set(key, { data, expires: Date.now() + SCHEMA_CACHE_TTL_MS });
+  return data;
 }
 
 export async function getRoutines(
   connectionId: string,
   schema: string,
 ): Promise<RoutineInfo[]> {
-  return getDriver(connectionId).getRoutines(schema);
+  const key = routineCacheKey(connectionId, schema);
+  const cached = routineCache.get(key);
+  if (cached && cached.expires > Date.now()) return cached.data;
+  const data = await getDriver(connectionId).getRoutines(schema);
+  routineCache.set(key, { data, expires: Date.now() + SCHEMA_CACHE_TTL_MS });
+  return data;
 }
 
 export async function getTableData(

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useRef, useMemo } from "react";
+import { useState, useEffect, useCallback, useRef, useMemo, memo } from "react";
 import type { QueryResult, CrudResult } from "@shared/types/database";
 import { parseEditValue } from "../utils/tableDataUtils";
 import styles from "./TableDataView.module.css";
@@ -20,6 +20,122 @@ interface EditingCell {
 interface NewRowData {
     [column: string]: string;
 }
+
+// ─── Memoized table row ─────────────────────────────────────────
+
+interface TableRowProps {
+    row: Record<string, unknown>;
+    rowIndex: number;
+    absoluteRowNum: number;
+    columns: string[];
+    primaryKeys: string[];
+    isSelected: boolean;
+    isDirty: boolean;
+    dirtyColsForRow: Set<string> | undefined;
+    localEditsForRow: Record<string, unknown> | undefined;
+    /** Non-null only when this specific row has an active editing cell. */
+    editingCellColumn: string | null;
+    editingCellValue: string;
+    colWidths: Record<string, number>;
+    editInputRef: React.RefObject<HTMLInputElement | null>;
+    onToggleSelect: (index: number, event: React.MouseEvent) => void;
+    onContextMenu: (event: React.MouseEvent, rowIndex: number, column?: string) => void;
+    onStartEditing: (rowIndex: number, column: string) => void;
+    onCommitEdit: () => void;
+    onCancelEditing: () => void;
+    onSetEditingCellValue: (value: string) => void;
+}
+
+const TableRow = memo(function TableRow({
+    row,
+    rowIndex,
+    absoluteRowNum,
+    columns,
+    primaryKeys,
+    isSelected,
+    isDirty,
+    dirtyColsForRow,
+    localEditsForRow,
+    editingCellColumn,
+    editingCellValue,
+    colWidths,
+    editInputRef,
+    onToggleSelect,
+    onContextMenu,
+    onStartEditing,
+    onCommitEdit,
+    onCancelEditing,
+    onSetEditingCellValue,
+}: TableRowProps) {
+    return (
+        <tr
+            className={
+                [
+                    isSelected ? styles.selectedRow : "",
+                    isDirty ? styles.dirtyRow : "",
+                ]
+                    .filter(Boolean)
+                    .join(" ") || undefined
+            }
+            onClick={(e) => onToggleSelect(rowIndex, e)}
+            onContextMenu={(e) => onContextMenu(e, rowIndex)}
+        >
+            <td className={styles.checkboxCell}>
+                <input
+                    type="checkbox"
+                    checked={isSelected}
+                    onChange={() => { }}
+                    tabIndex={-1}
+                />
+            </td>
+            <td className={styles.rowNum}>{absoluteRowNum}</td>
+            {columns.map((col) => (
+                <td
+                    key={col}
+                    onDoubleClick={() => onStartEditing(rowIndex, col)}
+                    onContextMenu={(e) => onContextMenu(e, rowIndex, col)}
+                    className={
+                        [
+                            editingCellColumn === col ? styles.editingCell : "",
+                            dirtyColsForRow?.has(col) ? styles.dirtyCell : "",
+                        ]
+                            .filter(Boolean)
+                            .join(" ") || undefined
+                    }
+                    style={
+                        colWidths[col] !== undefined
+                            ? { maxWidth: colWidths[col] }
+                            : undefined
+                    }
+                >
+                    {editingCellColumn === col ? (
+                        <input
+                            ref={editInputRef}
+                            className={styles.cellInput}
+                            value={editingCellValue}
+                            onChange={(e) => onSetEditingCellValue(e.target.value)}
+                            onKeyDown={(e) => {
+                                if (e.key === "Enter") onCommitEdit();
+                                if (e.key === "Escape") onCancelEditing();
+                                e.stopPropagation();
+                            }}
+                            onBlur={onCommitEdit}
+                            onClick={(e) => e.stopPropagation()}
+                        />
+                    ) : (
+                        <CellValue
+                            value={
+                                localEditsForRow?.[col] !== undefined
+                                    ? localEditsForRow[col]
+                                    : row[col]
+                            }
+                        />
+                    )}
+                </td>
+            ))}
+        </tr>
+    );
+});
 
 export function TableDataView({
     connectionId,
@@ -50,6 +166,8 @@ export function TableDataView({
 
     const tableRef = useRef<HTMLDivElement>(null);
     const editInputRef = useRef<HTMLInputElement>(null);
+    // Ref to each <th> for direct DOM width manipulation during column resize
+    const thRefs = useRef<Record<string, HTMLTableCellElement | null>>({});
     // Refs for reading latest dirty state inside callbacks without stale closures
     const localEditsRef = useRef(localEdits);
     const dirtyColsRef = useRef(dirtyCols);
@@ -342,46 +460,67 @@ export function TableDataView({
         const entries = Object.entries(dirtyCols);
         if (entries.length === 0) return;
 
-        const errors: string[] = [];
-        const savedRows: number[] = [];
+        // Snapshot local edits at call time to avoid stale closure issues
+        const editsSnapshot = localEditsRef.current;
 
+        type SaveTask = {
+            rowIdx: number;
+            row: Record<string, unknown>;
+            changes: Record<string, unknown>;
+        };
+        const tasks: SaveTask[] = [];
         for (const [rowIdxStr] of entries) {
             const rowIdx = Number(rowIdxStr);
             const row = result.rows[rowIdx];
             if (!row) continue;
-            const changes = localEdits[rowIdx] ?? {};
+            const changes = editsSnapshot[rowIdx] ?? {};
             if (Object.keys(changes).length === 0) continue;
+            tasks.push({ rowIdx, row, changes });
+        }
+        if (tasks.length === 0) return;
 
-            try {
-                const res: CrudResult = await window.electronAPI.invoke(
-                    "crud:update-row",
-                    {
+        // Fire all row updates in parallel
+        const settled = await Promise.allSettled(
+            tasks.map(({ rowIdx, row, changes }) =>
+                window.electronAPI
+                    .invoke("crud:update-row", {
                         connectionId,
                         schema,
                         table,
                         primaryKey: getRowPK(row),
                         changes,
-                    },
-                );
-                if (res.success) {
+                    })
+                    .then((res: CrudResult) => ({ rowIdx, res })),
+            ),
+        );
+
+        const errors: string[] = [];
+        const savedRows: number[] = [];
+
+        for (let t = 0; t < settled.length; t++) {
+            const outcome = settled[t];
+            const { rowIdx } = tasks[t];
+            if (outcome.status === "fulfilled") {
+                if (outcome.value.res.success) {
                     savedRows.push(rowIdx);
                 } else {
                     errors.push(`Row ${rowIdx + 1}: save did not succeed`);
                 }
-            } catch (err) {
-                errors.push(
-                    `Row ${rowIdx + 1}: ${err instanceof Error ? err.message : String(err)}`,
-                );
+            } else {
+                const msg =
+                    outcome.reason instanceof Error
+                        ? outcome.reason.message
+                        : String(outcome.reason);
+                errors.push(`Row ${rowIdx + 1}: ${msg}`);
             }
         }
 
         if (savedRows.length > 0) {
-            // Apply saved edits into result rows and clear dirty state for those rows
             setResult((prev) => {
                 if (!prev) return prev;
                 const newRows = [...prev.rows];
                 for (const rowIdx of savedRows) {
-                    newRows[rowIdx] = { ...newRows[rowIdx], ...(localEdits[rowIdx] ?? {}) };
+                    newRows[rowIdx] = { ...newRows[rowIdx], ...(editsSnapshot[rowIdx] ?? {}) };
                 }
                 return { ...prev, rows: newRows };
             });
@@ -408,7 +547,6 @@ export function TableDataView({
         result,
         hasPrimaryKeys,
         dirtyCols,
-        localEdits,
         connectionId,
         schema,
         table,
@@ -417,6 +555,15 @@ export function TableDataView({
     ]);
 
     // ─── Copy operations ────────────────────────────────────────
+
+    // Stable wrappers so TableRow memo isn't invalidated by deps-changing callbacks
+    const commitEditRef = useRef(commitEdit);
+    commitEditRef.current = commitEdit;
+    const stableCommitEdit = useCallback(() => commitEditRef.current(), []);
+
+    const onSetEditingCellValue = useCallback((value: string) => {
+        setEditingCell((prev) => (prev ? { ...prev, value } : null));
+    }, []);
 
     const copyToClipboard = useCallback(
         (text: string) => {
@@ -508,16 +655,16 @@ export function TableDataView({
         (col: string, e: React.MouseEvent<HTMLDivElement>) => {
             e.preventDefault();
             e.stopPropagation();
-            const th = (e.currentTarget as HTMLDivElement).closest(
-                "th",
-            ) as HTMLElement;
+            const th = thRefs.current[col];
+            if (!th) return;
             const startWidth = th.offsetWidth;
             const startX = e.clientX;
+            let finalWidth = startWidth;
 
+            // Update DOM directly during drag — zero React re-renders while resizing
             const onMove = (ev: MouseEvent) => {
-                const delta = ev.clientX - startX;
-                const newWidth = Math.max(60, startWidth + delta);
-                setColWidths((prev) => ({ ...prev, [col]: newWidth }));
+                finalWidth = Math.max(60, startWidth + ev.clientX - startX);
+                th.style.width = `${finalWidth}px`;
             };
 
             const onUp = () => {
@@ -525,6 +672,8 @@ export function TableDataView({
                 document.removeEventListener("mouseup", onUp);
                 document.body.style.cursor = "";
                 document.body.style.userSelect = "";
+                // Sync final width to React state only once on mouseup
+                setColWidths((prev) => ({ ...prev, [col]: finalWidth }));
             };
 
             document.addEventListener("mousemove", onMove);
@@ -651,7 +800,7 @@ export function TableDataView({
         [result, selectedRows.size],
     );
 
-    const dirtyCount = Object.keys(dirtyCols).length;
+    const dirtyCount = useMemo(() => Object.keys(dirtyCols).length, [dirtyCols]);
     const hasDirtyRows = dirtyCount > 0;
 
     // ─── Render ─────────────────────────────────────────────────
@@ -803,6 +952,7 @@ export function TableDataView({
                                 {result.columns.map((col) => (
                                     <th
                                         key={col}
+                                        ref={(el) => { thRefs.current[col] = el; }}
                                         style={{ width: colWidths[col] || undefined }}
                                         onContextMenu={(e) => {
                                             e.preventDefault();
@@ -882,101 +1032,36 @@ export function TableDataView({
 
                             {/* Data rows */}
                             {result.rows.map((row, i) => (
-                                <tr
+                                <TableRow
                                     key={i}
-                                    className={
-                                        [
-                                            selectedRows.has(i) ? styles.selectedRow : "",
-                                            dirtyCols[i] ? styles.dirtyRow : "",
-                                        ]
-                                            .filter(Boolean)
-                                            .join(" ") || undefined
+                                    row={row}
+                                    rowIndex={i}
+                                    absoluteRowNum={page * PAGE_SIZE + i + 1}
+                                    columns={result.columns}
+                                    primaryKeys={primaryKeys}
+                                    isSelected={selectedRows.has(i)}
+                                    isDirty={!!dirtyCols[i]}
+                                    dirtyColsForRow={dirtyCols[i]}
+                                    localEditsForRow={localEdits[i]}
+                                    editingCellColumn={
+                                        editingCell?.rowIndex === i
+                                            ? editingCell.column
+                                            : null
                                     }
-                                    onClick={(e) => toggleRowSelect(i, e)}
-                                    onContextMenu={(e) =>
-                                        handleContextMenu(e, i)
+                                    editingCellValue={
+                                        editingCell?.rowIndex === i
+                                            ? editingCell.value
+                                            : ""
                                     }
-                                >
-                                    <td className={styles.checkboxCell}>
-                                        <input
-                                            type="checkbox"
-                                            checked={selectedRows.has(i)}
-                                            onChange={() => { }}
-                                            tabIndex={-1}
-                                        />
-                                    </td>
-                                    <td className={styles.rowNum}>
-                                        {page * PAGE_SIZE + i + 1}
-                                    </td>
-                                    {result.columns.map((col) => (
-                                        <td
-                                            key={col}
-                                            onDoubleClick={() =>
-                                                startEditing(i, col)
-                                            }
-                                            onContextMenu={(e) =>
-                                                handleContextMenu(e, i, col)
-                                            }
-                                            className={
-                                                [
-                                                    editingCell?.rowIndex === i &&
-                                                        editingCell?.column === col
-                                                        ? styles.editingCell
-                                                        : "",
-                                                    dirtyCols[i]?.has(col)
-                                                        ? styles.dirtyCell
-                                                        : "",
-                                                ]
-                                                    .filter(Boolean)
-                                                    .join(" ") || undefined
-                                            }
-                                            style={
-                                                colWidths[col] !== undefined
-                                                    ? { maxWidth: colWidths[col] }
-                                                    : undefined
-                                            }
-                                        >
-                                            {editingCell?.rowIndex === i &&
-                                                editingCell?.column === col ? (
-                                                <input
-                                                    ref={editInputRef}
-                                                    className={styles.cellInput}
-                                                    value={editingCell.value}
-                                                    onChange={(e) =>
-                                                        setEditingCell(
-                                                            (prev) =>
-                                                                prev
-                                                                    ? {
-                                                                        ...prev,
-                                                                        value: e.target.value,
-                                                                    }
-                                                                    : null,
-                                                        )
-                                                    }
-                                                    onKeyDown={(e) => {
-                                                        if (e.key === "Enter")
-                                                            commitEdit();
-                                                        if (e.key === "Escape")
-                                                            cancelEditing();
-                                                        e.stopPropagation();
-                                                    }}
-                                                    onBlur={commitEdit}
-                                                    onClick={(e) =>
-                                                        e.stopPropagation()
-                                                    }
-                                                />
-                                            ) : (
-                                                <CellValue
-                                                    value={
-                                                        localEdits[i]?.[col] !== undefined
-                                                            ? localEdits[i]![col]
-                                                            : row[col]
-                                                    }
-                                                />
-                                            )}
-                                        </td>
-                                    ))}
-                                </tr>
+                                    colWidths={colWidths}
+                                    editInputRef={editInputRef}
+                                    onToggleSelect={toggleRowSelect}
+                                    onContextMenu={handleContextMenu}
+                                    onStartEditing={startEditing}
+                                    onCommitEdit={stableCommitEdit}
+                                    onCancelEditing={cancelEditing}
+                                    onSetEditingCellValue={onSetEditingCellValue}
+                                />
                             ))}
                             {result.rows.length === 0 && !showAddRow && (
                                 <tr>
