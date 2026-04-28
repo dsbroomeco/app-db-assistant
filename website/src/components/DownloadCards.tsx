@@ -63,8 +63,8 @@ export function DownloadCards({ platforms }: { platforms: Platform[] }) {
                     <div
                         key={platform.name}
                         className={`flex flex-col rounded-xl border p-6 ${isDetected
-                                ? "border-blue-400 bg-blue-50/50 ring-2 ring-blue-200 dark:border-blue-600 dark:bg-blue-950/20 dark:ring-blue-800"
-                                : "border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950"
+                            ? "border-blue-400 bg-blue-50/50 ring-2 ring-blue-200 dark:border-blue-600 dark:bg-blue-950/20 dark:ring-blue-800"
+                            : "border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950"
                             }`}
                     >
                         <div className="mb-4 flex items-center gap-3">
@@ -86,8 +86,8 @@ export function DownloadCards({ platforms }: { platforms: Platform[] }) {
                                     key={dl.label}
                                     href={dl.href}
                                     className={`flex items-center justify-between rounded-lg border px-4 py-3 text-sm transition-colors ${isDetected
-                                            ? "border-blue-200 hover:border-blue-400 hover:bg-blue-100 dark:border-blue-800 dark:hover:border-blue-600 dark:hover:bg-blue-950/50"
-                                            : "border-gray-200 hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:hover:border-blue-700 dark:hover:bg-blue-950/30"
+                                        ? "border-blue-200 hover:border-blue-400 hover:bg-blue-100 dark:border-blue-800 dark:hover:border-blue-600 dark:hover:bg-blue-950/50"
+                                        : "border-gray-200 hover:border-blue-300 hover:bg-blue-50 dark:border-gray-700 dark:hover:border-blue-700 dark:hover:bg-blue-950/30"
                                         }`}
                                 >
                                     <span className="font-medium">{dl.label}</span>
