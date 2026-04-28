@@ -394,8 +394,7 @@ Manual profiling pass checklist (next interactive step):
 - [ ] Update `CHANGELOG.md` with all changes since `0.1.0`
 - [ ] Run full test suite (unit + e2e) on all target platforms
 - [ ] Complete remaining security audit items (Batch 3)
-- [ ] Test fresh install on a clean VM for each platform (Windows 10/11, Ubuntu 22.04+, Fedora 38+)
-- [ ] Test upgrade path from beta → stable
+- [ ] Test fresh install on a clean VM for each platform (Windows 10/11, Ubuntu 22.04+, Fedora 38+)  - Windows: NSIS installer tested on dev machine (April 2026). Fixed critical white screen bug: `loadFile` path was `../renderer/index.html` but with `rootDir=src` and `outDir=dist/main`, `__dirname` at runtime is `dist/main/main/` — corrected to `../../renderer/index.html`. CI had no post-package smoke test so this was only caught by manual install testing.- [ ] Test upgrade path from beta → stable
 - [ ] Verify auto-update flow end-to-end
 - [ ] Review all error messages for user-friendliness (no stack traces in production)
 - [ ] Confirm telemetry/analytics are opt-in only (if applicable)
