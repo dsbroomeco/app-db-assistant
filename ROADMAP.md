@@ -202,7 +202,7 @@ This sequence is the operational plan from current state to public open-source l
 - [x] Re-run local quality gates: `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e`
 - [x] Confirm no regressions after module-format adjustment
 
-#### Phase 2 — CI/CD Release Dry-Run (verified; failed)
+#### Phase 2 — CI/CD Release Dry-Run (beta.1 failed; beta.2 rerun in progress)
 
 - [x] Create and push beta dry-run tag `v0.1.1-beta.1` to trigger release workflow
 - [x] Confirm tag push succeeded to origin
@@ -216,12 +216,15 @@ Recorded failure details (run `25029287581`):
 - `build (ubuntu-latest, linux)`: cancelled after windows failure
 - `publish`: skipped due failed dependency jobs
 
-Follow-up: fix MSI icon linkage for Windows packaging and rerun tag dry-run.
+Follow-up executed:
+- Added explicit icon generation (`build/icon.ico`) and CI icon generation step before packaging
+- Triggered rerun tag `v0.1.1-beta.2` (run `25030049034`)
+- Current state: `lint-and-test`, `e2e-test`, `build (linux)`, and `build (mac)` succeeded; `build (windows)` still in progress
 
 #### Phase 3 — Remaining Performance Batch
 
 - [ ] Complete remaining Batch 4 items (React DevTools interaction profiling still pending)
-- [ ] Document before/after startup and interaction metrics (before captured; after pending)
+- [ ] Document before/after startup and interaction metrics (automated proxy captured; manual profiler captures pending)
 
 #### Phase 4 — Website & Distribution Completion
 
@@ -270,7 +273,11 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 	- Cold sample: `did-finish-load=306ms` since `app.whenReady`
 	- Warm sample: `did-finish-load=297ms` since `app.whenReady`
 	- Init breakdowns remained stable (`initStore` 38-41ms, `parallelInitTotal` 1ms, `createWindow` 39-40ms)
-	- Limitation: this captures startup only; interaction profiling still pending in React DevTools Profiler
+	- Automated interaction proxy (Playwright JSON reporter, `tests/e2e/app-launch.test.ts`):
+		- `app launches and shows the main window`: `1007ms`
+		- `app window has expected minimum size`: `816ms`
+		- `tab switch unmounts inactive view content`: `1094ms`
+	- Limitation: React DevTools Profiler capture is still pending for component-level render-cost analysis
 
 #### Query Result Grid — Virtual Scrolling (highest risk, no row cap today)
 
