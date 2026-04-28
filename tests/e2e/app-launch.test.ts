@@ -33,3 +33,20 @@ test("app window has expected minimum size", async () => {
 
   await app.close();
 });
+
+test("tab switch unmounts inactive view content", async () => {
+  const app = await electron.launch({ args: ["."] });
+  const window = await app.firstWindow();
+  await window.waitForLoadState("domcontentloaded");
+
+  const welcomeHeading = window.getByText("Welcome to DB Assistant");
+  await expect(welcomeHeading).toBeVisible();
+
+  await window.getByRole("button", { name: "New query tab" }).click();
+  await expect(window.getByRole("tab", { name: /Query 1/ })).toBeVisible();
+
+  // Inactive tab content should be removed from DOM, not just hidden.
+  await expect(welcomeHeading).toHaveCount(0);
+
+  await app.close();
+});

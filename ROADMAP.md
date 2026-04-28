@@ -202,18 +202,26 @@ This sequence is the operational plan from current state to public open-source l
 - [x] Re-run local quality gates: `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e`
 - [x] Confirm no regressions after module-format adjustment
 
-#### Phase 2 — CI/CD Release Dry-Run (execution complete; remote verification pending)
+#### Phase 2 — CI/CD Release Dry-Run (verified; failed)
 
 - [x] Create and push beta dry-run tag `v0.1.1-beta.1` to trigger release workflow
 - [x] Confirm tag push succeeded to origin
-- [ ] Verify full GitHub Actions run completion and artifact set (win/linux/mac) from this environment
+- [x] Verify full GitHub Actions run and artifact state from this environment
 
-Note: this environment can push tags but cannot currently read private GitHub Actions pages/API (returns 404 without authenticated session), so artifact verification remains a manual follow-up in GitHub UI.
+Recorded failure details (run `25029287581`):
+- `lint-and-test`: success
+- `e2e-test`: success
+- `build (macos-latest, mac)`: success, artifact uploaded (`dist-mac`)
+- `build (windows-latest, win)`: **failed** in MSI packaging (`LGHT0094: Icon:DBAssistantIcon.exe could not be found` in WiX linker)
+- `build (ubuntu-latest, linux)`: cancelled after windows failure
+- `publish`: skipped due failed dependency jobs
+
+Follow-up: fix MSI icon linkage for Windows packaging and rerun tag dry-run.
 
 #### Phase 3 — Remaining Performance Batch
 
-- [ ] Complete remaining Batch 4 items (render profiling and baseline measurement still pending)
-- [ ] Document before/after startup and interaction metrics
+- [ ] Complete remaining Batch 4 items (React DevTools interaction profiling still pending)
+- [ ] Document before/after startup and interaction metrics (before captured; after pending)
 
 #### Phase 4 — Website & Distribution Completion
 
@@ -258,7 +266,11 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 
 - [x] **Baseline startup measurement** — Added `performance.now()` timing logs around startup init steps in `src/main/main.ts` and a dev-time `did-finish-load` timing marker
 - [x] **Parallelize independent init calls** — `initQueryHistory()` and `initSavedQueries()` have no dependency on each other; run both with `Promise.all` alongside `initConnectionManager()` where safe
-- [ ] **Measure and document baseline** — Record cold-start and warm-start times before any optimization so improvements are quantifiable
+- [x] **Measure and document baseline** — Local Linux dev measurements with `NODE_ENV=development npm run dev:main`:
+	- Cold sample: `did-finish-load=306ms` since `app.whenReady`
+	- Warm sample: `did-finish-load=297ms` since `app.whenReady`
+	- Init breakdowns remained stable (`initStore` 38-41ms, `parallelInitTotal` 1ms, `createWindow` 39-40ms)
+	- Limitation: this captures startup only; interaction profiling still pending in React DevTools Profiler
 
 #### Query Result Grid — Virtual Scrolling (highest risk, no row cap today)
 
@@ -290,7 +302,7 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 #### React Render Profiling
 
 - [ ] **Profile with React DevTools Profiler** — Record a session of: opening a large table, editing a cell, multi-selecting rows, switching tabs. Identify components with disproportionate render time and add `React.memo`, `useMemo`, or `useCallback` where the profiler shows clear wins (not speculatively)
-- [ ] **Confirm no unnecessary re-renders on tab switch** — The tab system should unmount/remount inactive tabs, not keep all tab contents live in the DOM
+- [x] **Confirm no unnecessary re-renders on tab switch** — Added Playwright e2e coverage in `tests/e2e/app-launch.test.ts` that opens a query tab and asserts welcome content is removed from DOM when inactive
 
 ---
 
