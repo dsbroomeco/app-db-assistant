@@ -202,7 +202,7 @@ This sequence is the operational plan from current state to public open-source l
 - [x] Re-run local quality gates: `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e`
 - [x] Confirm no regressions after module-format adjustment
 
-#### Phase 2 — CI/CD Release Dry-Run (beta.1 failed; beta.2 rerun in progress)
+#### Phase 2 — CI/CD Release Dry-Run (completed)
 
 - [x] Create and push beta dry-run tag `v0.1.1-beta.1` to trigger release workflow
 - [x] Confirm tag push succeeded to origin
@@ -219,7 +219,8 @@ Recorded failure details (run `25029287581`):
 Follow-up executed:
 - Added explicit icon generation (`build/icon.ico`) and CI icon generation step before packaging
 - Triggered rerun tag `v0.1.1-beta.2` (run `25030049034`)
-- Current state: `lint-and-test`, `e2e-test`, `build (linux)`, and `build (mac)` succeeded; `build (windows)` still in progress
+- Rerun result: all jobs succeeded (`lint-and-test`, `e2e-test`, `build linux/mac/win`, `publish`)
+- Verified release published: `v0.1.1-beta.2` with cross-platform assets and `checksums.txt`
 
 #### Phase 3 — Remaining Performance Batch
 
