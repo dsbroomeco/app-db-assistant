@@ -319,13 +319,18 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 #### React Render Profiling
 
 - [x] **Add temporary built-in render profiler mode** — Added `src/renderer/utils/renderProfiler.ts` and root/component React `Profiler` hooks in `src/renderer/main.tsx` and `src/renderer/App.tsx`; capture API exposed as `window.__DBA_RENDER_PROFILER__` (`summary()`, `samples()`, `clear()`)
+- [x] **Add e2e profiling helper test** — Added `tests/e2e/render-profiler-helper.test.ts` (manual-on-demand via `RUN_PROFILER_HELPER_E2E=true`) and npm script `test:e2e:profile-helper` to collect summarized profiler output after a repeatable baseline interaction
+- [x] **Add DB-backed interaction helper scenario** — Extended `tests/e2e/render-profiler-helper.test.ts` with `RUN_PROFILER_HELPER_DB_E2E=true` scenario that seeds a SQLite fixture via IPC and captures open-table -> edit-cell -> multi-select -> tab-switch flow; script: `test:e2e:profile-helper:db`
 - [ ] **Profile with React DevTools Profiler** — Record a session of: opening a large table, editing a cell, multi-selecting rows, switching tabs. Identify components with disproportionate render time and add `React.memo`, `useMemo`, or `useCallback` where the profiler shows clear wins (not speculatively)
 - [x] **Confirm no unnecessary re-renders on tab switch** — Added Playwright e2e coverage in `tests/e2e/app-launch.test.ts` that opens a query tab and asserts welcome content is removed from DOM when inactive
 
 Temporary profiler capture status (April 2026):
 - Runtime flag plumbing verified (`window.electronAPI.getRuntimeFlags()` returns `{ renderProfilerEnabled: true }` when launched with `DBA_RENDER_PROFILER=true`)
-- Automated Playwright capture attempt from this Linux workspace failed because Electron launch returned zero app windows in the ad-hoc capture script (`WINDOW_COUNT 0`), so no renderer context was available to read profiler API output
-- Failure recorded; proceed with manual interactive capture using dev run + DevTools in next pass
+- Ad-hoc `node -e` Playwright capture remained unreliable (`WINDOW_COUNT 0`) for direct probing, but dedicated helper tests now provide repeatable automated capture paths
+- Verified helper output (`npm run test:e2e:profile-helper:db`) includes interaction-heavy component timings:
+	- `TableDataView`: `commits=10`, `totalActualMs=35.7`, `avgActualMs=3.57`, `p95ActualMs=7.3`
+	- `AppRoot`: `commits=21`, `totalActualMs=65.6`, `avgActualMs=3.124`, `p95ActualMs=7.3`
+	- `QueryEditorView`: `commits=3`, `totalActualMs=3.7`
 
 Manual capture steps (current approved path):
 1. Launch with profiling enabled: `DBA_RENDER_PROFILER=true npm run dev`

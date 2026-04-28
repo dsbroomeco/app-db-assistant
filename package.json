@@ -27,6 +27,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:e2e:profile-helper": "RUN_PROFILER_HELPER_E2E=true playwright test tests/e2e/render-profiler-helper.test.ts",
+    "test:e2e:profile-helper:db": "RUN_PROFILER_HELPER_E2E=true RUN_PROFILER_HELPER_DB_E2E=true playwright test tests/e2e/render-profiler-helper.test.ts",
     "lint": "eslint src/",
     "lint:fix": "eslint src/ --fix",
     "format": "prettier --write \"src/**/*.{ts,tsx}\"",

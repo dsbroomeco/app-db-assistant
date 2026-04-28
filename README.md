@@ -116,6 +116,8 @@ app-db-assistant/
 | `npm test`           | Run unit tests                      |
 | `npm run test:watch` | Run unit tests in watch mode        |
 | `npm run test:e2e`   | Run end-to-end tests                |
+| `npm run test:e2e:profile-helper` | Run baseline profiler helper scenario (manual/on-demand) |
+| `npm run test:e2e:profile-helper:db` | Run baseline + DB-backed profiler helper scenarios |
 | `npm run lint`       | Lint all source files               |
 | `npm run lint:fix`   | Lint and auto-fix                   |
 | `npm run format`     | Format with Prettier                |
@@ -156,6 +158,15 @@ window.__DBA_RENDER_PROFILER__.clear()
 ```bash
 VITE_ENABLE_RENDER_PROFILER=true npm run dev
 ```
+
+4. Optional automated helper captures:
+
+```bash
+npm run test:e2e:profile-helper
+npm run test:e2e:profile-helper:db
+```
+
+The DB helper uses a local SQLite fixture and captures an interaction flow that includes table open, cell edit, multi-row select, and tab switch.
 
 This mode is temporary and must be removed before stable release cut.
 
