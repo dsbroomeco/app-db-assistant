@@ -38,6 +38,14 @@ import type { DatabaseDriver, MongoDBDriver, RedisDriver, BaseDriver } from "./t
 
 type StoreType = { connections: Record<string, ConnectionConfig> };
 
+const isDevPerformanceLogging = process.env.NODE_ENV === "development";
+
+function logPerformance(message: string): void {
+  if (isDevPerformanceLogging) {
+    console.log(`[perf] ${message}`);
+  }
+}
+
 let configStore: {
   get(key: "connections"): Record<string, ConnectionConfig>;
   set(key: "connections", value: Record<string, ConnectionConfig>): void;
@@ -458,10 +466,19 @@ export async function explainQuery(
 export async function getCompletionItems(
   connectionId: string,
 ): Promise<{ tables: string[]; columns: string[] }> {
+  const start = performance.now();
   const cached = completionCache.get(connectionId);
-  if (cached && cached.expires > Date.now()) return cached.data;
+  if (cached && cached.expires > Date.now()) {
+    logPerformance(
+      `completion cache=hit connection=${connectionId} latency=${Math.round(performance.now() - start)}ms`,
+    );
+    return cached.data;
+  }
   const data = await getDriver(connectionId).getCompletionItems();
   completionCache.set(connectionId, { data, expires: Date.now() + SCHEMA_CACHE_TTL_MS });
+  logPerformance(
+    `completion cache=miss connection=${connectionId} latency=${Math.round(performance.now() - start)}ms tables=${data.tables.length} columns=${data.columns.length}`,
+  );
   return data;
 }
 

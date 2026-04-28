@@ -163,6 +163,27 @@ The pipeline scaffolding exists but has never been exercised on a real tag push.
 - [x] **Add e2e test stage to CI** — Playwright step added to `release.yml` on `ubuntu-latest` with `continue-on-error: true` until test suite is stable
 - [x] **Semantic versioning tooling** — `standard-version` installed; `npm run release`, `npm run release:beta`, `npm run release:dry` scripts added
 
+#### Lint Remediation Backlog (captured April 2026)
+
+Current `npm run lint` status: **21 problems (17 errors, 4 warnings)**.
+
+- [ ] `src/db/connection-manager.ts` — remove unused imports: `isSqlType`, `createDriver`, `createMongoDriver`, `createRedisDriver`
+- [ ] `src/db/drivers/index.ts` — remove unused imports: `isSqlType`, `isNoSqlType`
+- [ ] `src/db/drivers/mongodb.ts` — remove unused `_id` assignment
+- [ ] `src/db/drivers/mssql.ts` — remove unused `paramIdx`
+- [ ] `src/db/drivers/sqlite.ts` — replace `require("better-sqlite3")` with ESM-safe dynamic import to satisfy `@typescript-eslint/no-require-imports`
+- [ ] `src/db/ssh-tunnel.ts` — remove unused `getPassword` import
+- [ ] `src/db/types.ts` — remove unused `RedisKeyInfo` import/type
+- [ ] `src/renderer/components/ConnectionForm.tsx` — remove unused `isNoSql`
+- [ ] `src/renderer/components/RedisTreeView.tsx` — prefix unused props (`connectionId`, `connectionName`) with `_` or remove
+- [ ] `src/renderer/components/Sidebar.tsx` — remove unused `isNoSqlType`
+- [ ] `src/renderer/components/TableDataView.tsx` — remove unused `primaryKeys` prop/arg
+- [ ] `src/shared/types/database.test.ts` — remove unused `ColumnDiff` import
+- [ ] `src/renderer/App.tsx` — fix `react-hooks/exhaustive-deps` warning for `queryCount`
+- [ ] `src/renderer/components/MongoCollectionView.tsx` — fix `react-hooks/exhaustive-deps` warning for `fetchDocuments`
+- [ ] `src/renderer/components/QueryEditorView.tsx` — fix `react-hooks/exhaustive-deps` warning for `refreshHistory`
+- [ ] `src/renderer/components/RedisBrowserView.tsx` — fix `react-hooks/exhaustive-deps` warning for `scanKeys`
+
 ### Batch 3: Remaining Security Items
 
 These are deferred from the security audit and should be addressed before stable release (a beta can ship without them).
@@ -177,7 +198,7 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 
 #### Startup Time (target: < 3s cold start on mid-range hardware)
 
-- [ ] **Baseline startup measurement** — Add `performance.now()` timestamps around each `app.whenReady()` init step (`initStore`, `initConnectionManager`, `initQueryHistory`, `initSavedQueries`) and log them in dev mode. Capture time-to-first-paint via Playwright's `page.waitForSelector` timing
+- [x] **Baseline startup measurement** — Added `performance.now()` timing logs around startup init steps in `src/main/main.ts` and a dev-time `did-finish-load` timing marker
 - [x] **Parallelize independent init calls** — `initQueryHistory()` and `initSavedQueries()` have no dependency on each other; run both with `Promise.all` alongside `initConnectionManager()` where safe
 - [ ] **Measure and document baseline** — Record cold-start and warm-start times before any optimization so improvements are quantifiable
 
@@ -195,17 +216,17 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 #### ERD View — Concurrent IPC Flood
 
 - [x] **Add concurrency limit to ERD table structure fetches** — `ErdView.tsx` fires one `db:table-structure` IPC call per table simultaneously via `Promise.all`. For schemas with 100+ tables this overwhelms the connection pool. Add concurrency limiting (max 8 parallel) using a simple worker-pool semaphore
-- [ ] **Cache `db:table-structure` results in main process** — Table structure rarely changes during a session; cache per `(connectionId, schema, table)` and invalidate only on disconnect or manual refresh. Eliminates redundant DB queries when the same table appears in both the tree view and ERD
-- [ ] **Add per-table progress indicator to ERD** — Show `Fetching X of Y tables…` during generation instead of a static spinner
+- [x] **Cache `db:table-structure` results in main process** — Table structure cache keyed by `(connectionId, schema, table)` is implemented in `src/db/connection-manager.ts`, with invalidation on disconnect
+- [x] **Add per-table progress indicator to ERD** — `ErdView.tsx` now shows `Fetching X of Y tables…` during generation
 
 #### Autocomplete — Live DB Queries on Every Keystroke
 
 - [x] **Cache `getCompletionItems()` per connection** — Currently called on every CodeMirror completion trigger; each call runs live DB queries for all table and column names. Cache the result in main process memory after first fetch per `connectionId`, invalidated only on disconnect or `db:refresh`
-- [ ] **Measure and log completion latency** — Add timing in dev mode to confirm cache hit vs miss behavior
+- [x] **Measure and log completion latency** — Added dev-time cache hit/miss latency logging in `getCompletionItems()`
 
 #### IPC Payload Size
 
-- [ ] **Log IPC payload sizes in dev mode** — Add serialized byte size logging for `query:execute` and `db:table-data` responses in development builds to establish a baseline and catch regressions
+- [x] **Log IPC payload sizes in dev mode** — Added serialized payload-size logging for `query:execute` and `db:table-data` IPC responses in `src/main/main.ts`
 - [ ] **Stream large exports directly to disk** — The CSV/JSON/SQL export feature currently transfers the full dataset to the renderer, then back to main via `save-file`. For large exports, write directly from main process to a `fs.createWriteStream` without going through the renderer
 
 #### React Render Profiling

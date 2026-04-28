@@ -19,6 +19,11 @@ interface Relationship {
     toColumns: string[];
 }
 
+interface ErdProgress {
+    completed: number;
+    total: number;
+}
+
 export function ErdView() {
     const { connections, isConnected } = useConnections();
     const connectedConns = connections.filter(
@@ -32,6 +37,7 @@ export function ErdView() {
     const [error, setError] = useState("");
     const [tables, setTables] = useState<TablePosition[]>([]);
     const [relationships, setRelationships] = useState<Relationship[]>([]);
+    const [progress, setProgress] = useState<ErdProgress>({ completed: 0, total: 0 });
 
     const handleGenerate = useCallback(async () => {
         if (!connectionId) return;
@@ -42,6 +48,7 @@ export function ErdView() {
                 "db:tables",
                 { connectionId, schema },
             );
+            setProgress({ completed: 0, total: tableList.length });
 
             const positions: TablePosition[] = [];
             const rels: Relationship[] = [];
@@ -63,6 +70,7 @@ export function ErdView() {
                 while (nextIdx < tasks.length) {
                     const i = nextIdx++;
                     results[i] = await tasks[i]();
+                    setProgress((prev) => ({ ...prev, completed: prev.completed + 1 }));
                 }
             }
             await Promise.all(
@@ -281,6 +289,11 @@ export function ErdView() {
                 >
                     {loading ? "Generating…" : "Generate ERD"}
                 </button>
+                {loading && progress.total > 0 && (
+                    <span className={styles.progressText}>
+                        Fetching {progress.completed} of {progress.total} tables...
+                    </span>
+                )}
             </div>
 
             {error && <div className={styles.error}>{error}</div>}

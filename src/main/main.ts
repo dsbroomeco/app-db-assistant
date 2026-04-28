@@ -56,6 +56,23 @@ import { initAutoUpdater, checkForUpdates } from "./auto-updater";
 
 type StoreType = { settings: AppSettings; shortcuts: KeyboardShortcut[] };
 
+const isDevPerformanceLogging = !app.isPackaged && process.env.NODE_ENV === "development";
+
+function logPerformance(message: string): void {
+  if (isDevPerformanceLogging) {
+    // Keep logs in main process only to avoid exposing internals to renderer.
+    console.log(`[perf] ${message}`);
+  }
+}
+
+function getPayloadBytes(value: unknown): number {
+  try {
+    return Buffer.byteLength(JSON.stringify(value), "utf-8");
+  } catch {
+    return -1;
+  }
+}
+
 let store: {
   get(key: "settings"): AppSettings;
   set(key: "settings", value: AppSettings): void;
@@ -257,13 +274,20 @@ ipcMain.handle(
       pageSize: number;
     },
   ) => {
-    return getTableData(
+    const result = await getTableData(
       payload.connectionId,
       payload.schema,
       payload.table,
       payload.page,
       payload.pageSize,
     );
+    const bytes = getPayloadBytes(result);
+    if (bytes >= 0) {
+      logPerformance(
+        `ipc db:table-data payload=${bytes}B connection=${payload.connectionId} table=${payload.schema}.${payload.table} page=${payload.page}`,
+      );
+    }
+    return result;
   },
 );
 
@@ -274,7 +298,14 @@ ipcMain.handle(
     _event,
     payload: { connectionId: string; sql: string },
   ) => {
-    return executeQuery(payload.connectionId, payload.sql);
+    const result = await executeQuery(payload.connectionId, payload.sql);
+    const bytes = getPayloadBytes(result);
+    if (bytes >= 0) {
+      logPerformance(
+        `ipc query:execute payload=${bytes}B connection=${payload.connectionId} rows=${result.rowCount} truncated=${result.truncated ? "yes" : "no"}`,
+      );
+    }
+    return result;
   },
 );
 
@@ -668,18 +699,38 @@ ipcMain.handle("shortcuts:reset", (): KeyboardShortcut[] => {
 });
 
 app.whenReady().then(async () => {
-  await initStore();
+  const appReadyStart = performance.now();
+
+  const runStartupStep = async (name: string, step: () => Promise<void>) => {
+    const stepStart = performance.now();
+    await step();
+    const duration = Math.round(performance.now() - stepStart);
+    logPerformance(`startup ${name}=${duration}ms`);
+  };
+
+  await runStartupStep("initStore", initStore);
+
+  const parallelStart = performance.now();
   await Promise.all([
-    initConnectionManager(),
-    initQueryHistory(),
-    initSavedQueries(),
+    runStartupStep("initConnectionManager", initConnectionManager),
+    runStartupStep("initQueryHistory", initQueryHistory),
+    runStartupStep("initSavedQueries", initSavedQueries),
   ]);
+  logPerformance(`startup parallelInitTotal=${Math.round(performance.now() - parallelStart)}ms`);
 
   // Apply saved theme on startup
   const settings = store.get("settings");
   nativeTheme.themeSource = settings.theme;
 
+  const windowStart = performance.now();
   createWindow();
+  logPerformance(`startup createWindow=${Math.round(performance.now() - windowStart)}ms`);
+
+  if (mainWindow) {
+    mainWindow.webContents.once("did-finish-load", () => {
+      logPerformance(`startup did-finish-load=${Math.round(performance.now() - appReadyStart)}ms since app.whenReady`);
+    });
+  }
 
   // Initialize auto-updater in packaged builds
   if (app.isPackaged && mainWindow) {
