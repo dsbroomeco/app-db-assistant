@@ -159,6 +159,61 @@
 
 /* ─── Result Grid ─────────────────────────────────────────────── */
 
+.virtualTable {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.virtualHeader {
+  display: grid;
+  border-bottom: 2px solid var(--border);
+  background: var(--bg-primary);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.virtualBody {
+  overflow: auto;
+  height: 100%;
+}
+
+.virtualCanvas {
+  position: relative;
+  width: 100%;
+}
+
+.virtualRow {
+  display: grid;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  border-bottom: 1px solid var(--border);
+}
+
+.virtualRow:hover {
+  background: var(--bg-tertiary);
+}
+
+.virtualCell {
+  padding: 4px 12px;
+  white-space: nowrap;
+  max-width: 300px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-family: "Consolas", "Monaco", "Courier New", monospace;
+  font-size: 12px;
+}
+
+.virtualHeader .virtualCell {
+  padding: 6px 12px;
+  font-weight: 600;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
 .table {
   width: 100%;
   border-collapse: collapse;

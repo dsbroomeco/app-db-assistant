@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 
 type PlatformName = "Windows" | "Linux" | "macOS";
 
@@ -44,11 +44,7 @@ function detectPlatform(): PlatformName | null {
 }
 
 export function DownloadCards({ platforms }: { platforms: Platform[] }) {
-    const [detected, setDetected] = useState<PlatformName | null>(null);
-
-    useEffect(() => {
-        setDetected(detectPlatform());
-    }, []);
+    const [detected] = useState<PlatformName | null>(() => detectPlatform());
 
     // Sort so the detected platform comes first
     const sorted = detected

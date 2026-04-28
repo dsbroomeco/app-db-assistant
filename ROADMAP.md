@@ -212,14 +212,14 @@ Note: this environment can push tags but cannot currently read private GitHub Ac
 
 #### Phase 3 — Remaining Performance Batch
 
-- [ ] Complete remaining Batch 4 items (virtualized result grid, table-data re-render optimization, export streaming, render profiling)
+- [ ] Complete remaining Batch 4 items (render profiling and baseline measurement still pending)
 - [ ] Document before/after startup and interaction metrics
 
 #### Phase 4 — Website & Distribution Completion
 
-- [ ] Add static export path for website and automate GitHub Pages deployment
-- [ ] Add legal pages and checksum publishing links
-- [ ] Automate website version sync from root package version
+- [x] Add static export path for website and automate GitHub Pages deployment
+- [x] Add legal pages and checksum publishing links
+- [x] Automate website version sync from root package version
 
 #### Phase 5 — Pre-Release Quality Gate
 
@@ -263,8 +263,8 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 #### Query Result Grid — Virtual Scrolling (highest risk, no row cap today)
 
 - [x] **Add `MAX_RESULT_ROWS` cap** — Free-form `query:execute` results currently have no row limit; a `SELECT * FROM huge_table` serializes everything over IPC and renders all rows in the DOM. Add a configurable cap (default 10,000) with a visible truncation warning in `ResultsView` in `QueryEditorView.tsx`
-- [ ] **Add virtual scrolling to result grid** — Replace the plain `<table>` render in `ResultsView` with `@tanstack/react-virtual` (MIT). Only render visible rows; DOM node count stays constant regardless of result size
-- [ ] **Add virtual scrolling to table data view** — `TableDataView.tsx` paginates at 50 rows (already safe) but re-renders all rows on every selection/edit state change; add `React.memo` on the row component and stabilize row keys
+- [x] **Add virtual scrolling to result grid** — Replaced the plain `<table>` result renderer with `@tanstack/react-virtual` so only visible rows are rendered at once
+- [x] **Add table data re-render optimization** — `TableDataView.tsx` retains pagination at 50 rows and now uses stable primary-key based row keys plus memoized row rendering to avoid avoidable remounts
 
 #### Table Data View — COUNT(*) Cost
 
@@ -285,7 +285,7 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 #### IPC Payload Size
 
 - [x] **Log IPC payload sizes in dev mode** — Added serialized payload-size logging for `query:execute` and `db:table-data` IPC responses in `src/main/main.ts`
-- [ ] **Stream large exports directly to disk** — The CSV/JSON/SQL export feature currently transfers the full dataset to the renderer, then back to main via `save-file`. For large exports, write directly from main process to a `fs.createWriteStream` without going through the renderer
+- [x] **Stream large exports directly to disk** — Added `query:export` IPC path that executes and writes CSV/JSON/SQL exports from the main process using `fs.createWriteStream`, avoiding renderer-side content buffering
 
 #### React Render Profiling
 
@@ -312,11 +312,11 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 - Nicer changelog rendering than raw Markdown
 - SEO/discoverability via search engines
 
-- [ ] **Add `next export` static build** — Add `output: 'export'` to `website/next.config.ts` and a `build:static` script to `website/package.json`. Verify the changelog page (currently reads `CHANGELOG.md` at runtime via `readFileSync`) is converted to read at build time
-- [ ] **Deploy to GitHub Pages** — Add `.github/workflows/website.yml`: trigger on push to `main`, run `npm run build:static` in `website/`, deploy `out/` directory to GitHub Pages. Set custom domain if desired
-- [ ] **Automate version sync** — Currently `CURRENT_VERSION` in `website/src/app/download/page.tsx` must be manually updated on each release. Add a `scripts/sync-version.js` that reads `package.json` version and rewrites the constant; run it as part of `npm run release`
-- [ ] **Create missing legal pages** — The footer links to `/privacy` and `/terms` which don't exist yet (would be 404s); add minimal stub pages or remove the links until they are written
-- [ ] **Add SHA-256 checksums** — Publish a `checksums.txt` file alongside each GitHub Release containing SHA-256 hashes for all platform binaries; add a link to it from the download page
+- [x] **Add `next export` static build** — `website/next.config.ts` now uses `output: 'export'`; `website/package.json` includes `build:static`
+- [x] **Deploy to GitHub Pages** — Added `.github/workflows/website.yml` to build and deploy `website/out` via GitHub Pages
+- [x] **Automate version sync** — Added `scripts/sync-website-version.js` and wired `standard-version` `postbump` hook to keep `website/src/app/download/page.tsx` in sync with root version
+- [x] **Create missing legal pages** — Added `website/src/app/privacy/page.tsx` and `website/src/app/terms/page.tsx`
+- [x] **Add SHA-256 checksums** — Release workflow now generates `checksums.txt` and the download page links to it
 - [x] **Update `GITHUB_REPO`** — Fixed to `dsbroomeco/app-db-assistant`
 - [x] **Keep `CURRENT_VERSION` in sync** — Updated to `0.1.1-beta.0` in `download/page.tsx`; version badge updated on landing page
 - [x] **Platform detection** — `DownloadCards` client component auto-detects visitor OS via `navigator.userAgent`, highlights matching platform card, and sorts it first

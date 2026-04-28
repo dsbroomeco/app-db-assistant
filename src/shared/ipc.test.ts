@@ -54,6 +54,7 @@ describe("ipc shared types", () => {
       "db:routines",
       "db:table-data",
       "query:execute",
+      "query:export",
       "query:explain",
       "query:history",
       "query:history:clear",
@@ -87,7 +88,7 @@ describe("ipc shared types", () => {
       "shortcuts:set",
       "shortcuts:reset",
     ];
-    expect(channelKeys).toHaveLength(49);
+    expect(channelKeys).toHaveLength(50);
   });
 
   it("DEFAULT_SHORTCUTS is re-exported from ipc", () => {

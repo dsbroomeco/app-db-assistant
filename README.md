@@ -13,12 +13,14 @@ A cross-platform desktop database manager for SQL and NoSQL databases.
 - **Table Structure Viewer** — Inspect columns, data types, indexes, and constraints
 - **Table Data Viewer** — Browse table data with pagination and row counts
 - **SQL Editor** — Write and execute SQL queries with syntax highlighting and autocomplete
+- **Virtualized Query Results** — Large query result sets render efficiently with windowed row virtualization
 - **CRUD Operations** — Create, read, update, and delete records with keyboard shortcuts and right-click context menus
 - **MongoDB Support** — Browse databases and collections, view/edit/insert/delete documents with a JSON tree view, run aggregation pipelines
 - **Redis Support** — Browse and search keys, view type-aware values (strings, lists, sets, hashes, sorted sets, streams), set/edit/delete keys, built-in CLI passthrough
 - **Cross-Platform** — Runs on Windows, Linux, and macOS
 - **Connection Manager** — Save, organize, and securely store database connections
 - **Data Export** — Export query results to CSV, JSON, and other formats
+- **Streaming Export** — CSV/JSON/SQL exports are generated in the main process and streamed directly to disk
 - **Data Import** — Import CSV and JSON files into database tables with column mapping
 - **Schema Diff** — Compare schemas between connections to spot differences
 - **ERD Generation** — Generate Entity Relationship Diagrams with Mermaid
@@ -121,11 +123,13 @@ app-db-assistant/
 | `npm run release`    | Bump version, update changelog, create git tag |
 | `npm run release:beta` | Create a beta pre-release          |
 | `npm run release:dry` | Preview release without making changes |
+| `node scripts/sync-website-version.js` | Sync website download version constant from root package version |
 | `node scripts/generate-icons.js` | Regenerate app icons from SVG template |
 | `docker compose run --rm build-linux` | Full Linux pipeline in Docker |
 | `docker compose run --rm build-win` | Windows cross-compile in Docker |
 | `cd testdb && docker compose up -d` | Start local PostgreSQL + MySQL test instances |
 | `cd testdb && docker compose down -v` | Stop and wipe test database volumes |
+| `cd website && npm run build:static` | Build static marketing site output for GitHub Pages (`website/out`) |
 
 ## Contributing
 

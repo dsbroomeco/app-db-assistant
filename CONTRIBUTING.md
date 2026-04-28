@@ -9,6 +9,7 @@ Thanks for your interest in contributing! Here's how to get started.
 3. Run `npm install` in the project root
 4. For the marketing website: `cd website && npm install`
 5. If you need to build Linux `.rpm` packages locally, install the system `rpm` package first
+6. To validate website deployment output locally, run `cd website && npm run build:static` and verify `website/out/`
 
 ## Branch Naming
 
@@ -33,8 +34,9 @@ chore: upgrade electron to v30
 1. Create a feature branch from `main`
 2. Make your changes with tests
 3. Run `npm test`, `npm run test:e2e`, and `npm run lint` before opening a release-affecting PR
-4. Open a PR with a clear description of the change
-5. Link related issues
+4. If website files changed, also run `cd website && npm run lint && npm run build:static`
+5. Open a PR with a clear description of the change
+6. Link related issues
 
 ## Code Style
 

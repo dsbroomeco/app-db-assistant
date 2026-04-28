@@ -139,6 +139,20 @@ export interface IpcChannels {
     request: import("./types/database").ExecuteQueryRequest;
     response: import("./types/database").ExecuteQueryResult;
   };
+  "query:export": {
+    request: {
+      connectionId: string;
+      sql: string;
+      format: import("./types/database").ExportFormat;
+      filePath: string;
+      tableName?: string;
+    };
+    response: {
+      rowCount: number;
+      truncated: boolean;
+      filePath: string;
+    };
+  };
   "query:explain": {
     request: import("./types/database").ExplainQueryRequest;
     response: import("./types/database").ExplainQueryResult;

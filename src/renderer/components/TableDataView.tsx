@@ -287,6 +287,19 @@ export function TableDataView({
         [primaryKeys],
     );
 
+    const getStableRowKey = useCallback(
+        (row: Record<string, unknown>, rowIndex: number): string => {
+            if (primaryKeys.length === 0) {
+                return `${page}:${rowIndex}`;
+            }
+            const pkComposite = primaryKeys
+                .map((col) => String(row[col] ?? "null"))
+                .join("|");
+            return `${page}:${pkComposite}`;
+        },
+        [page, primaryKeys],
+    );
+
     // ─── Inline editing ─────────────────────────────────────────
 
     const startEditing = useCallback(
@@ -1031,7 +1044,7 @@ export function TableDataView({
                             {/* Data rows */}
                             {result.rows.map((row, i) => (
                                 <TableRow
-                                    key={i}
+                                    key={getStableRowKey(row, i)}
                                     row={row}
                                     rowIndex={i}
                                     absoluteRowNum={page * PAGE_SIZE + i + 1}

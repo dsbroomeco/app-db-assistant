@@ -1,10 +1,12 @@
 import { app, BrowserWindow, dialog, ipcMain, nativeTheme, session } from "electron";
 import path from "path";
 import os from "os";
+import { finished } from "stream/promises";
 import { AppSettings, DEFAULT_SETTINGS } from "../shared/ipc";
 import type { ConnectionConfig, ImportPreviewRequest, ImportExecuteRequest, SchemaDiffRequest, KeyboardShortcut } from "../shared/types/database";
 import { DEFAULT_SHORTCUTS } from "../shared/types/database";
 import { sanitizeErrorMessage } from "../db/sanitize";
+import type { ExportFormat } from "../shared/types/database";
 import {
   initConnectionManager,
   listConnections,
@@ -70,6 +72,99 @@ function getPayloadBytes(value: unknown): number {
     return Buffer.byteLength(JSON.stringify(value), "utf-8");
   } catch {
     return -1;
+  }
+}
+
+function resolvePathWithinHome(filePath: string): string {
+  const resolved = path.resolve(filePath);
+  const home = os.homedir();
+  if (!resolved.startsWith(home + path.sep) && resolved !== home) {
+    throw new Error("File path must be within the user home directory");
+  }
+  return resolved;
+}
+
+function escapeCsvField(value: unknown): string {
+  if (value === null || value === undefined) return "";
+  const str = typeof value === "object" ? JSON.stringify(value) : String(value);
+  if (str.includes(",") || str.includes('"') || str.includes("\n")) {
+    return `"${str.replace(/"/g, '""')}"`;
+  }
+  return str;
+}
+
+function toSqlLiteral(value: unknown): string {
+  if (value === null || value === undefined) return "NULL";
+  if (typeof value === "number" || typeof value === "bigint") return String(value);
+  if (typeof value === "boolean") return value ? "TRUE" : "FALSE";
+  if (typeof value === "object") {
+    return `'${JSON.stringify(value).replace(/'/g, "''")}'`;
+  }
+  return `'${String(value).replace(/'/g, "''")}'`;
+}
+
+async function exportQueryToFile(payload: {
+  connectionId: string;
+  sql: string;
+  format: ExportFormat;
+  filePath: string;
+  tableName?: string;
+}): Promise<{ rowCount: number; truncated: boolean; filePath: string }> {
+  const { createWriteStream } = await import("fs");
+  const resolvedPath = resolvePathWithinHome(payload.filePath);
+  const result = await executeQuery(payload.connectionId, payload.sql);
+
+  if (result.isModification) {
+    throw new Error("Export supports result-set queries only");
+  }
+
+  const stream = createWriteStream(resolvedPath, { encoding: "utf-8" });
+
+  try {
+    if (payload.format === "csv") {
+      stream.write(`${result.columns.map(escapeCsvField).join(",")}\n`);
+      for (const row of result.rows) {
+        stream.write(
+          `${result.columns.map((col) => escapeCsvField(row[col])).join(",")}\n`,
+        );
+      }
+    }
+
+    if (payload.format === "json") {
+      stream.write("[\n");
+      for (let i = 0; i < result.rows.length; i++) {
+        const prefix = i === 0 ? "" : ",\n";
+        stream.write(`${prefix}${JSON.stringify(result.rows[i])}`);
+      }
+      stream.write("\n]\n");
+    }
+
+    if (payload.format === "sql") {
+      if (result.rows.length === 0) {
+        stream.write(`-- No data to export from ${payload.tableName ?? "exported_table"}\n`);
+      } else {
+        const safeTable = (payload.tableName ?? "exported_table").replace(/[^a-zA-Z0-9_.]/g, "_");
+        const cols = result.columns
+          .map((col) => `"${col.replace(/"/g, '""')}"`)
+          .join(", ");
+        for (const row of result.rows) {
+          const values = result.columns.map((col) => toSqlLiteral(row[col])).join(", ");
+          stream.write(`INSERT INTO ${safeTable} (${cols}) VALUES (${values});\n`);
+        }
+      }
+    }
+
+    stream.end();
+    await finished(stream);
+
+    return {
+      rowCount: result.rowCount,
+      truncated: Boolean(result.truncated),
+      filePath: resolvedPath,
+    };
+  } catch (error) {
+    stream.destroy();
+    throw error;
   }
 }
 
@@ -310,6 +405,22 @@ ipcMain.handle(
 );
 
 ipcMain.handle(
+  "query:export",
+  async (
+    _event,
+    payload: {
+      connectionId: string;
+      sql: string;
+      format: ExportFormat;
+      filePath: string;
+      tableName?: string;
+    },
+  ) => {
+    return exportQueryToFile(payload);
+  },
+);
+
+ipcMain.handle(
   "query:explain",
   async (
     _event,
@@ -432,12 +543,7 @@ ipcMain.handle(
     payload: { filePath: string; content: string },
   ) => {
     const fs = await import("fs/promises");
-    // Validate file path is under user's home directory to prevent writing to system locations
-    const resolved = path.resolve(payload.filePath);
-    const home = os.homedir();
-    if (!resolved.startsWith(home + path.sep) && resolved !== home) {
-      throw new Error("File path must be within the user home directory");
-    }
+    const resolved = resolvePathWithinHome(payload.filePath);
     await fs.writeFile(resolved, payload.content, "utf-8");
   },
 );

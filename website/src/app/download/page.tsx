@@ -118,6 +118,16 @@ export default function DownloadPage() {
                             All releases on GitHub
                         </Link>
                     </div>
+                    <div>
+                        <Link
+                            href={`${RELEASE_BASE}/checksums.txt`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="font-medium text-blue-600 hover:underline dark:text-blue-400"
+                        >
+                            SHA-256 checksums
+                        </Link>
+                    </div>
                 </div>
             </section>
         </>

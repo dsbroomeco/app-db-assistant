@@ -133,8 +133,9 @@ The SQL editor uses **CodeMirror 6** with the following features:
 - Keyboard shortcut: Ctrl+Enter (Cmd+Enter) to execute
 - Resizable editor/results split pane
 - Results panel with three tabs: Results grid, Query Plan (EXPLAIN), and History
+- Results grid virtualization via `@tanstack/react-virtual` to keep DOM size bounded for large row counts
 - Query history persisted to `electron-store` (last 200 entries)
-- Export results to CSV, JSON, or SQL INSERT format via file save dialog
+- Export results to CSV, JSON, or SQL INSERT format via a main-process streaming export path (`query:export`)
 
 Security: All SQL execution happens in the main process via the driver layer. The renderer sends raw SQL strings through IPC — the drivers execute them using their native client libraries. No string interpolation is used for parameterized table browsing queries.
 
@@ -175,6 +176,10 @@ type IpcChannels = {
   'conn:disconnect': { request: string; response: ConnectionStatus };
   'db:schemas': { request: string; response: SchemaInfo[] };
   'db:tables': { request: { connectionId: string; schema: string }; response: TableInfo[] };
+  'query:export': {
+    request: { connectionId: string; sql: string; format: ExportFormat; filePath: string };
+    response: { rowCount: number; truncated: boolean; filePath: string };
+  };
   // ... SQL schema/query/CRUD channels ...
   // MongoDB operations (Phase 6)
   'mongo:databases': { request: string; response: string[] };
@@ -201,6 +206,10 @@ A standalone Next.js application serving as the public-facing marketing site. It
 - Documentation pages (future)
 
 The website is fully static (SSG) and deployed independently from the desktop app.
+
+Deployment details:
+- `website/next.config.ts` uses `output: "export"` for static output
+- `.github/workflows/website.yml` builds `website/out` and deploys it via GitHub Pages
 
 ## Technology Choices
 

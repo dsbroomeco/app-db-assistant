@@ -5,6 +5,7 @@ import {
     useCallback,
     useMemo,
 } from "react";
+import { useVirtualizer } from "@tanstack/react-virtual";
 import { EditorView, keymap, lineNumbers, placeholder as cmPlaceholder } from "@codemirror/view";
 import { EditorState, Compartment } from "@codemirror/state";
 import { sql, StandardSQL } from "@codemirror/lang-sql";
@@ -16,7 +17,6 @@ import { oneDark } from "@codemirror/theme-one-dark";
 import { useConnections } from "../context/ConnectionContext";
 import { useSettings } from "../context/SettingsContext";
 import {
-    exportResults,
     getExportMimeFilters,
 } from "../utils/exportResults";
 import type { ExecuteQueryResult, ExplainQueryResult, QueryHistoryEntry, ExportFormat, SavedQuery } from "@shared/types/database";
@@ -160,7 +160,10 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
     const handleExport = useCallback(
         async (format: ExportFormat) => {
             setExportMenuOpen(false);
-            if (!result) return;
+            if (!result || !selectedConnectionId) return;
+
+            const sqlText = getEditorContent().trim();
+            if (!sqlText) return;
 
             const filters = getExportMimeFilters(format);
             const filePath = await window.electronAPI.invoke("dialog:save-file", {
@@ -169,10 +172,18 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
             });
             if (!filePath) return;
 
-            const content = exportResults(result, format);
-            await window.electronAPI.invoke("file:write", { filePath, content });
+            try {
+                await window.electronAPI.invoke("query:export", {
+                    connectionId: selectedConnectionId,
+                    sql: sqlText,
+                    format,
+                    filePath,
+                });
+            } catch (err) {
+                setError(err instanceof Error ? err.message : String(err));
+            }
         },
-        [result],
+        [result, selectedConnectionId, getEditorContent],
     );
 
     // Saved queries
@@ -591,29 +602,66 @@ function ResultsView({
                     Results truncated to 10,000 rows. Use <code>LIMIT</code> to retrieve a specific range.
                 </div>
             )}
-            <table className={styles.table}>
-                <thead>
-                    <tr>
-                        <th className={styles.rowNumHeader}>#</th>
-                        {result.columns.map((col) => (
-                            <th key={col}>{col}</th>
-                        ))}
-                    </tr>
-                </thead>
-                <tbody>
-                    {result.rows.map((row, i) => (
-                        <tr key={i}>
-                            <td className={styles.rowNum}>{i + 1}</td>
-                            {result.columns.map((col) => (
-                                <td key={col}>
-                                    <CellValue value={row[col]} />
-                                </td>
-                            ))}
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
+            <VirtualizedResultsTable result={result} />
         </>
+    );
+}
+
+function VirtualizedResultsTable({ result }: { result: ExecuteQueryResult }) {
+    const parentRef = useRef<HTMLDivElement>(null);
+    const rowVirtualizer = useVirtualizer({
+        count: result.rows.length,
+        getScrollElement: () => parentRef.current,
+        estimateSize: () => 30,
+        overscan: 12,
+    });
+    const virtualRows = rowVirtualizer.getVirtualItems();
+    const gridTemplateColumns = `56px repeat(${Math.max(1, result.columns.length)}, minmax(160px, 1fr))`;
+
+    return (
+        <div className={styles.virtualTable}>
+            <div
+                className={styles.virtualHeader}
+                style={{ gridTemplateColumns }}
+            >
+                <div className={`${styles.virtualCell} ${styles.rowNumHeader}`}>#</div>
+                {result.columns.map((col) => (
+                    <div key={col} className={styles.virtualCell} title={col}>
+                        {col}
+                    </div>
+                ))}
+            </div>
+
+            <div ref={parentRef} className={styles.virtualBody}>
+                <div
+                    className={styles.virtualCanvas}
+                    style={{ height: `${rowVirtualizer.getTotalSize()}px` }}
+                >
+                    {virtualRows.map((virtualRow) => {
+                        const row = result.rows[virtualRow.index];
+                        return (
+                            <div
+                                key={virtualRow.key}
+                                className={styles.virtualRow}
+                                style={{
+                                    gridTemplateColumns,
+                                    transform: `translateY(${virtualRow.start}px)`,
+                                }}
+                            >
+                                <div className={`${styles.virtualCell} ${styles.rowNum}`}>
+                                    {virtualRow.index + 1}
+                                </div>
+                                {result.columns.map((col) => (
+                                    <div key={col} className={styles.virtualCell}>
+                                        <CellValue value={row[col]} />
+                                    </div>
+                                ))}
+                            </div>
+                        );
+                    })}
+                </div>
+            </div>
+        </div>
     );
 }
 
