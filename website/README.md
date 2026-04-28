@@ -23,10 +23,9 @@ Output is generated in `website/out/`.
 
 ## Deployment
 
-GitHub Pages deployment is automated by `.github/workflows/website.yml`.
+The workflow currently runs in build-only mode and uploads `website/out` as an artifact (`website-static`).
 
-Deployment is gated by repository variable `ENABLE_GITHUB_PAGES=true`.
-If the repository plan does not support Pages, the workflow will still build static output but skip deployment.
+GitHub Pages deployment is temporarily disabled because the repository plan does not currently support Pages for this repo.
 
 ## Version Sync
 
