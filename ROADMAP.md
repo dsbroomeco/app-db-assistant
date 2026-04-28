@@ -225,7 +225,7 @@ Follow-up executed:
 #### Phase 3 — Remaining Performance Batch
 
 - [ ] Complete remaining Batch 4 items (React DevTools interaction profiling still pending)
-- [ ] Document before/after startup and interaction metrics (automated proxy captured; manual profiler captures pending)
+- [ ] Document before/after startup and interaction metrics (automated proxy updated; manual profiler captures pending)
 
 #### Phase 4 — Website & Distribution Completion
 
@@ -279,10 +279,14 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 	- Cold sample: `did-finish-load=306ms` since `app.whenReady`
 	- Warm sample: `did-finish-load=297ms` since `app.whenReady`
 	- Init breakdowns remained stable (`initStore` 38-41ms, `parallelInitTotal` 1ms, `createWindow` 39-40ms)
-	- Automated interaction proxy (Playwright JSON reporter, `tests/e2e/app-launch.test.ts`):
-		- `app launches and shows the main window`: `1007ms`
-		- `app window has expected minimum size`: `816ms`
-		- `tab switch unmounts inactive view content`: `1094ms`
+	- Automated interaction proxy (Playwright JSON reporter):
+		- Focus run (`tests/e2e/app-launch.test.ts`): `1007ms`, `816ms`, `1094ms`
+		- Full e2e run (`tests/e2e/*.test.ts`):
+			- `app launches and shows the main window`: `1638ms`
+			- `app window has expected minimum size`: `1628ms`
+			- `connection form renders with required fields`: `1670ms`
+			- `tab switch unmounts inactive view content`: `1657ms`
+			- Aggregate: `count=4`, `avg=1648ms`, `min=1628ms`, `max=1670ms`
 	- Limitation: React DevTools Profiler capture is still pending for component-level render-cost analysis
 
 #### Query Result Grid — Virtual Scrolling (highest risk, no row cap today)
@@ -316,6 +320,12 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 
 - [ ] **Profile with React DevTools Profiler** — Record a session of: opening a large table, editing a cell, multi-selecting rows, switching tabs. Identify components with disproportionate render time and add `React.memo`, `useMemo`, or `useCallback` where the profiler shows clear wins (not speculatively)
 - [x] **Confirm no unnecessary re-renders on tab switch** — Added Playwright e2e coverage in `tests/e2e/app-launch.test.ts` that opens a query tab and asserts welcome content is removed from DOM when inactive
+
+Manual profiling pass checklist (next interactive step):
+- Open React DevTools Profiler and record one session covering: open large table -> edit one cell -> multi-select rows -> switch tabs
+- Export profile JSON and log top 5 components by render time + commit count
+- Apply targeted memoization only where profiler shows repeat expensive renders
+- Re-run the same scenario and compare before/after commit durations in roadmap notes
 
 ---
 
