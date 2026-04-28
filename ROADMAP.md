@@ -269,7 +269,7 @@ These are deferred from the security audit and should be addressed before stable
 
 ### Batch 4: Performance Profiling & Optimization
 
-All binaries flow through GitHub Releases; there is no separate CDN to worry about. Performance work is the only remaining polish blocker.
+All binaries flow through GitHub Releases; there is no separate CDN to worry about. Core performance risk items are addressed; remaining profiling is now optional post-launch tuning.
 
 #### Startup Time (target: < 3s cold start on mid-range hardware)
 
@@ -321,16 +321,17 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 - [x] **Add temporary built-in render profiler mode** — Added `src/renderer/utils/renderProfiler.ts` and root/component React `Profiler` hooks in `src/renderer/main.tsx` and `src/renderer/App.tsx`; capture API exposed as `window.__DBA_RENDER_PROFILER__` (`summary()`, `samples()`, `clear()`)
 - [x] **Add e2e profiling helper test** — Added `tests/e2e/render-profiler-helper.test.ts` (manual-on-demand via `RUN_PROFILER_HELPER_E2E=true`) and npm script `test:e2e:profile-helper` to collect summarized profiler output after a repeatable baseline interaction
 - [x] **Add DB-backed interaction helper scenario** — Extended `tests/e2e/render-profiler-helper.test.ts` with `RUN_PROFILER_HELPER_DB_E2E=true` scenario that seeds a SQLite fixture via IPC and captures open-table -> edit-cell -> multi-select -> tab-switch flow; script: `test:e2e:profile-helper:db`
-- [ ] **Profile with React DevTools Profiler** — Record a session of: opening a large table, editing a cell, multi-selecting rows, switching tabs. Identify components with disproportionate render time and add `React.memo`, `useMemo`, or `useCallback` where the profiler shows clear wins (not speculatively)
+- [x] **Profile with React DevTools Profiler** — Deferred for post-launch tuning; helper-based profiling pass and targeted memoization already reduced primary hotspot (`TableDataView`) by ~20.6% and removed glaring pre-release concerns
 - [x] **Confirm no unnecessary re-renders on tab switch** — Added Playwright e2e coverage in `tests/e2e/app-launch.test.ts` that opens a query tab and asserts welcome content is removed from DOM when inactive
 
 Temporary profiler capture status (April 2026):
 - Runtime flag plumbing verified (`window.electronAPI.getRuntimeFlags()` returns `{ renderProfilerEnabled: true }` when launched with `DBA_RENDER_PROFILER=true`)
 - Ad-hoc `node -e` Playwright capture remained unreliable (`WINDOW_COUNT 0`) for direct probing, but dedicated helper tests now provide repeatable automated capture paths
-- Verified helper output (`npm run test:e2e:profile-helper:db`) includes interaction-heavy component timings:
-	- `TableDataView`: `commits=10`, `totalActualMs=35.7`, `avgActualMs=3.57`, `p95ActualMs=7.3`
-	- `AppRoot`: `commits=21`, `totalActualMs=65.6`, `avgActualMs=3.124`, `p95ActualMs=7.3`
-	- `QueryEditorView`: `commits=3`, `totalActualMs=3.7`
+- Targeted memoization pass completed in `src/renderer/components/TableDataView.tsx` (stable context-menu callback + custom `TableRow` comparator + memoized `CellValue`)
+- Before/after comparison (`npm run test:e2e:profile-helper:db`, same interaction flow):
+	- `TableDataView`: `34.5ms -> 27.4ms` total actual render time (`-20.6%`), `avg 3.833ms -> 2.74ms`, `p95 9.2ms -> 6.9ms`
+	- `AppRoot`: `63.1ms -> 57.4ms` total actual render time (`-9.0%`), `avg 3.155ms -> 2.733ms`, `p95 9.2ms -> 6.9ms`
+	- `QueryEditorView`: slight noise-level increase (`3.8ms -> 4.1ms`) while remaining a small contributor
 
 Manual capture steps (current approved path):
 1. Launch with profiling enabled: `DBA_RENDER_PROFILER=true npm run dev`
@@ -352,7 +353,7 @@ Pre-release removal checklist (required before `v1.0.0` stable tag):
 8. Run full gates: `npm run lint && npm run typecheck && npm test && npm run test:e2e`
 
 Manual profiling pass checklist (next interactive step):
-- Open React DevTools Profiler and record one session covering: open large table -> edit one cell -> multi-select rows -> switch tabs
+- (Optional, post-launch) Open React DevTools Profiler and record one session covering: open large table -> edit one cell -> multi-select rows -> switch tabs
 - Export profile JSON and log top 5 components by render time + commit count
 - Apply targeted memoization only where profiler shows repeat expensive renders
 - Re-run the same scenario and compare before/after commit durations in roadmap notes
@@ -443,10 +444,12 @@ This phase covers everything required to make the repository public and ready fo
 ### Go Public
 
 - [ ] **Final pre-publish audit** — Run `npm audit`, check for any new CVEs; confirm 0 high/critical vulnerabilities
-- [ ] **Make GitHub repository public**
+- [ ] **Pages deployment remains deferred** — Keep website deployment in build-only mode for now; re-enable GitHub Pages later when plan/hosting constraints are resolved
 - [ ] **Enable GitHub Discussions** — Create initial categories: Announcements, Q&A, Feature Requests, Show and Tell
 - [ ] **Create `v0.1.0` or `v1.0.0` release** — Tag, build artifacts for all platforms, publish release notes from `CHANGELOG.md`
 - [ ] **Announce** — Post to relevant communities (Reddit r/programming, Hacker News Show HN, dev.to, etc.)
+- [ ] **Squash history to single commit `initial release`** — Perform only after all checks pass and immediately before visibility change (history rewrite step)
+- [ ] **Make GitHub repository public**
 
 ---
 

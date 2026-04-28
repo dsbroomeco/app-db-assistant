@@ -133,7 +133,23 @@ const TableRow = memo(function TableRow({
             ))}
         </tr>
     );
-});
+}, areTableRowPropsEqual);
+
+function areTableRowPropsEqual(prev: TableRowProps, next: TableRowProps): boolean {
+    return (
+        prev.row === next.row &&
+        prev.rowIndex === next.rowIndex &&
+        prev.absoluteRowNum === next.absoluteRowNum &&
+        prev.columns === next.columns &&
+        prev.isSelected === next.isSelected &&
+        prev.isDirty === next.isDirty &&
+        prev.dirtyColsForRow === next.dirtyColsForRow &&
+        prev.localEditsForRow === next.localEditsForRow &&
+        prev.editingCellColumn === next.editingCellColumn &&
+        prev.editingCellValue === next.editingCellValue &&
+        prev.colWidths === next.colWidths
+    );
+}
 
 export function TableDataView({
     connectionId,
@@ -640,12 +656,10 @@ export function TableDataView({
             e.preventDefault();
             e.stopPropagation();
             // Select row if not already selected
-            if (!selectedRows.has(rowIndex)) {
-                setSelectedRows(new Set([rowIndex]));
-            }
+            setSelectedRows((prev) => (prev.has(rowIndex) ? prev : new Set([rowIndex])));
             setContextMenu({ x: e.clientX, y: e.clientY, rowIndex, column });
         },
-        [selectedRows],
+        [],
     );
 
     const closeContextMenu = useCallback(() => {
@@ -1248,7 +1262,7 @@ function ContextMenu({
 
 // ─── Cell Value Display ─────────────────────────────────────────
 
-function CellValue({ value }: { value: unknown }) {
+const CellValue = memo(function CellValue({ value }: { value: unknown }) {
     if (value === null || value === undefined) {
         return <span className={styles.null}>NULL</span>;
     }
@@ -1268,4 +1282,4 @@ function CellValue({ value }: { value: unknown }) {
     const str = String(value);
     const truncated = str.length > 200 ? str.slice(0, 200) + "…" : str;
     return <span title={str.length > 200 ? str : undefined}>{truncated}</span>;
-}
+}, (prev, next) => Object.is(prev.value, next.value));
