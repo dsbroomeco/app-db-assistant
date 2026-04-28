@@ -15,8 +15,12 @@ if (!root) throw new Error("Root element not found");
 function isRuntimeProfilerEnabled(): boolean {
     if (typeof window === "undefined") return false;
 
-    if (window.electronAPI.getRuntimeFlags().renderProfilerEnabled) {
-        return true;
+    try {
+        if (window.electronAPI?.getRuntimeFlags?.().renderProfilerEnabled) {
+            return true;
+        }
+    } catch {
+        // electronAPI may not be injected yet in some test environments
     }
 
     if (window.name.includes("dba-render-profiler=true")) return true;

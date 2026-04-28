@@ -37,10 +37,16 @@ test("app window has expected minimum size", async () => {
 test("tab switch unmounts inactive view content", async () => {
   const app = await electron.launch({ args: ["."] });
   const window = await app.firstWindow();
-  await window.waitForLoadState("domcontentloaded");
+  // Wait for the full page load (JS bundles downloaded and executed)
+  await window.waitForLoadState("load", { timeout: 30000 });
+  // Wait for React to mount (#root must have children)
+  await window.waitForFunction(
+    () => (document.getElementById("root")?.children.length ?? 0) > 0,
+    { timeout: 20000 },
+  );
 
   const welcomeHeading = window.getByText("Welcome to DB Assistant");
-  await expect(welcomeHeading).toBeVisible();
+  await expect(welcomeHeading).toBeVisible({ timeout: 10000 });
 
   await window.getByRole("button", { name: "New query tab" }).click();
   await expect(window.getByRole("tab", { name: /Query 1/ })).toBeVisible();
