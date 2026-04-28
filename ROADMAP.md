@@ -190,7 +190,57 @@ Segment 3 — Hook dependency warnings
 - [x] `src/renderer/components/RedisBrowserView.tsx` — fixed `useEffect` deps to use `scanKeys`
 
 Deferred follow-up (non-lint)
-- [ ] Node warning during lint: `MODULE_TYPELESS_PACKAGE_JSON` for `eslint.config.js`; decide later whether to set `"type": "module"` in `package.json` or rename ESLint config to `.mjs`
+- [x] Node warning during lint resolved by renaming `eslint.config.js` to `eslint.config.mjs` (Phase 1)
+
+### Launch Execution Phases (through open-source go-live)
+
+This sequence is the operational plan from current state to public open-source launch.
+
+#### Phase 1 — Tooling Baseline Stabilization (completed)
+
+- [x] Rename ESLint config to ESM file (`eslint.config.mjs`) to eliminate Node module-type warning
+- [x] Re-run local quality gates: `npm run lint`, `npm run typecheck`, `npm test`, `npm run test:e2e`
+- [x] Confirm no regressions after module-format adjustment
+
+#### Phase 2 — CI/CD Release Dry-Run (execution complete; remote verification pending)
+
+- [x] Create and push beta dry-run tag `v0.1.1-beta.1` to trigger release workflow
+- [x] Confirm tag push succeeded to origin
+- [ ] Verify full GitHub Actions run completion and artifact set (win/linux/mac) from this environment
+
+Note: this environment can push tags but cannot currently read private GitHub Actions pages/API (returns 404 without authenticated session), so artifact verification remains a manual follow-up in GitHub UI.
+
+#### Phase 3 — Remaining Performance Batch
+
+- [ ] Complete remaining Batch 4 items (virtualized result grid, table-data re-render optimization, export streaming, render profiling)
+- [ ] Document before/after startup and interaction metrics
+
+#### Phase 4 — Website & Distribution Completion
+
+- [ ] Add static export path for website and automate GitHub Pages deployment
+- [ ] Add legal pages and checksum publishing links
+- [ ] Automate website version sync from root package version
+
+#### Phase 5 — Pre-Release Quality Gate
+
+- [ ] Complete all Batch 6 checklist items for stable readiness
+- [ ] Validate installer behavior and auto-update paths on target platforms
+
+#### Phase 6 — Open-Source Readiness Hardening
+
+- [ ] Complete legal/history/security/community infrastructure items under Open Source Release
+- [ ] Add contributor CI workflow and branch protection requirements
+
+#### Phase 7 — Go-Live Execution
+
+- [ ] Final security audit and release decision
+- [ ] Publish release, make repository public, enable Discussions, and announce
+
+#### Phase 8 — First 30 Days Post-Launch
+
+- [ ] Triage and respond to external issues/discussions daily
+- [ ] Ship first patch release from community/field feedback
+- [ ] Tune docs and contributor onboarding from real-world friction
 
 ### Batch 3: Remaining Security Items
 
