@@ -9,10 +9,12 @@
  *
  * Outputs:
  *   build/icon.png          — 1024x1024 master icon (used by electron-builder for Win/Mac conversion)
+ *   build/icon.ico          — Windows icon for NSIS/MSI packaging
  *   build/icons/NxN.png     — Sized PNGs for Linux (16–512)
  */
 
 const sharp = require("sharp");
+const pngToIco = require("png-to-ico");
 const fs = require("fs");
 const path = require("path");
 
@@ -78,14 +80,23 @@ async function main() {
     await sharp(svgBuffer).resize(1024, 1024).png().toFile(path.join(BUILD_DIR, "icon.png"));
     console.log("  build/icon.png (1024x1024)");
 
-    // 2. Sized PNGs for Linux
+    // 2. Windows .ico bundle (multi-resolution)
+    const icoSizes = [16, 24, 32, 48, 64, 128, 256];
+    const icoBuffers = await Promise.all(
+      icoSizes.map((size) => sharp(svgBuffer).resize(size, size).png().toBuffer()),
+    );
+    const ico = await pngToIco(icoBuffers);
+    fs.writeFileSync(path.join(BUILD_DIR, "icon.ico"), ico);
+    console.log("  build/icon.ico (16-256)");
+
+    // 3. Sized PNGs for Linux
     for (const size of LINUX_SIZES) {
         const outPath = path.join(ICONS_DIR, `${size}x${size}.png`);
         await sharp(svgBuffer).resize(size, size).png().toFile(outPath);
         console.log(`  build/icons/${size}x${size}.png`);
     }
 
-    console.log("\nDone. electron-builder will auto-convert icon.png to .ico / .icns at build time.");
+    console.log("\nDone. Icon assets generated for Windows, Linux, and macOS packaging.");
 }
 
 main().catch((err) => {

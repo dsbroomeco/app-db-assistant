@@ -120,6 +120,7 @@ app-db-assistant/
 | `npm run lint:fix`   | Lint and auto-fix                   |
 | `npm run format`     | Format with Prettier                |
 | `npm run typecheck`  | TypeScript type checking only       |
+| `npm run assets:icons` | Generate platform icon assets (`build/icon.png`, `build/icon.ico`, `build/icons/*`) |
 | `npm run release`    | Bump version, update changelog, create git tag |
 | `npm run release:beta` | Create a beta pre-release          |
 | `npm run release:dry` | Preview release without making changes |

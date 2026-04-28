@@ -13,10 +13,11 @@
     "url": "git+https://github.com/dsbroomeco/app-db-assistant.git"
   },
   "scripts": {
+    "assets:icons": "node scripts/generate-icons.js",
     "dev": "concurrently \"npm run dev:renderer\" \"npm run dev:main\"",
     "dev:renderer": "vite",
     "dev:main": "wait-on http://localhost:5173 && tsc -p tsconfig.main.json && electron .",
-    "build": "tsc -p tsconfig.main.json && vite build",
+    "build": "npm run assets:icons && tsc -p tsconfig.main.json && vite build",
     "build:electron": "npm run build && electron-builder",
     "build:win": "npm run build && electron-builder --win",
     "build:linux": "npm run build && electron-builder --linux",
@@ -81,6 +82,7 @@
     "eslint": "^9.0.0",
     "eslint-plugin-react-hooks": "^5.0.0",
     "globals": "^15.0.0",
+    "png-to-ico": "^2.1.8",
     "prettier": "^3.4.0",
     "sharp": "^0.34.5",
     "standard-version": "^9.5.0",
@@ -127,7 +129,7 @@
         "nsis",
         "msi"
       ],
-      "icon": "build/icon.png"
+      "icon": "build/icon.ico"
     },
     "nsis": {
       "oneClick": false,

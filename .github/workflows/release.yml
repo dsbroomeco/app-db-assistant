@@ -66,6 +66,9 @@ jobs:
         run: |
           node -e "const fs = require('fs'); fs.rmSync('node_modules/cpu-features', { recursive: true, force: true }); fs.rmSync('node_modules/ssh2/node_modules/cpu-features', { recursive: true, force: true });"
 
+      - name: Generate packaging icons
+        run: npm run assets:icons
+
       - name: Build Electron app
         run: npm run build
 
