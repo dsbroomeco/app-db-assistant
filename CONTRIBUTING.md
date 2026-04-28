@@ -8,6 +8,7 @@ Thanks for your interest in contributing! Here's how to get started.
 2. **Install Node.js 20+** and npm 10+
 3. Run `npm install` in the project root
 4. For the marketing website: `cd website && npm install`
+5. If you need to build Linux `.rpm` packages locally, install the system `rpm` package first
 
 ## Branch Naming
 
@@ -31,7 +32,7 @@ chore: upgrade electron to v30
 
 1. Create a feature branch from `main`
 2. Make your changes with tests
-3. Run `npm test` and `npm run lint` — both must pass
+3. Run `npm test`, `npm run test:e2e`, and `npm run lint` before opening a release-affecting PR
 4. Open a PR with a clear description of the change
 5. Link related issues
 

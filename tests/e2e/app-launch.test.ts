@@ -9,12 +9,12 @@ test("app launches and shows the main window", async () => {
   const window = await app.firstWindow();
   await window.waitForLoadState("domcontentloaded");
 
-  const title = await window.title();
-  expect(title).toBeTruthy();
-
   // The app should have a visible body
   const body = await window.locator("body");
   await expect(body).toBeVisible();
+
+  // The renderer should mount the React root element.
+  await expect(window.locator("#root")).toBeVisible();
 
   await app.close();
 });

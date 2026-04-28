@@ -146,7 +146,7 @@ These items must be completed first — without them, no build will succeed.
 
 - [x] **Create app icons** — `build/icon.png` (1024×1024 master), `build/icons/` with sized PNGs (16–512px, Linux). electron-builder auto-converts to `.ico`/`.icns`. Generated via `scripts/generate-icons.js`.
 - [x] **Fix GitHub repo URL** — Updated `GITHUB_REPO` in `website/src/app/download/page.tsx` to `dsbroomeco/app-db-assistant`
-- [x] **Verify local build** — `npm run build:win` produces `DB Assistant Setup 0.1.0.exe` (89 MB) and `DB Assistant 0.1.0.msi` (98 MB) in `release/`. Unsigned builds work with `sign: null` in electron-builder config (`CSC_IDENTITY_AUTO_DISCOVERY=false`). Code signing deferred to Batch 3.
+- [x] **Verify local build** — `npm run build:win` produces `DB Assistant Setup 0.1.0.exe` (89 MB) and `DB Assistant 0.1.0.msi` (98 MB) in `release/`. Unsigned builds work with `CSC_IDENTITY_AUTO_DISCOVERY=false`; code signing remains deferred to Batch 3.
 
 ### Batch 2: CI/CD Validation & Release Pipeline
 

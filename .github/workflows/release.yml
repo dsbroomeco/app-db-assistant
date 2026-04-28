@@ -34,7 +34,7 @@ jobs:
       - run: npx playwright install --with-deps chromium
       - name: Run e2e tests
         run: npx playwright test
-        continue-on-error: true  # TODO: remove once e2e test suite is stable
+        continue-on-error: true # TODO: remove once e2e test suite is stable
 
   build:
     needs: lint-and-test
@@ -57,6 +57,14 @@ jobs:
           cache: npm
 
       - run: npm ci
+
+      - name: Install Linux packaging dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: sudo apt-get update && sudo apt-get install -y rpm
+
+      - name: Remove ssh2 optional cpu-features native module
+        run: |
+          node -e "const fs = require('fs'); fs.rmSync('node_modules/cpu-features', { recursive: true, force: true }); fs.rmSync('node_modules/ssh2/node_modules/cpu-features', { recursive: true, force: true });"
 
       - name: Build Electron app
         run: npm run build

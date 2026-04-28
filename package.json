@@ -44,7 +44,7 @@
     "@codemirror/state": "^6.6.0",
     "@codemirror/theme-one-dark": "^6.1.3",
     "@codemirror/view": "^6.40.0",
-    "better-sqlite3": "^12.6.2",
+    "better-sqlite3": "12.9.0",
     "codemirror": "^6.0.2",
     "electron-store": "^10.0.0",
     "electron-updater": "^6.8.3",
@@ -121,9 +121,7 @@
         "nsis",
         "msi"
       ],
-      "icon": "build/icon.png",
-      "signDlls": false,
-      "sign": null
+      "icon": "build/icon.png"
     },
     "nsis": {
       "oneClick": false,
@@ -145,7 +143,9 @@
         "application/vnd.sqlite3"
       ],
       "desktop": {
-        "StartupWMClass": "db-assistant"
+        "entry": {
+          "StartupWMClass": "db-assistant"
+        }
       }
     },
     "mac": {
