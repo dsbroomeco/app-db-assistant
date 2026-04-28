@@ -49,7 +49,6 @@ import type {
   SchemaDiffRequest,
   SchemaDiffResult,
   TableDiff,
-  ColumnDiff,
   DiffStatus,
   SavedQuery,
   KeyboardShortcut,

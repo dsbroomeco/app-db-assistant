@@ -64,7 +64,6 @@ export function ConnectionForm({
     const isSqlite = config.type === "sqlite";
     const isRedis = config.type === "redis";
     const isMongo = config.type === "mongodb";
-    const isNoSql = isRedis || isMongo;
     const needsHostPort = !isSqlite;
 
     const update = useCallback(

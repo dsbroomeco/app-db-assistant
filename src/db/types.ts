@@ -12,7 +12,6 @@ import type {
   MongoCollectionInfo,
   MongoDocument,
   MongoFindResult,
-  RedisKeyInfo,
   RedisScanResult,
   RedisGetResult,
   RedisCommandResult,

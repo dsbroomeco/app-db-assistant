@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { TabBar } from "./components/TabBar";
 import { Sidebar } from "./components/Sidebar";
 import { WelcomeView } from "./components/WelcomeView";
@@ -44,12 +44,12 @@ function AppContent() {
         addTab(SETTINGS_TAB);
     }, [addTab]);
 
-    let queryCount = 0;
+    const queryCountRef = useRef(0);
     const handleNewQueryTab = useCallback(() => {
-        queryCount++;
+        queryCountRef.current += 1;
         addTab({
             id: `query-${Date.now()}`,
-            title: `Query ${queryCount}`,
+            title: `Query ${queryCountRef.current}`,
             type: "query",
             closable: true,
         });

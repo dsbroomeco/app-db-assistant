@@ -163,26 +163,34 @@ The pipeline scaffolding exists but has never been exercised on a real tag push.
 - [x] **Add e2e test stage to CI** — Playwright step added to `release.yml` on `ubuntu-latest` with `continue-on-error: true` until test suite is stable
 - [x] **Semantic versioning tooling** — `standard-version` installed; `npm run release`, `npm run release:beta`, `npm run release:dry` scripts added
 
-#### Lint Remediation Backlog (captured April 2026)
+#### Lint Remediation Backlog (completed April 2026)
 
-Current `npm run lint` status: **21 problems (17 errors, 4 warnings)**.
+Current `npm run lint` status: **0 problems**.
 
-- [ ] `src/db/connection-manager.ts` — remove unused imports: `isSqlType`, `createDriver`, `createMongoDriver`, `createRedisDriver`
-- [ ] `src/db/drivers/index.ts` — remove unused imports: `isSqlType`, `isNoSqlType`
-- [ ] `src/db/drivers/mongodb.ts` — remove unused `_id` assignment
-- [ ] `src/db/drivers/mssql.ts` — remove unused `paramIdx`
-- [ ] `src/db/drivers/sqlite.ts` — replace `require("better-sqlite3")` with ESM-safe dynamic import to satisfy `@typescript-eslint/no-require-imports`
-- [ ] `src/db/ssh-tunnel.ts` — remove unused `getPassword` import
-- [ ] `src/db/types.ts` — remove unused `RedisKeyInfo` import/type
-- [ ] `src/renderer/components/ConnectionForm.tsx` — remove unused `isNoSql`
-- [ ] `src/renderer/components/RedisTreeView.tsx` — prefix unused props (`connectionId`, `connectionName`) with `_` or remove
-- [ ] `src/renderer/components/Sidebar.tsx` — remove unused `isNoSqlType`
-- [ ] `src/renderer/components/TableDataView.tsx` — remove unused `primaryKeys` prop/arg
-- [ ] `src/shared/types/database.test.ts` — remove unused `ColumnDiff` import
-- [ ] `src/renderer/App.tsx` — fix `react-hooks/exhaustive-deps` warning for `queryCount`
-- [ ] `src/renderer/components/MongoCollectionView.tsx` — fix `react-hooks/exhaustive-deps` warning for `fetchDocuments`
-- [ ] `src/renderer/components/QueryEditorView.tsx` — fix `react-hooks/exhaustive-deps` warning for `refreshHistory`
-- [ ] `src/renderer/components/RedisBrowserView.tsx` — fix `react-hooks/exhaustive-deps` warning for `scanKeys`
+Segment 1 — Core DB module cleanup
+- [x] `src/db/connection-manager.ts` — removed unused imports: `isSqlType`, `createDriver`, `createMongoDriver`, `createRedisDriver`
+- [x] `src/db/drivers/index.ts` — removed unused imports: `isSqlType`, `isNoSqlType`
+- [x] `src/db/drivers/mongodb.ts` — removed unused `_id` binding while still stripping `_id` from update payload
+- [x] `src/db/drivers/mssql.ts` — removed unused `paramIdx`
+- [x] `src/db/drivers/sqlite.ts` — replaced `require("better-sqlite3")` with dynamic `import()`
+- [x] `src/db/ssh-tunnel.ts` — removed unused `getPassword` import
+- [x] `src/db/types.ts` — removed unused `RedisKeyInfo` import
+
+Segment 2 — Renderer/component cleanup
+- [x] `src/renderer/components/ConnectionForm.tsx` — removed unused `isNoSql`
+- [x] `src/renderer/components/RedisTreeView.tsx` — renamed unused props to `_connectionId` / `_connectionName`
+- [x] `src/renderer/components/Sidebar.tsx` — removed unused `isNoSqlType`
+- [x] `src/renderer/components/TableDataView.tsx` — removed unused `primaryKeys` prop from memoized row component
+- [x] `src/shared/types/database.test.ts` — removed unused `ColumnDiff` import
+
+Segment 3 — Hook dependency warnings
+- [x] `src/renderer/App.tsx` — replaced `queryCount` local variable with `useRef` counter for stable callback behavior
+- [x] `src/renderer/components/MongoCollectionView.tsx` — fixed `useEffect` deps by stabilizing `fetchDocuments`
+- [x] `src/renderer/components/QueryEditorView.tsx` — fixed `handleExecute` dependency on `refreshHistory`
+- [x] `src/renderer/components/RedisBrowserView.tsx` — fixed `useEffect` deps to use `scanKeys`
+
+Deferred follow-up (non-lint)
+- [ ] Node warning during lint: `MODULE_TYPELESS_PACKAGE_JSON` for `eslint.config.js`; decide later whether to set `"type": "module"` in `package.json` or rename ESLint config to `.mjs`
 
 ### Batch 3: Remaining Security Items
 

@@ -1,5 +1,4 @@
 import type { DatabaseType } from "../../shared/types/database";
-import { isSqlType, isNoSqlType } from "../../shared/types/database";
 import type { DatabaseDriver, MongoDBDriver, RedisDriver, BaseDriver } from "../types";
 import { PostgreSQLDriver } from "./postgresql";
 import { MySQLDriver } from "./mysql";

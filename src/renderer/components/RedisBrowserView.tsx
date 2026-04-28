@@ -72,7 +72,7 @@ export function RedisBrowserView({ connectionId }: RedisBrowserViewProps) {
 
     useEffect(() => {
         scanKeys(true);
-    }, [connectionId]);
+    }, [scanKeys]);
 
     const handleSearch = useCallback(() => {
         scanKeys(true);

@@ -35,7 +35,7 @@ export function MongoCollectionView({
     const [statusMessage, setStatusMessage] = useState<string | null>(null);
 
     const fetchDocuments = useCallback(
-        async (p: number = page) => {
+        async (p: number) => {
             setLoading(true);
             setError(null);
             try {
@@ -62,12 +62,12 @@ export function MongoCollectionView({
                 setLoading(false);
             }
         },
-        [connectionId, database, collection, filter, sort, page, pageSize],
+        [connectionId, database, collection, filter, sort, pageSize],
     );
 
     useEffect(() => {
         fetchDocuments(0);
-    }, [connectionId, database, collection]);
+    }, [fetchDocuments]);
 
     const handleSearch = useCallback(() => {
         fetchDocuments(0);

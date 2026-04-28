@@ -5,7 +5,6 @@
  */
 
 import type { ConnectionConfig } from "../shared/types/database";
-import { getPassword } from "./credential-store";
 import { readFile } from "fs/promises";
 import net from "net";
 

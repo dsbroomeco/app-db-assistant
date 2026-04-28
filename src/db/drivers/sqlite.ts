@@ -24,7 +24,9 @@ export class SQLiteDriver implements DatabaseDriver {
       throw new Error("SQLite requires a file path");
     }
     // Dynamic import — better-sqlite3 is a native module that may need electron-rebuild
-    const Database = require("better-sqlite3") as typeof BetterSqlite3;
+    const sqliteModule = await import("better-sqlite3");
+    const Database =
+      (sqliteModule.default ?? sqliteModule) as unknown as typeof BetterSqlite3;
     this.db = new Database(config.filepath, {
       timeout: config.connectionTimeout,
     });

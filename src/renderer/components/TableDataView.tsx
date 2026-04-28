@@ -28,7 +28,6 @@ interface TableRowProps {
     rowIndex: number;
     absoluteRowNum: number;
     columns: string[];
-    primaryKeys: string[];
     isSelected: boolean;
     isDirty: boolean;
     dirtyColsForRow: Set<string> | undefined;
@@ -51,7 +50,6 @@ const TableRow = memo(function TableRow({
     rowIndex,
     absoluteRowNum,
     columns,
-    primaryKeys,
     isSelected,
     isDirty,
     dirtyColsForRow,
@@ -1038,7 +1036,6 @@ export function TableDataView({
                                     rowIndex={i}
                                     absoluteRowNum={page * PAGE_SIZE + i + 1}
                                     columns={result.columns}
-                                    primaryKeys={primaryKeys}
                                     isSelected={selectedRows.has(i)}
                                     isDirty={!!dirtyCols[i]}
                                     dirtyColsForRow={dirtyCols[i]}

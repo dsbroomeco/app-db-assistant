@@ -134,7 +134,8 @@ export class MongoDBDriverImpl implements MongoDBDriver {
   ): Promise<CrudResult> {
     const db = this.getDb(database);
     // Remove _id from update payload to prevent immutable field error
-    const { _id, ...updateFields } = update;
+    const updateFields: Record<string, unknown> = { ...update };
+    delete updateFields._id;
     const result = await db.collection(collection).updateOne(
       { _id: new ObjectId(documentId) },
       { $set: updateFields },

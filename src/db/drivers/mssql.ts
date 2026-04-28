@@ -358,10 +358,8 @@ export class MSSQLDriver implements DatabaseDriver {
     const pkCols = Object.keys(primaryKey);
 
     const req = pool.request();
-    let paramIdx = 0;
     setCols.forEach((_, i) => {
       req.input(`s${i}`, Object.values(changes)[i]);
-      paramIdx++;
     });
     pkCols.forEach((_, i) => {
       req.input(`w${i}`, Object.values(primaryKey)[i]);

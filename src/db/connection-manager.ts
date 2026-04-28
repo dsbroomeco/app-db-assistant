@@ -23,7 +23,6 @@ import type {
   RedisGetResult,
   RedisCommandResult,
 } from "../shared/types/database";
-import { isSqlType } from "../shared/types/database";
 import {
   initCredentialStore,
   savePassword,
@@ -32,7 +31,7 @@ import {
   hasPassword,
 } from "./credential-store";
 import { sanitizeErrorMessage } from "./sanitize";
-import { createDriver, createMongoDriver, createRedisDriver, createAnyDriver } from "./drivers";
+import { createAnyDriver } from "./drivers";
 import { createTunnel, closeTunnel, closeAllTunnels } from "./ssh-tunnel";
 import type { DatabaseDriver, MongoDBDriver, RedisDriver, BaseDriver } from "./types";
 

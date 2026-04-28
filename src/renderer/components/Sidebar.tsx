@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import { useConnections } from "../context/ConnectionContext";
-import { DATABASE_TYPE_LABELS, isSqlType, isNoSqlType } from "@shared/types/database";
+import { DATABASE_TYPE_LABELS, isSqlType } from "@shared/types/database";
 import type { SavedConnection } from "@shared/types/database";
 import { DatabaseTreeView } from "./DatabaseTreeView";
 import { MongoTreeView } from "./MongoTreeView";

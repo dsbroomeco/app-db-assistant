@@ -7,8 +7,8 @@ interface RedisTreeViewProps {
 }
 
 export function RedisTreeView({
-    connectionId,
-    connectionName,
+    connectionId: _connectionId,
+    connectionName: _connectionName,
     onOpenBrowser,
 }: RedisTreeViewProps) {
     return (

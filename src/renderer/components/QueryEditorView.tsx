@@ -85,6 +85,16 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
         });
     }, []);
 
+    // Load history
+    const refreshHistory = useCallback(async () => {
+        try {
+            const entries = await window.electronAPI.invoke("query:history");
+            setHistoryEntries(entries);
+        } catch {
+            // ignore
+        }
+    }, []);
+
     // Execute query
     const handleExecute = useCallback(async () => {
         const sqlText = getEditorContent().trim();
@@ -108,7 +118,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
             setExecuting(false);
             refreshHistory();
         }
-    }, [getEditorContent, selectedConnectionId]);
+    }, [getEditorContent, selectedConnectionId, refreshHistory]);
 
     // Explain query
     const handleExplain = useCallback(async () => {
@@ -132,16 +142,6 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
             setExecuting(false);
         }
     }, [getEditorContent, selectedConnectionId]);
-
-    // Load history
-    const refreshHistory = useCallback(async () => {
-        try {
-            const entries = await window.electronAPI.invoke("query:history");
-            setHistoryEntries(entries);
-        } catch {
-            // ignore
-        }
-    }, []);
 
     const handleClearHistory = useCallback(async () => {
         await window.electronAPI.invoke("query:history:clear");
