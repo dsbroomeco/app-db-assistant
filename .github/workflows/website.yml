@@ -28,25 +28,25 @@ jobs:
             - uses: actions/checkout@v4
 
             - uses: actions/setup-node@v4
-              with:
-                  node-version: 20
-                  cache: npm
-                  cache-dependency-path: website/package-lock.json
+                with:
+                    node-version: 20
+                    cache: npm
+                    cache-dependency-path: website/package-lock.json
 
             - run: npm ci
             - run: npm run build:static
 
-                        - name: Configure Pages
-                            if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
-                            uses: actions/configure-pages@v5
+            - name: Configure Pages
+                if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
+                uses: actions/configure-pages@v5
 
             - uses: actions/upload-pages-artifact@v3
-                            if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
-              with:
-                  path: website/out
+                if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
+                with:
+                    path: website/out
 
     deploy:
-                if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
+        if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
         environment:
             name: github-pages
             url: ${{ steps.deployment.outputs.page_url }}
@@ -54,4 +54,4 @@ jobs:
         needs: build
         steps:
             - id: deployment
-              uses: actions/deploy-pages@v4
+                uses: actions/deploy-pages@v4
