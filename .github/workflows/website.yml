@@ -36,11 +36,17 @@ jobs:
             - run: npm ci
             - run: npm run build:static
 
+                        - name: Configure Pages
+                            if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
+                            uses: actions/configure-pages@v5
+
             - uses: actions/upload-pages-artifact@v3
+                            if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
               with:
                   path: website/out
 
     deploy:
+                if: ${{ vars.ENABLE_GITHUB_PAGES == 'true' }}
         environment:
             name: github-pages
             url: ${{ steps.deployment.outputs.page_url }}

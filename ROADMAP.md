@@ -232,6 +232,11 @@ Follow-up executed:
 - [x] Add legal pages and checksum publishing links
 - [x] Automate website version sync from root package version
 
+Operational note (April 2026):
+- GitHub Pages deployment is currently blocked by repository plan limits (`422: Your current plan does not support GitHub Pages for this repository`)
+- Workflow `.github/workflows/website.yml` now gates deploy behavior behind repo variable `ENABLE_GITHUB_PAGES=true` so CI passes while Pages is unavailable
+- Build/static export remains active; deployment can be re-enabled later by upgrading plan or switching to another static host
+
 #### Phase 5 — Pre-Release Quality Gate
 
 - [ ] Complete all Batch 6 checklist items for stable readiness

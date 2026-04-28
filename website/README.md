@@ -25,6 +25,9 @@ Output is generated in `website/out/`.
 
 GitHub Pages deployment is automated by `.github/workflows/website.yml`.
 
+Deployment is gated by repository variable `ENABLE_GITHUB_PAGES=true`.
+If the repository plan does not support Pages, the workflow will still build static output but skip deployment.
+
 ## Version Sync
 
 The download page version constant is synced from the root package version using:
