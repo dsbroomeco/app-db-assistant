@@ -17,6 +17,12 @@ const api = {
     ipcRenderer.on("theme:changed", handler);
     return () => ipcRenderer.removeListener("theme:changed", handler);
   },
+
+  getRuntimeFlags: (): { renderProfilerEnabled: boolean } => {
+    return {
+      renderProfilerEnabled: process.env.DBA_RENDER_PROFILER === "true",
+    };
+  },
 };
 
 export type ElectronApi = typeof api;

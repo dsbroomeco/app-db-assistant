@@ -124,6 +124,23 @@ The renderer uses a tab manager that supports:
 - Redis browser tabs (key list with pattern search, type-aware value viewer, inline string editing, CLI passthrough)
 - Each tab maintains its own state and can reference different database connections via metadata
 
+### 6.5. Temporary Render Profiler Mode (Phase 3)
+
+For short-term performance work, the renderer includes optional React `Profiler` instrumentation:
+
+- Collector utility: `src/renderer/utils/renderProfiler.ts`
+- Root hook: `src/renderer/main.tsx` (`Profiler` around app root)
+- View-level hooks: `src/renderer/App.tsx` (per-active-view `Profiler` wrappers)
+- Runtime flag source: `src/main/preload.ts` (`getRuntimeFlags()` reads `DBA_RENDER_PROFILER`)
+
+When enabled, the renderer exposes `window.__DBA_RENDER_PROFILER__` with:
+
+- `summary()` — aggregate by component/profile id
+- `samples()` — raw render sample list
+- `clear()` — reset capture buffer
+
+This instrumentation is temporary and should be removed before stable release.
+
 ### 5. SQL Editor & Query Execution
 
 The SQL editor uses **CodeMirror 6** with the following features:

@@ -224,7 +224,7 @@ Follow-up executed:
 
 #### Phase 3 — Remaining Performance Batch
 
-- [ ] Complete remaining Batch 4 items (React DevTools interaction profiling still pending)
+- [ ] Complete remaining Batch 4 items (manual interaction profiling capture and optimization follow-up still pending)
 - [ ] Document before/after startup and interaction metrics (automated proxy updated; manual profiler captures pending)
 
 #### Phase 4 — Website & Distribution Completion
@@ -318,8 +318,33 @@ All binaries flow through GitHub Releases; there is no separate CDN to worry abo
 
 #### React Render Profiling
 
+- [x] **Add temporary built-in render profiler mode** — Added `src/renderer/utils/renderProfiler.ts` and root/component React `Profiler` hooks in `src/renderer/main.tsx` and `src/renderer/App.tsx`; capture API exposed as `window.__DBA_RENDER_PROFILER__` (`summary()`, `samples()`, `clear()`)
 - [ ] **Profile with React DevTools Profiler** — Record a session of: opening a large table, editing a cell, multi-selecting rows, switching tabs. Identify components with disproportionate render time and add `React.memo`, `useMemo`, or `useCallback` where the profiler shows clear wins (not speculatively)
 - [x] **Confirm no unnecessary re-renders on tab switch** — Added Playwright e2e coverage in `tests/e2e/app-launch.test.ts` that opens a query tab and asserts welcome content is removed from DOM when inactive
+
+Temporary profiler capture status (April 2026):
+- Runtime flag plumbing verified (`window.electronAPI.getRuntimeFlags()` returns `{ renderProfilerEnabled: true }` when launched with `DBA_RENDER_PROFILER=true`)
+- Automated Playwright capture attempt from this Linux workspace failed because Electron launch returned zero app windows in the ad-hoc capture script (`WINDOW_COUNT 0`), so no renderer context was available to read profiler API output
+- Failure recorded; proceed with manual interactive capture using dev run + DevTools in next pass
+
+Manual capture steps (current approved path):
+1. Launch with profiling enabled: `DBA_RENDER_PROFILER=true npm run dev`
+2. Execute scenario: open large table -> edit one cell -> multi-select rows -> switch tabs
+3. In DevTools console run:
+	- `window.__DBA_RENDER_PROFILER__.summary()`
+	- `window.__DBA_RENDER_PROFILER__.samples()`
+4. Save top 5 components by `totalActualMs` and `commits` into this roadmap
+5. Apply targeted memoization and re-run the same scenario for before/after comparison
+
+Pre-release removal checklist (required before `v1.0.0` stable tag):
+1. Remove `src/renderer/utils/renderProfiler.ts`
+2. Remove profiler imports and callbacks from `src/renderer/main.tsx`
+3. Remove profiler wrappers/props from `src/renderer/App.tsx`
+4. Remove temporary API typing from `src/renderer/env.d.ts`
+5. Remove runtime flag accessor from `src/main/preload.ts`
+6. Remove `src/renderer/utils/renderProfiler.test.ts`
+7. Remove temporary profiler docs from `README.md` and this roadmap section
+8. Run full gates: `npm run lint && npm run typecheck && npm test && npm run test:e2e`
 
 Manual profiling pass checklist (next interactive step):
 - Open React DevTools Profiler and record one session covering: open large table -> edit one cell -> multi-select rows -> switch tabs

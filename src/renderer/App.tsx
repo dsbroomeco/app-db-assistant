@@ -1,4 +1,11 @@
-import { useCallback, useRef, useState } from "react";
+import {
+    useCallback,
+    useRef,
+    useState,
+    Profiler,
+    type ProfilerOnRenderCallback,
+    type ReactNode,
+} from "react";
 import { TabBar } from "./components/TabBar";
 import { Sidebar } from "./components/Sidebar";
 import { WelcomeView } from "./components/WelcomeView";
@@ -32,7 +39,26 @@ const SETTINGS_TAB: Tab = {
     closable: true,
 };
 
-function AppContent() {
+interface AppProps {
+    renderProfilerEnabled?: boolean;
+    onRenderProfile?: ProfilerOnRenderCallback;
+}
+
+function profileView(
+    id: string,
+    node: ReactNode,
+    enabled: boolean,
+    onRenderProfile?: ProfilerOnRenderCallback,
+) {
+    if (!enabled || !onRenderProfile) return node;
+    return (
+        <Profiler id={id} onRender={onRenderProfile}>
+            {node}
+        </Profiler>
+    );
+}
+
+function AppContent({ renderProfilerEnabled = false, onRenderProfile }: AppProps) {
     const { tabs, activeTab, activeTabId, setActiveTabId, addTab, closeTab } =
         useTabs([WELCOME_TAB]);
 
@@ -178,47 +204,100 @@ function AppContent() {
                     />
                     <div className={styles.content} role="region" aria-label="Active view">
                         {activeTab?.type === "welcome" && (
-                            <WelcomeView onNewConnection={handleNewConnection} />
+                            profileView(
+                                "WelcomeView",
+                                <WelcomeView onNewConnection={handleNewConnection} />,
+                                renderProfilerEnabled,
+                                onRenderProfile,
+                            )
                         )}
-                        {activeTab?.type === "settings" && <SettingsView />}
+                        {activeTab?.type === "settings" &&
+                            profileView(
+                                "SettingsView",
+                                <SettingsView />,
+                                renderProfilerEnabled,
+                                onRenderProfile,
+                            )}
                         {activeTab?.type === "query" && (
-                            <QueryEditorView
-                                connectionId={activeTab.meta?.connectionId}
-                            />
+                            profileView(
+                                "QueryEditorView",
+                                <QueryEditorView
+                                    connectionId={activeTab.meta?.connectionId}
+                                />,
+                                renderProfilerEnabled,
+                                onRenderProfile,
+                            )
                         )}
                         {activeTab?.type === "table" && activeTab.meta && (
-                            <TableDataView
-                                connectionId={activeTab.meta.connectionId!}
-                                schema={activeTab.meta.schema!}
-                                table={activeTab.meta.table!}
-                            />
+                            profileView(
+                                "TableDataView",
+                                <TableDataView
+                                    connectionId={activeTab.meta.connectionId!}
+                                    schema={activeTab.meta.schema!}
+                                    table={activeTab.meta.table!}
+                                />,
+                                renderProfilerEnabled,
+                                onRenderProfile,
+                            )
                         )}
                         {activeTab?.type === "structure" && activeTab.meta && (
-                            <TableStructureView
-                                connectionId={activeTab.meta.connectionId!}
-                                schema={activeTab.meta.schema!}
-                                table={activeTab.meta.table!}
-                            />
+                            profileView(
+                                "TableStructureView",
+                                <TableStructureView
+                                    connectionId={activeTab.meta.connectionId!}
+                                    schema={activeTab.meta.schema!}
+                                    table={activeTab.meta.table!}
+                                />,
+                                renderProfilerEnabled,
+                                onRenderProfile,
+                            )
                         )}
                         {activeTab?.type === "mongo-collection" && activeTab.meta && (
-                            <MongoCollectionView
-                                connectionId={activeTab.meta.connectionId!}
-                                database={activeTab.meta.database!}
-                                collection={activeTab.meta.collection!}
-                            />
+                            profileView(
+                                "MongoCollectionView",
+                                <MongoCollectionView
+                                    connectionId={activeTab.meta.connectionId!}
+                                    database={activeTab.meta.database!}
+                                    collection={activeTab.meta.collection!}
+                                />,
+                                renderProfilerEnabled,
+                                onRenderProfile,
+                            )
                         )}
                         {activeTab?.type === "redis-browser" && activeTab.meta && (
-                            <RedisBrowserView
-                                connectionId={activeTab.meta.connectionId!}
-                            />
+                            profileView(
+                                "RedisBrowserView",
+                                <RedisBrowserView
+                                    connectionId={activeTab.meta.connectionId!}
+                                />,
+                                renderProfilerEnabled,
+                                onRenderProfile,
+                            )
                         )}
                         {activeTab?.type === "import" && activeTab.meta && (
-                            <DataImportView
-                                connectionId={activeTab.meta.connectionId!}
-                            />
+                            profileView(
+                                "DataImportView",
+                                <DataImportView
+                                    connectionId={activeTab.meta.connectionId!}
+                                />,
+                                renderProfilerEnabled,
+                                onRenderProfile,
+                            )
                         )}
-                        {activeTab?.type === "schema-diff" && <SchemaDiffView />}
-                        {activeTab?.type === "erd" && <ErdView />}
+                        {activeTab?.type === "schema-diff" &&
+                            profileView(
+                                "SchemaDiffView",
+                                <SchemaDiffView />,
+                                renderProfilerEnabled,
+                                onRenderProfile,
+                            )}
+                        {activeTab?.type === "erd" &&
+                            profileView(
+                                "ErdView",
+                                <ErdView />,
+                                renderProfilerEnabled,
+                                onRenderProfile,
+                            )}
                         {!activeTab && (
                             <div className={styles.placeholder}>
                                 <span className={styles.placeholderIcon}>📭</span>
@@ -242,10 +321,13 @@ function AppContent() {
     );
 }
 
-export function App() {
+export function App({ renderProfilerEnabled = false, onRenderProfile }: AppProps) {
     return (
         <ConnectionProvider>
-            <AppContent />
+            <AppContent
+                renderProfilerEnabled={renderProfilerEnabled}
+                onRenderProfile={onRenderProfile}
+            />
         </ConnectionProvider>
     );
 }

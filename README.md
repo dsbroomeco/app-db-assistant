@@ -121,6 +121,7 @@ app-db-assistant/
 | `npm run format`     | Format with Prettier                |
 | `npm run typecheck`  | TypeScript type checking only       |
 | `npm run assets:icons` | Generate platform icon assets (`build/icon.png`, `build/icon.ico`, `build/icons/*`) |
+| `DBA_RENDER_PROFILER=true npm run dev` | Start app with temporary built-in render profiler enabled |
 | `npm run release`    | Bump version, update changelog, create git tag |
 | `npm run release:beta` | Create a beta pre-release          |
 | `npm run release:dry` | Preview release without making changes |
@@ -131,6 +132,32 @@ app-db-assistant/
 | `cd testdb && docker compose up -d` | Start local PostgreSQL + MySQL test instances |
 | `cd testdb && docker compose down -v` | Stop and wipe test database volumes |
 | `cd website && npm run build:static` | Build static marketing site output for GitHub Pages (`website/out`) |
+
+### Temporary Render Profiler (Phase 3)
+
+Use this for the manual profiling pass while Phase 3 optimization work is active.
+
+1. Launch with profiler enabled:
+
+```bash
+DBA_RENDER_PROFILER=true npm run dev
+```
+
+2. In DevTools console, capture data after your interaction scenario:
+
+```js
+window.__DBA_RENDER_PROFILER__.summary()
+window.__DBA_RENDER_PROFILER__.samples()
+window.__DBA_RENDER_PROFILER__.clear()
+```
+
+3. Optional Vite env flag equivalent:
+
+```bash
+VITE_ENABLE_RENDER_PROFILER=true npm run dev
+```
+
+This mode is temporary and must be removed before stable release cut.
 
 ## Contributing
 
