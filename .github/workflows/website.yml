@@ -1,20 +1,20 @@
 name: Website Build
 
 on:
-  push:
-    branches: [master]
-    paths:
-      - website/**
-      - CHANGELOG.md
-      - .github/workflows/website.yml
+    push:
+        branches: [master]
+        paths:
+            - website/**
+            - CHANGELOG.md
+            - .github/workflows/website.yml
 
 jobs:
-  build-website:
-    runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: website
-    steps:
-      - uses: actions/checkout@v4
-      - run: npm ci
-      - run: npm run build:static
+    build-website:
+        runs-on: ubuntu-latest
+        defaults:
+            run:
+                working-directory: website
+        steps:
+            - uses: actions/checkout@v4
+            - run: npm ci
+            - run: npm run build:static
