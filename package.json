@@ -1,6 +1,6 @@
 {
   "name": "db-assistant",
-  "version": "0.1.1-beta.0",
+  "version": "0.1.1-beta.1",
   "description": "A cross-platform desktop database manager for SQL and NoSQL databases",
   "main": "dist/main/main/main.js",
   "author": {
