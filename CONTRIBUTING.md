@@ -49,7 +49,7 @@ chore: upgrade electron to v30
 
 - Never interpolate user input into SQL strings — always use parameterized queries
 - Never store credentials in plaintext
-- Report security vulnerabilities privately (do not open public issues)
+- Report security vulnerabilities via [GitHub private advisory](https://github.com/dsbroomeco/app-db-assistant/security/advisories/new) — do not open public issues
 
 ## License
 

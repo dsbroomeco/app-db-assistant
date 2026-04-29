@@ -4,8 +4,7 @@
   "description": "A cross-platform desktop database manager for SQL and NoSQL databases",
   "main": "dist/main/main/main.js",
   "author": {
-    "name": "DB Assistant",
-    "email": "support@dbassistant.dev"
+    "name": "DB Assistant Contributors"
   },
   "license": "MIT",
   "repository": {

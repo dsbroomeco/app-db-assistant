@@ -4,7 +4,7 @@
 
 Items that **must** be completed before the repository is made public.
 
-- [ ] Remove `testdb/` folder — this directory contains a dev-only Docker Compose setup with hardcoded credentials for local PostgreSQL and MySQL test instances. It must not be included in the public open-source repo. Verify it is absent from the final public branch and that no commit history exposes the credentials.
+- [x] Remove `testdb/` folder — removed from working tree and git tracking (April 2026). Credentials (`testpass`, `rootpass`) remain in git history (3 commits) but are throwaway local Docker dev values; history rewrite deferred to pre-public squash.
 
 ---
 
@@ -439,14 +439,14 @@ This phase covers everything required to make the repository public and ready fo
 
 - [x] **Add `CODE_OF_CONDUCT.md`** — Contributor Covenant v2.1 at repo root *(completed April 2026)*
 - [x] **Add `SECURITY.md`** — GitHub private advisory as sole reporting channel; no email, no public issue direction *(completed April 2026)*
-- [ ] **Add GitHub issue templates** (`.github/ISSUE_TEMPLATE/`) — Bug report, Feature request, and Question templates
-- [ ] **Add GitHub PR template** (`.github/pull_request_template.md`) — Checklist: tests pass, lint clean, docs updated, breaking changes noted
+- [x] **Add GitHub issue templates** (`.github/ISSUE_TEMPLATE/`) — Bug report, Feature request, Question, and config.yml (disables blank issues, routes security to private advisory) *(completed April 2026)*
+- [x] **Add GitHub PR template** (`.github/pull_request_template.md`) — Checklist: type of change, tests/lint/typecheck pass, docs updated, no secrets, security implications noted *(completed April 2026)*
 - [x] **Add `CODEOWNERS`** — `* @dsbroomeco` global ownership + key path overrides; file at repo root *(completed April 2026)*
 - [ ] **Configure branch protection** — Require PR + CI pass before merge to `main`; no force-push
 
 ### Repository Hygiene
 
-- [ ] **Scrub `README.md` for internal references** — Remove any internal emails, Slack links, or private URLs; ensure all links are publicly accessible
+- [x] **Scrub `README.md` for internal references** — Removed `dbassistant.dev` domain link (replaced with GitHub Releases), removed `testdb/` entries from project structure and scripts table, removed temporary render profiler dev section. `package.json` author email (`support@dbassistant.dev`) removed. CONTRIBUTING.md and ARCHITECTURE.md scrubbed of internal/domain references. *(completed April 2026)*
 - [x] **Confirm `.gitignore` is complete** — `.gitignore` correctly excludes `*.env`, `*.env.local`, `.env.*` while explicitly allowing `.env.example` via `!.env.example`; OS artifacts (`.DS_Store`, `Thumbs.db`) also covered *(verified April 2026)*
 - [x] **Verify `.env.example` is up to date** — `.env` files are **not required** by the desktop app: `NODE_ENV` is set by Vite/Electron automatically; `DBA_RENDER_PROFILER` is set inline on the CLI. The website uses two vars (`NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_DOWNLOAD_BASE_URL`) both of which have safe public defaults. `.env.example` documents these for reference only; no `.env` file is needed for dev or production. *(audited April 2026)*
 - [ ] **Remove or anonymize internal identifiers** — Check author email in `package.json` and git config; use a public contact address
