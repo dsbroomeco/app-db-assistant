@@ -2,7 +2,7 @@
 
 A cross-platform desktop database manager for SQL and NoSQL databases.
 
-![Platform Support](https://img.shields.io/badge/platform-Windows%20%7C%20Linux%20%7C%20macOS-blue)
+![Platform Support](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-blue)
 ![License](https://img.shields.io/badge/license-MIT-green)
 
 ## Features
@@ -17,7 +17,7 @@ A cross-platform desktop database manager for SQL and NoSQL databases.
 - **CRUD Operations** — Create, read, update, and delete records with keyboard shortcuts and right-click context menus
 - **MongoDB Support** — Browse databases and collections, view/edit/insert/delete documents with a JSON tree view, run aggregation pipelines
 - **Redis Support** — Browse and search keys, view type-aware values (strings, lists, sets, hashes, sorted sets, streams), set/edit/delete keys, built-in CLI passthrough
-- **Cross-Platform** — Runs on Windows, Linux, and macOS
+- **Cross-Platform** — Runs on Windows and Linux (macOS support planned)
 - **Connection Manager** — Save, organize, and securely store database connections
 - **Data Export** — Export query results to CSV, JSON, and other formats
 - **Streaming Export** — CSV/JSON/SQL exports are generated in the main process and streamed directly to disk
@@ -38,7 +38,8 @@ Visit the [Releases page](https://github.com/dsbroomeco/app-db-assistant/release
 | -------- | ----------------------- |
 | Windows  | `.exe` / `.msi`         |
 | Linux    | `.AppImage` / `.deb` / `.rpm` |
-| macOS    | `.dmg`                  |
+
+> macOS support is planned for a future release.
 
 ## Development
 
@@ -110,7 +111,6 @@ app-db-assistant/
 | `npm run build:electron` | Build + package with electron-builder |
 | `npm run build:win`  | Build + package for Windows           |
 | `npm run build:linux`| Build + package for Linux              |
-| `npm run build:mac`  | Build + package for macOS              |
 | `npm run pack`       | Build + pack (no installer, for testing) |
 | `npm test`           | Run unit tests                      |
 | `npm run test:watch` | Run unit tests in watch mode        |

@@ -84,7 +84,7 @@ const features = [
   {
     title: "Cross-Platform",
     description:
-      "Runs natively on Windows, Linux, and macOS. Same experience everywhere.",
+      "Runs natively on Windows and Linux. macOS support is planned for a future release.",
     icon: (
       <svg
         className="h-8 w-8 text-blue-500"

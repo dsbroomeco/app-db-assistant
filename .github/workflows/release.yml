@@ -45,8 +45,6 @@ jobs:
             platform: win
           - os: ubuntu-latest
             platform: linux
-          - os: macos-latest
-            platform: mac
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -85,8 +83,6 @@ jobs:
           path: |
             release/*.exe
             release/*.msi
-            release/*.dmg
-            release/*.zip
             release/*.AppImage
             release/*.deb
             release/*.rpm
@@ -112,11 +108,26 @@ jobs:
           cd release
           find . -maxdepth 1 -type f ! -name 'checksums.txt' -print0 | sort -z | xargs -0 sha256sum > checksums.txt
 
+      - name: Extract CHANGELOG section for this release
+        id: changelog
+        run: |
+          TAG="${{ github.ref_name }}"
+          VERSION="${TAG#v}"
+          BODY=$(awk "/^## \[?${VERSION}\]?/{found=1; next} found && /^## /{exit} found{print}" CHANGELOG.md)
+          if [ -z "$BODY" ]; then
+            BODY="See [CHANGELOG.md](https://github.com/${{ github.repository }}/blob/main/CHANGELOG.md) for details."
+          fi
+          {
+            echo "body<<EOF"
+            echo "$BODY"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
           files: release/*
-          generate_release_notes: true
+          body: ${{ steps.changelog.outputs.body }}
           draft: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

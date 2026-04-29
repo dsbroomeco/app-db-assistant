@@ -20,7 +20,6 @@
     "build:electron": "npm run build && electron-builder",
     "build:win": "npm run build && node -e \"const fs=require('fs');fs.rmSync('node_modules/cpu-features',{recursive:true,force:true});fs.rmSync('node_modules/ssh2/node_modules/cpu-features',{recursive:true,force:true});\" && electron-builder --win",
     "build:linux": "npm run build && node -e \"const fs=require('fs');fs.rmSync('node_modules/cpu-features',{recursive:true,force:true});fs.rmSync('node_modules/ssh2/node_modules/cpu-features',{recursive:true,force:true});\" && electron-builder --linux",
-    "build:mac": "npm run build && node -e \"const fs=require('fs');fs.rmSync('node_modules/cpu-features',{recursive:true,force:true});fs.rmSync('node_modules/ssh2/node_modules/cpu-features',{recursive:true,force:true});\" && electron-builder --mac",
     "pack": "npm run build && electron-builder --dir",
     "preview": "vite preview",
     "test": "vitest run",
@@ -157,19 +156,7 @@
         }
       }
     },
-    "mac": {
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "x64",
-            "arm64"
-          ]
-        }
-      ],
-      "icon": "build/icon.png",
-      "category": "public.app-category.developer-tools"
-    }
+    "_macNote": "macOS support is planned as a future development opportunity"
   },
   "overrides": {
     "uuid": ">=14.0.0"

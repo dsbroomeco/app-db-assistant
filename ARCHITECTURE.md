@@ -104,7 +104,7 @@ NoSQL drivers implement their own interfaces (see `src/db/types.ts` for `MongoDB
 ### 5. CI/CD Pipeline
 
 - GitHub Actions workflow (`.github/workflows/release.yml`) triggered on version tags (`v*.*.*`)
-- Matrix build strategy: Windows, Linux, macOS
+- Matrix build strategy: Windows and Linux (macOS support planned as a future release)
 - Pipeline: typecheck → test → e2e (Linux) → build → package → create GitHub Release
 - Unsigned dev builds: `CSC_IDENTITY_AUTO_DISCOVERY=false` disables auto-discovery of signing identities for local validation builds
 - CI installs dependencies normally, then removes `ssh2`'s optional `cpu-features` native module before packaging to avoid rebuilding an Electron-incompatible optional dependency

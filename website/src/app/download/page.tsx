@@ -5,7 +5,7 @@ import { DownloadCards } from "@/components/DownloadCards";
 export const metadata: Metadata = {
     title: "Download — DB Assistant",
     description:
-        "Download DB Assistant for Windows, Linux, or macOS. Free and open source.",
+        "Download DB Assistant for Windows and Linux. Free and open source.",
 };
 
 const CURRENT_VERSION = "0.1.1-beta.0";
@@ -26,12 +26,6 @@ const platforms = [
             { label: "AppImage", href: `${RELEASE_BASE}/DB-Assistant-${CURRENT_VERSION}.AppImage`, size: "~122 MB" },
             { label: "Debian (.deb)", href: `${RELEASE_BASE}/db-assistant_${CURRENT_VERSION}_amd64.deb`, size: "~80 MB" },
             { label: "RPM (.rpm)", href: `${RELEASE_BASE}/db-assistant-${CURRENT_VERSION}.x86_64.rpm`, size: "~80 MB" },
-        ],
-    },
-    {
-        name: "macOS" as const,
-        downloads: [
-            { label: "DMG (Universal)", href: `${RELEASE_BASE}/DB-Assistant-${CURRENT_VERSION}-universal.dmg`, size: "~95 MB" },
         ],
     },
 ];
@@ -65,7 +59,7 @@ export default function DownloadPage() {
                 {/* System requirements */}
                 <div className="mt-16 rounded-xl border border-gray-200 bg-gray-50 p-8 dark:border-gray-800 dark:bg-gray-900/50">
                     <h3 className="mb-4 text-lg font-bold">System Requirements</h3>
-                    <div className="grid gap-6 text-sm text-gray-600 dark:text-gray-400 sm:grid-cols-3">
+                    <div className="grid gap-6 text-sm text-gray-600 dark:text-gray-400 sm:grid-cols-2">
                         <div>
                             <h4 className="mb-2 font-semibold text-gray-900 dark:text-gray-200">
                                 Windows
@@ -86,17 +80,10 @@ export default function DownloadPage() {
                                 <li>4 GB RAM minimum</li>
                             </ul>
                         </div>
-                        <div>
-                            <h4 className="mb-2 font-semibold text-gray-900 dark:text-gray-200">
-                                macOS
-                            </h4>
-                            <ul className="list-inside list-disc space-y-1">
-                                <li>macOS 12 Monterey or later</li>
-                                <li>Apple Silicon or Intel</li>
-                                <li>4 GB RAM minimum</li>
-                            </ul>
-                        </div>
                     </div>
+                    <p className="mt-6 text-xs text-gray-400">
+                        macOS support is planned for a future release.
+                    </p>
                 </div>
 
                 {/* Previous versions */}

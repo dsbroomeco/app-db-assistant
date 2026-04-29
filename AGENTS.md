@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**DB Assistant** is a cross-platform desktop database manager application targeting Windows, macOS, and Linux (Windows and Linux first). It connects to commonly used local and remote SQL and NoSQL databases, provides tabbed views for databases and tables, supports SQL command execution, and offers CRUD operations through shortcuts and context menus.
+**DB Assistant** is a cross-platform desktop database manager application targeting Windows and Linux. macOS support is planned as a future development opportunity. It connects to commonly used local and remote SQL and NoSQL databases, provides tabbed views for databases and tables, supports SQL command execution, and offers CRUD operations through shortcuts and context menus.
 
 ## Tech Stack
 
@@ -11,7 +11,7 @@
 - **Supported Databases**:
   - SQL: PostgreSQL, MySQL/MariaDB, SQLite, Microsoft SQL Server
   - NoSQL: MongoDB, Redis
-- **Build/Package**: electron-builder (Windows `.exe`/`.msi`, Linux `.AppImage`/`.deb`/`.rpm`, macOS `.dmg`)
+- **Build/Package**: electron-builder (Windows `.exe`/`.msi`, Linux `.AppImage`/`.deb`/`.rpm`; macOS `.dmg` planned)
 - **Testing**: Vitest (unit), Playwright (e2e)
 
 ## Coding Conventions

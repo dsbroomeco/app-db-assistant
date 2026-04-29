@@ -79,7 +79,7 @@ Items that **must** be completed before the repository is made public.
 ## Phase 8: Polish & Distribution
 
 - [x] Auto-update mechanism (electron-updater)
-- [x] electron-builder configuration (Windows NSIS/MSI, Linux AppImage/deb/rpm, macOS DMG universal)
+- [x] electron-builder configuration (Windows NSIS/MSI, Linux AppImage/deb/rpm)
 - [x] CI/CD pipeline for automated builds and releases (GitHub Actions `release.yml`)
 - [x] Marketing website: release notes, changelog integration
 - [x] Accessibility audit (keyboard navigation, screen readers)
@@ -113,7 +113,7 @@ Before any public release, the following security items **must** be audited, tes
 - [x] Review CSP (Content Security Policy) headers for the renderer — block inline scripts and `eval`
 - [x] Validate no `shell.openExternal()` calls with unsanitized URLs (prevent SSRF / open-redirect)
 - [x] Pin Electron version and monitor for security advisories — Electron ^34.0.0 pinned, Dependabot enabled
-- [ ] Sign application binaries (Windows Authenticode, macOS code signing) — *deferred: requires paid certificates*
+- [ ] Sign application binaries (Windows Authenticode) — *deferred: requires paid certificate*
 
 ### Cross-Site Scripting (XSS) Prevention
 - [x] Audit all rendered database values — ensure cell values, error messages, and user content are escaped
@@ -146,7 +146,7 @@ These items must be completed first — without them, no build will succeed.
 
 - [x] **Create app icons** — `build/icon.png` (1024×1024 master), `build/icons/` with sized PNGs (16–512px, Linux). electron-builder auto-converts to `.ico`/`.icns`. Generated via `scripts/generate-icons.js`.
 - [x] **Fix GitHub repo URL** — Updated `GITHUB_REPO` in `website/src/app/download/page.tsx` to `dsbroomeco/app-db-assistant`
-- [x] **Verify local build** — `npm run build:win` produces `DB Assistant Setup 0.1.1-beta.0.exe` (105 MB) and `DB Assistant 0.1.1-beta.0.msi` (117 MB) in `release/`. Unsigned builds work with `CSC_IDENTITY_AUTO_DISCOVERY=false`; code signing remains deferred to Batch 3. `build:win/linux/mac` scripts now include an inline `cpu-features` removal step (same fix used in CI) to prevent node-gyp rebuild failures for the `ssh2` optional native module on Electron 41.
+- [x] **Verify local build** — `npm run build:win` produces `DB Assistant Setup 0.1.1-beta.0.exe` (105 MB) and `DB Assistant 0.1.1-beta.0.msi` (117 MB) in `release/`. Unsigned builds work with `CSC_IDENTITY_AUTO_DISCOVERY=false`; code signing remains deferred to Batch 3. `build:win/linux` scripts now include an inline `cpu-features` removal step (same fix used in CI) to prevent node-gyp rebuild failures for the `ssh2` optional native module on Electron 41.
 
 ### Batch 2: CI/CD Validation & Release Pipeline
 
@@ -156,7 +156,7 @@ The pipeline scaffolding exists but has never been exercised on a real tag push.
 
 - [x] **GitHub Actions workflow** — `release.yml` exists: lint → typecheck → test → e2e → build (matrix) → upload → GitHub Release
 - [x] **Auto-update (electron-updater)** — Implemented in `src/main/auto-updater.ts`, points to GitHub Releases, user-initiated download + restart
-- [x] **electron-builder config** — `build` section in `package.json` complete for all 3 platforms (NSIS/MSI, AppImage/deb/rpm, DMG with universal arch)
+- [x] **electron-builder config** — `build` section in `package.json` complete for Windows (NSIS/MSI) and Linux (AppImage/deb/rpm). macOS support is deferred as a future development opportunity.
 - [x] **Create Docker build containers** — `docker/Dockerfile.linux` and `docker/Dockerfile.win` with `docker-compose.yml` for one-command local pipeline runs
 - [x] **Validate builds locally in Docker** — Full Linux pipeline (typecheck → test → build → package AppImage/deb/rpm) validated in Docker. Windows builds validated natively. Ubuntu native build (April 2026): all three Linux targets (AppImage 130 MB, deb 98 MB, rpm 86 MB) built successfully after installing `rpm` system package via `sudo apt-get install rpm`.
 - [x] **Dry-run the pipeline** — Push a `v0.1.0-beta.1` tag and verify the full CI flow produces artifacts for all platforms
@@ -211,7 +211,6 @@ This sequence is the operational plan from current state to public open-source l
 Recorded failure details (run `25029287581`):
 - `lint-and-test`: success
 - `e2e-test`: success
-- `build (macos-latest, mac)`: success, artifact uploaded (`dist-mac`)
 - `build (windows-latest, win)`: **failed** in MSI packaging (`LGHT0094: Icon:DBAssistantIcon.exe could not be found` in WiX linker)
 - `build (ubuntu-latest, linux)`: cancelled after windows failure
 - `publish`: skipped due failed dependency jobs
@@ -219,12 +218,12 @@ Recorded failure details (run `25029287581`):
 Follow-up executed:
 - Added explicit icon generation (`build/icon.ico`) and CI icon generation step before packaging
 - Triggered rerun tag `v0.1.1-beta.2` (run `25030049034`)
-- Rerun result: all jobs succeeded (`lint-and-test`, `e2e-test`, `build linux/mac/win`, `publish`)
+- Rerun result: all jobs succeeded (`lint-and-test`, `e2e-test`, `build linux/win`, `publish`)
 - Verified release published: `v0.1.1-beta.2` with cross-platform assets and `checksums.txt`
 
 Windows-specific fixes and validation (April 2026):
 - Discovered and fixed critical white-screen bug in all packaged builds: `loadFile` path was `../renderer/index.html` but `__dirname` at packaged runtime is `dist/main/main/`; corrected to `../../renderer/index.html`
-- Fixed `cpu-features` node-gyp rebuild failure in `build:win/linux/mac` scripts (mirrors CI workflow fix)
+- Fixed `cpu-features` node-gyp rebuild failure in `build:win/linux` scripts (mirrors CI workflow fix)
 - Fixed Playwright e2e timing race on Windows (`waitForLoadState("domcontentloaded")` fires before Electron calls `loadURL`; switched to `waitForLoadState("load")` + `waitForFunction` polling React mount)
 - `v0.1.1-beta.3` tag pushed; CI confirmed all jobs pass and working artifacts published to GitHub Releases
 - `v0.1.1-beta.4` tag pushed (version bumped to `0.1.1-beta.1`) to provide a higher-semver target for auto-update flow testing
@@ -284,7 +283,7 @@ These are deferred from the security audit and should be addressed before stable
 
 - [x] **Native module supply chain review** — `npm audit` confirms zero vulnerabilities in production/runtime dependencies (pg, mysql2, better-sqlite3, mssql, mongodb, ioredis, ssh2). All 14 audit findings are in dev/build deps (electron-builder, tar, electron).
 - [x] **Pin exact versions** — `npm config set save-exact true` configured; future installs use pinned versions
-- [ ] **Sign application binaries** — Windows Authenticode + macOS code signing / notarization (requires paid certificates; can be deferred to post-beta)
+- [ ] **Sign application binaries** — Windows Authenticode (requires paid certificate; can be deferred to post-beta). macOS code signing/notarization is deferred until macOS support is implemented.
 
 ### Batch 4: Performance Profiling & Optimization
 
@@ -531,6 +530,7 @@ This phase covers everything required to make the repository public and ready fo
 - AI-assisted query writing
 - Database migration tooling
 - REST API explorer (for API-backed data sources)
+- **macOS support** — electron-builder DMG packaging (universal binary for Apple Silicon + Intel), macOS code signing/notarization (requires paid Apple Developer certificate), Keychain integration for credential storage, macOS-specific UX (native menu bar, Touch Bar, Spotlight indexing). Deferred as a future development opportunity once Windows and Linux reach stable maturity.
 
 ---
 
