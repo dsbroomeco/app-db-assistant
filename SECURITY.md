@@ -15,15 +15,9 @@ to older versions.
 **Please do not report security vulnerabilities through public GitHub issues,**
 **pull requests, or discussions.**
 
-Report security vulnerabilities privately via one of the following methods:
-
-1. **Email**: Send details to **dsbroomeco@gmail.com** with the subject line
-   `[SECURITY] <brief description>`. Encrypt your message with our public key
-   if the disclosure contains sensitive details (key available on request).
-
-2. **GitHub Private Advisory**: Use
-   [GitHub's private vulnerability reporting](https://github.com/dsbroomeco/app-db-assistant/security/advisories/new)
-   to submit a draft security advisory directly to the maintainers.
+Please report security vulnerabilities using
+[GitHub's private vulnerability reporting](https://github.com/dsbroomeco/app-db-assistant/security/advisories/new)
+to submit a draft security advisory directly to the maintainers.
 
 ### What to include
 
