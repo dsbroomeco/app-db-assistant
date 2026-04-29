@@ -159,7 +159,7 @@ The pipeline scaffolding exists but has never been exercised on a real tag push.
 - [x] **electron-builder config** — `build` section in `package.json` complete for all 3 platforms (NSIS/MSI, AppImage/deb/rpm, DMG with universal arch)
 - [x] **Create Docker build containers** — `docker/Dockerfile.linux` and `docker/Dockerfile.win` with `docker-compose.yml` for one-command local pipeline runs
 - [x] **Validate builds locally in Docker** — Full Linux pipeline (typecheck → test → build → package AppImage/deb/rpm) validated in Docker. Windows builds validated natively.
-- [ ] **Dry-run the pipeline** — Push a `v0.1.0-beta.1` tag and verify the full CI flow produces artifacts for all platforms
+- [x] **Dry-run the pipeline** — Push a `v0.1.0-beta.1` tag and verify the full CI flow produces artifacts for all platforms
 - [x] **Add e2e test stage to CI** — Playwright step added to `release.yml` on `ubuntu-latest` with `continue-on-error: true` until test suite is stable
 - [x] **Semantic versioning tooling** — `standard-version` installed; `npm run release`, `npm run release:beta`, `npm run release:dry` scripts added
 
@@ -221,6 +221,13 @@ Follow-up executed:
 - Triggered rerun tag `v0.1.1-beta.2` (run `25030049034`)
 - Rerun result: all jobs succeeded (`lint-and-test`, `e2e-test`, `build linux/mac/win`, `publish`)
 - Verified release published: `v0.1.1-beta.2` with cross-platform assets and `checksums.txt`
+
+Windows-specific fixes and validation (April 2026):
+- Discovered and fixed critical white-screen bug in all packaged builds: `loadFile` path was `../renderer/index.html` but `__dirname` at packaged runtime is `dist/main/main/`; corrected to `../../renderer/index.html`
+- Fixed `cpu-features` node-gyp rebuild failure in `build:win/linux/mac` scripts (mirrors CI workflow fix)
+- Fixed Playwright e2e timing race on Windows (`waitForLoadState("domcontentloaded")` fires before Electron calls `loadURL`; switched to `waitForLoadState("load")` + `waitForFunction` polling React mount)
+- `v0.1.1-beta.3` tag pushed; CI confirmed all jobs pass and working artifacts published to GitHub Releases
+- `v0.1.1-beta.4` tag pushed (version bumped to `0.1.1-beta.1`) to provide a higher-semver target for auto-update flow testing
 
 #### Phase 3 — Remaining Performance Batch
 
@@ -399,7 +406,7 @@ Manual profiling pass checklist (next interactive step):
   - Ubuntu 22.04+: pending
   - Fedora 38+: pending
 - [ ] Test upgrade path from beta → stable
-- [ ] Verify auto-update flow end-to-end
+- [ ] Verify auto-update flow end-to-end — *deferred to post-public; requires public repo so `electron-updater` can reach `latest.yml` on GitHub Releases without a token*
 - [ ] Review all error messages for user-friendliness (no stack traces in production)
 - [ ] Confirm telemetry/analytics are opt-in only (if applicable)
 
