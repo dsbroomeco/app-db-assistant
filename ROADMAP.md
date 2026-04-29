@@ -431,24 +431,24 @@ This phase covers everything required to make the repository public and ready fo
 ### License & Legal
 
 - [x] **Verify license compatibility** — All direct and transitive dependencies are MIT, Apache-2.0, or ISC. No GPL/LGPL/AGPL/commercial-only packages. Confirmed: safe to publish under MIT. *(completed April 2026)*
-- [x] **Add `LICENSE` file** — MIT license text with current copyright year at repo root
-- [ ] **Audit git history for secrets** — Run `git log --all --full-history` + `trufflehog` or `gitleaks` to confirm no credentials, API keys, or private URLs were ever committed; rewrite history if needed
+- [x] **Add `LICENSE` file** — MIT license, copyright `2025-2026 DB Assistant Contributors` *(updated April 2026)*
+- [x] **Audit git history for secrets** — Full 52-commit history scanned (April 2026). No real credentials, API keys, or tokens found. `testdb/` contains `testpass`/`rootpass` in 3 commits — these are throwaway local Docker dev values, not production credentials; acceptable risk given private repo status, must be removed before go-public via `testdb/` removal item above. `SuperSecret123` hit is inside a unit test asserting error message parsing, not a real secret.
 - [ ] **Audit assets for proprietary content** — Confirm all icons, fonts, and images are either original or licensed for open distribution; replace any that are not
 
 ### Community Infrastructure
 
-- [ ] **Add `CODE_OF_CONDUCT.md`** — Contributor Covenant v2.1 at repo root
-- [ ] **Add `SECURITY.md`** — Private vulnerability disclosure instructions (email or GitHub private advisory); do not direct reporters to public issues
+- [x] **Add `CODE_OF_CONDUCT.md`** — Contributor Covenant v2.1 at repo root *(completed April 2026)*
+- [x] **Add `SECURITY.md`** — GitHub private advisory as sole reporting channel; no email, no public issue direction *(completed April 2026)*
 - [ ] **Add GitHub issue templates** (`.github/ISSUE_TEMPLATE/`) — Bug report, Feature request, and Question templates
 - [ ] **Add GitHub PR template** (`.github/pull_request_template.md`) — Checklist: tests pass, lint clean, docs updated, breaking changes noted
-- [ ] **Add `CODEOWNERS`** (`.github/CODEOWNERS`) — Define code ownership for review routing
+- [x] **Add `CODEOWNERS`** — `* @dsbroomeco` global ownership + key path overrides; file at repo root *(completed April 2026)*
 - [ ] **Configure branch protection** — Require PR + CI pass before merge to `main`; no force-push
 
 ### Repository Hygiene
 
 - [ ] **Scrub `README.md` for internal references** — Remove any internal emails, Slack links, or private URLs; ensure all links are publicly accessible
-- [ ] **Confirm `.gitignore` is complete** — `.env`, `*.env`, credential files, and OS artifacts (`.DS_Store`, `Thumbs.db`) are excluded
-- [ ] **Verify `.env.example` is up to date** — All required environment variables documented with placeholder values; no real values committed
+- [x] **Confirm `.gitignore` is complete** — `.gitignore` correctly excludes `*.env`, `*.env.local`, `.env.*` while explicitly allowing `.env.example` via `!.env.example`; OS artifacts (`.DS_Store`, `Thumbs.db`) also covered *(verified April 2026)*
+- [x] **Verify `.env.example` is up to date** — `.env` files are **not required** by the desktop app: `NODE_ENV` is set by Vite/Electron automatically; `DBA_RENDER_PROFILER` is set inline on the CLI. The website uses two vars (`NEXT_PUBLIC_SITE_URL`, `NEXT_PUBLIC_DOWNLOAD_BASE_URL`) both of which have safe public defaults. `.env.example` documents these for reference only; no `.env` file is needed for dev or production. *(audited April 2026)*
 - [ ] **Remove or anonymize internal identifiers** — Check author email in `package.json` and git config; use a public contact address
 
 ### CI/CD for Contributors
