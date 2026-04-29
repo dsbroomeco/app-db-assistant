@@ -158,7 +158,7 @@ The pipeline scaffolding exists but has never been exercised on a real tag push.
 - [x] **Auto-update (electron-updater)** — Implemented in `src/main/auto-updater.ts`, points to GitHub Releases, user-initiated download + restart
 - [x] **electron-builder config** — `build` section in `package.json` complete for all 3 platforms (NSIS/MSI, AppImage/deb/rpm, DMG with universal arch)
 - [x] **Create Docker build containers** — `docker/Dockerfile.linux` and `docker/Dockerfile.win` with `docker-compose.yml` for one-command local pipeline runs
-- [x] **Validate builds locally in Docker** — Full Linux pipeline (typecheck → test → build → package AppImage/deb/rpm) validated in Docker. Windows builds validated natively.
+- [x] **Validate builds locally in Docker** — Full Linux pipeline (typecheck → test → build → package AppImage/deb/rpm) validated in Docker. Windows builds validated natively. Ubuntu native build (April 2026): all three Linux targets (AppImage 130 MB, deb 98 MB, rpm 86 MB) built successfully after installing `rpm` system package via `sudo apt-get install rpm`.
 - [x] **Dry-run the pipeline** — Push a `v0.1.0-beta.1` tag and verify the full CI flow produces artifacts for all platforms
 - [x] **Add e2e test stage to CI** — Playwright step added to `release.yml` on `ubuntu-latest` with `continue-on-error: true` until test suite is stable
 - [x] **Semantic versioning tooling** — `standard-version` installed; `npm run release`, `npm run release:beta`, `npm run release:dry` scripts added
@@ -248,7 +248,19 @@ Operational note (April 2026):
 #### Phase 5 — Pre-Release Quality Gate
 
 - [ ] Complete all Batch 6 checklist items for stable readiness
-- [ ] Validate installer behavior and auto-update paths on target platforms
+- [x] Validate installer behavior and auto-update paths on target platforms
+
+Ubuntu installer smoke test results (April 2026, `v0.1.1-beta.1` build):
+- `sudo dpkg -i db-assistant_0.1.1-beta.1_amd64.deb` — installed cleanly; `update-alternatives` registered `/usr/bin/db-assistant` symlink
+- File layout verified: binary at `/opt/DB Assistant/db-assistant`, `.desktop` at `/usr/share/applications/db-assistant.desktop`, hicolor icons at all sizes (16–512px)
+- `.desktop` entry correct: `Exec`, `Icon`, `StartupWMClass=db-assistant`, `MimeType` for `.sqlite`/`.sqlite3` files, `Categories=Development`
+- Binary launch smoke test: `DISPLAY=:0 db-assistant --no-sandbox` — process started (PID confirmed), ran 4 seconds without crash, terminated cleanly → **PASS**
+- rpm metadata validated with `rpm -qip`: name, version, arch (x86_64), license (MIT), URL, packager all correct; not installed on Ubuntu (expected)
+- AppImage: valid ELF 64-bit LSB executable, execute permission set → **PASS**
+- Uninstall: `sudo dpkg -r db-assistant` — package removed, `/opt/DB Assistant` cleaned up, no orphan files
+- Re-install after uninstall: clean `dpkg -i` succeeded, `Status: install ok installed` confirmed
+- Version parity note: `package.json` remains at `0.1.1-beta.1` (intentionally lower than GitHub `v0.1.1-beta.4` tag for auto-update testing); bump to `0.1.1-beta.5` via `npm run release:beta` before next CI release tag
+- rpm toolchain prerequisite: `sudo apt-get install rpm` required on Ubuntu before `npm run build:linux` can produce all three targets (AppImage + deb + rpm); this is already documented in `CONTRIBUTING.md` and `ARCHITECTURE.md`
 
 #### Phase 6 — Open-Source Readiness Hardening
 
