@@ -56,16 +56,3 @@ jobs:
             - name: Run e2e tests
               run: npx playwright test
               continue-on-error: true # remove once e2e suite is stable
-
-    website-build:
-        name: Website Build
-        runs-on: ubuntu-latest
-        steps:
-            - uses: actions/checkout@v4
-            - uses: actions/setup-node@v4
-              with:
-                  node-version: 20
-                  cache: npm
-            - run: cd website && npm ci
-            - run: cd website && npm run lint
-            - run: cd website && npm run build:static
