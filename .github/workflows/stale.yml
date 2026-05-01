@@ -1,0 +1,52 @@
+name: Stale Issues
+
+on:
+    schedule:
+        - cron: "0 6 * * *" # daily at 06:00 UTC
+    workflow_dispatch:
+
+permissions:
+    issues: write
+    pull-requests: write
+
+jobs:
+    stale:
+        name: Mark and close stale issues & PRs
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/stale@v9
+              with:
+                  # Issues
+                  stale-issue-label: "stale"
+                  stale-issue-message: >
+                      This issue has been inactive for 45 days and will be
+                      closed in 15 days if there is no further activity. If this
+                      is still relevant, please leave a comment or remove the
+                      `stale` label.
+                  close-issue-message: >
+                      This issue was closed automatically after 60 days of
+                      inactivity. Feel free to reopen it if the problem persists
+                      or the feature is still wanted.
+                  days-before-issue-stale: 45
+                  days-before-issue-close: 15
+
+                  # Pull requests
+                  stale-pr-label: "stale"
+                  stale-pr-message: >
+                      This pull request has been inactive for 45 days and will
+                      be closed in 15 days if there is no further activity. If
+                      you are still working on this, please push an update or
+                      leave a comment.
+                  close-pr-message: >
+                      This pull request was closed automatically after 60 days
+                      of inactivity. Feel free to reopen it if you would like to
+                      continue.
+                  days-before-pr-stale: 45
+                  days-before-pr-close: 15
+
+                  # Never stale issues/PRs with these labels
+                  exempt-issue-labels: "priority: high,security,blocked,pinned"
+                  exempt-pr-labels: "priority: high,security,blocked"
+
+                  # Limit operations per run to stay within GitHub API rate limits
+                  operations-per-run: 100

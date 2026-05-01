@@ -1,0 +1,45 @@
+# Cross-compile Windows builds from Linux (for local testing).
+# electron-builder can produce NSIS/MSI from Linux using Wine.
+#
+# Usage:
+#   docker compose run --rm build-win
+#   OR
+#   docker build -f docker/Dockerfile.win -t db-assistant-win .
+#   docker run --rm -v ./release:/app/release db-assistant-win
+#
+# NOTE: This produces unsigned Windows installers. The official signed
+# Windows build should use the GitHub Actions windows-latest runner.
+
+FROM node:20-bullseye
+
+ENV DEBIAN_FRONTEND=noninteractive
+
+# System dependencies + Wine for cross-compilation
+RUN dpkg --add-architecture i386 \
+    && apt-get update && apt-get install -y --no-install-recommends \
+    python3 \
+    make \
+    g++ \
+    wine64 \
+    wine32 \
+    libx11-dev \
+    libxkbfile-dev \
+    libsecret-1-dev \
+    fakeroot \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /app
+
+# Install dependencies first (layer caching)
+COPY package.json package-lock.json ./
+RUN npm ci
+
+# Copy source
+COPY . .
+
+# Build and package for Windows (cross-compile)
+CMD ["bash", "-c", "\
+    echo '=== Build ===' && npm run build && \
+    echo '=== Package Windows (cross-compile) ===' && npx electron-builder --win --publish never && \
+    echo '=== Done ===' && ls -lh release/*.exe release/*.msi 2>/dev/null \
+    "]

@@ -1,0 +1,382 @@
+.container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+.header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+}
+
+.title {
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--text-primary);
+}
+
+.headerActions {
+    display: flex;
+    gap: 6px;
+}
+
+.error {
+    padding: 8px 16px;
+    background: rgba(244, 67, 54, 0.1);
+    color: var(--danger);
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.status {
+    padding: 8px 16px;
+    background: rgba(76, 175, 80, 0.1);
+    color: var(--success);
+    font-size: 12px;
+    border-bottom: 1px solid var(--border);
+}
+
+.body {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+}
+
+/* Key Panel (Left) */
+.keyPanel {
+    width: 320px;
+    min-width: 200px;
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    background: var(--bg-primary);
+}
+
+.searchRow {
+    display: flex;
+    gap: 4px;
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.searchInput {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.keyActions {
+    display: flex;
+    gap: 4px;
+    padding: 4px 8px;
+    border-bottom: 1px solid var(--border);
+}
+
+.addKeyPanel {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+}
+
+.addKeyActions {
+    display: flex;
+    gap: 4px;
+}
+
+.input {
+    padding: 4px 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-size: 12px;
+}
+
+.keyList {
+    flex: 1;
+    overflow-y: auto;
+}
+
+.keyItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 5px 8px;
+    cursor: pointer;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+}
+
+.keyItem:hover {
+    background: var(--bg-hover);
+}
+
+.keyActive {
+    background: var(--bg-tertiary);
+    border-left: 2px solid var(--accent);
+}
+
+.keyType {
+    display: inline-block;
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-size: 9px;
+    font-weight: 700;
+    color: #fff;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+}
+
+.keyName {
+    flex: 1;
+    font-family: monospace;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    color: var(--text-primary);
+}
+
+.keyTtl {
+    font-size: 10px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.loadMoreBtn {
+    display: block;
+    width: 100%;
+    padding: 8px;
+    border: none;
+    background: var(--bg-secondary);
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.loadMoreBtn:hover {
+    background: var(--bg-tertiary);
+}
+
+.loadMoreBtn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.loading {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 24px;
+    font-size: 13px;
+}
+
+.empty {
+    text-align: center;
+    color: var(--text-muted);
+    padding: 24px;
+    font-size: 13px;
+}
+
+/* Detail Panel (Right) */
+.detailPanel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.placeholder {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: var(--text-muted);
+    font-size: 14px;
+}
+
+.detailHeader {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+}
+
+.detailKey {
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-primary);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.detailTtl {
+    font-size: 11px;
+    color: var(--text-muted);
+}
+
+.detailActions {
+    margin-left: auto;
+    display: flex;
+    gap: 4px;
+}
+
+.valueDisplay {
+    flex: 1;
+    margin: 0;
+    padding: 12px 16px;
+    font-family: monospace;
+    font-size: 12px;
+    color: var(--text-primary);
+    overflow: auto;
+    white-space: pre-wrap;
+    word-break: break-all;
+}
+
+.editSection {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    padding: 12px 16px;
+    gap: 8px;
+}
+
+.valueEditor {
+    flex: 1;
+    padding: 8px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: monospace;
+    font-size: 12px;
+    resize: none;
+}
+
+.editRow {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.editLabel {
+    font-size: 12px;
+    color: var(--text-secondary);
+}
+
+/* Buttons */
+.btn {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    cursor: pointer;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.btn:hover {
+    background: var(--bg-hover);
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: default;
+}
+
+.btnActive {
+    background: var(--accent);
+    color: #fff;
+    border-color: var(--accent);
+}
+
+.btnDanger {
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+.btnDanger:hover {
+    background: var(--danger);
+    color: #fff;
+}
+
+.btnSecondary {
+    padding: 4px 10px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 12px;
+}
+
+/* CLI Panel */
+.cliPanel {
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    height: 200px;
+    background: #1e1e1e;
+}
+
+.cliOutput {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px 12px;
+    font-family: monospace;
+    font-size: 12px;
+    color: #d4d4d4;
+}
+
+.cliLine {
+    white-space: pre-wrap;
+    word-break: break-all;
+    min-height: 1em;
+}
+
+.cliInputRow {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px 8px;
+    border-top: 1px solid #333;
+}
+
+.cliPrompt {
+    color: #4ec9b0;
+    font-family: monospace;
+    font-size: 13px;
+    font-weight: 700;
+}
+
+.cliInput {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid #444;
+    border-radius: var(--radius);
+    background: #2d2d2d;
+    color: #d4d4d4;
+    font-family: monospace;
+    font-size: 12px;
+}
+
+.cliInput::placeholder {
+    color: #666;
+}

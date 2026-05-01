@@ -1,0 +1,72 @@
+name: Manage Labels
+
+on:
+    workflow_dispatch:
+        # allow manual trigger
+
+permissions:
+    issues: write
+    pull-requests: write
+
+jobs:
+    sync-labels:
+        name: Sync Labels
+        runs-on: ubuntu-latest
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Create/update labels
+              uses: actions/github-script@v7
+              with:
+                  script: |
+                      const labels = [
+                        // Type
+                        { name: "bug",             color: "d73a4a", description: "Something isn't working" },
+                        { name: "enhancement",     color: "a2eeef", description: "New feature or request" },
+                        { name: "documentation",   color: "0075ca", description: "Improvements or additions to documentation" },
+                        { name: "chore",           color: "e4e669", description: "Maintenance, refactoring, tooling" },
+                        // Priority
+                        { name: "priority: high",  color: "b60205", description: "Needs immediate attention" },
+                        { name: "priority: low",   color: "c5def5", description: "Nice to have, no urgency" },
+                        // Status
+                        { name: "needs review",    color: "fbca04", description: "Awaiting code review" },
+                        { name: "needs triage",    color: "e4e669", description: "Awaiting initial triage" },
+                        { name: "blocked",         color: "e11d48", description: "Blocked by another issue or external dependency" },
+                        { name: "wont fix",        color: "ffffff", description: "This will not be worked on" },
+                        { name: "duplicate",       color: "cfd3d7", description: "This issue or pull request already exists" },
+                        // Contribution
+                        { name: "good first issue", color: "7057ff", description: "Good for newcomers" },
+                        { name: "help wanted",      color: "008672", description: "Extra attention is needed" },
+                        // Impact
+                        { name: "breaking change",  color: "d93f0b", description: "Introduces a breaking change" },
+                        { name: "security",         color: "e11d48", description: "Security vulnerability or hardening" },
+                        // Scope
+                        { name: "area: db-drivers", color: "bfd4f2", description: "PostgreSQL, MySQL, SQLite, MSSQL, MongoDB, Redis drivers" },
+                        { name: "area: ui",         color: "bfd4f2", description: "Renderer / React components" },
+                        { name: "area: ipc",        color: "bfd4f2", description: "Main ↔ renderer IPC layer" },
+                        { name: "area: ci",         color: "bfd4f2", description: "CI/CD workflows and packaging" },
+                        { name: "area: website",    color: "bfd4f2", description: "Marketing website" },
+                      ];
+
+                      for (const label of labels) {
+                        try {
+                          await github.rest.issues.createLabel({
+                            owner: context.repo.owner,
+                            repo: context.repo.repo,
+                            ...label,
+                          });
+                          console.log(`Created: ${label.name}`);
+                        } catch (err) {
+                          if (err.status === 422) {
+                            // Label already exists — update it
+                            await github.rest.issues.updateLabel({
+                              owner: context.repo.owner,
+                              repo: context.repo.repo,
+                              ...label,
+                            });
+                            console.log(`Updated: ${label.name}`);
+                          } else {
+                            throw err;
+                          }
+                        }
+                      }
