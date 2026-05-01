@@ -137,6 +137,7 @@
       "createStartMenuShortcut": true
     },
     "linux": {
+      "maintainer": "DB Assistant Contributors <noreply@github.com>",
       "target": [
         "AppImage",
         "deb",
@@ -153,8 +154,7 @@
           "StartupWMClass": "db-assistant"
         }
       }
-    },
-    "_macNote": "macOS support is planned as a future development opportunity"
+    }
   },
   "overrides": {
     "uuid": ">=14.0.0"
