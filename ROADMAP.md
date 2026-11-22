@@ -2,7 +2,7 @@
 
 ## Current Status
 
-v0.1.x beta — all core features shipped and working on Windows and Linux. CI/CD pipeline, auto-update, packaging, and open-source infrastructure are in place.
+v0.2.0 — all core features shipped and working on Windows and Linux. CI/CD pipeline, auto-update, packaging, and open-source infrastructure are in place.
 
 ---
 
@@ -11,9 +11,9 @@ v0.1.x beta — all core features shipped and working on Windows and Linux. CI/C
 - [ ] Clean VM install validation on Ubuntu 22.04+ and Fedora 38+
 - [ ] Beta → stable upgrade path smoke test
 - [ ] Expand contributor docs: end-to-end local setup, Docker CI guide, how to add a new database driver
-- [ ] Troubleshooting section in README (node-gyp, native modules, platform quirks)
+- [x] Troubleshooting section in README (node-gyp, native modules, platform quirks)
 - [ ] Windows Authenticode code signing
-- [ ] Make repository public
+- [x] Make repository public
 
 ---
 

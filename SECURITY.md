@@ -7,7 +7,7 @@ to older versions.
 
 | Version        | Supported          |
 | -------------- | ------------------ |
-| Latest beta    | :white_check_mark: |
+| Latest release (0.2.x) | :white_check_mark: |
 | Older releases | :x:                |
 
 ## Reporting a Vulnerability

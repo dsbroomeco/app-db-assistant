@@ -64,7 +64,7 @@ All notable changes to this project will be documented in this file. See [standa
 #### Phase 7: Advanced Features
 - Data import wizard (CSV, JSON → table) with preview and column mapping
 - Schema diff and comparison between connections
-- ERD (Entity Relationship Diagram) generation with Mermaid
+- ERD (Entity Relationship Diagram) generation on HTML5 canvas
 - SSH tunnel support for remote database connections
 - Saved queries and query snippets management
 - Customizable keyboard shortcuts with settings UI

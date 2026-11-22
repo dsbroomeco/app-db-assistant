@@ -31,16 +31,16 @@ chore: upgrade electron to v30
 
 1. Create a feature branch from `main`
 2. Make your changes with tests
-3. Run `npm test`, `npm run test:e2e`, and `npm run lint` before opening a release-affecting PR
+3. Run `npm run typecheck`, `npm run lint`, `npm test`, and `npm run test:e2e` before opening a release-affecting PR
 4. Open a PR with a clear description of the change
-6. Link related issues
+5. Link related issues
 
 ## Code Style
 
 - TypeScript strict mode
 - Functional React components with hooks
 - Named exports preferred
-- ESLint + Prettier (run `npm run lint` to check)
+- ESLint + Prettier (`npm run lint` to check, `npm run format` to format)
 
 ## Security
 

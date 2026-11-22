@@ -40,6 +40,7 @@ describe("ipc shared types", () => {
       "settings:get",
       "settings:set",
       "app:get-version",
+      "app:check-for-updates",
       "theme:get-system",
       "conn:list",
       "conn:save",
@@ -88,7 +89,7 @@ describe("ipc shared types", () => {
       "shortcuts:set",
       "shortcuts:reset",
     ];
-    expect(channelKeys).toHaveLength(50);
+    expect(channelKeys).toHaveLength(51);
   });
 
   it("DEFAULT_SHORTCUTS is re-exported from ipc", () => {
