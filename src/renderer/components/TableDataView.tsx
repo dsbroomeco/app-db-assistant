@@ -185,8 +185,10 @@ export function TableDataView({
     // Refs for reading latest dirty state inside callbacks without stale closures
     const localEditsRef = useRef(localEdits);
     const dirtyColsRef = useRef(dirtyCols);
-    localEditsRef.current = localEdits;
-    dirtyColsRef.current = dirtyCols;
+    useEffect(() => {
+        localEditsRef.current = localEdits;
+        dirtyColsRef.current = dirtyCols;
+    }, [localEdits, dirtyCols]);
 
     // Load primary keys once
     useEffect(() => {
@@ -232,8 +234,35 @@ export function TableDataView({
     );
 
     useEffect(() => {
-        fetchData(0);
-    }, [fetchData]);
+        let cancelled = false;
+        window.electronAPI
+            .invoke("db:table-data", {
+                connectionId,
+                schema,
+                table,
+                page: 0,
+                pageSize: PAGE_SIZE,
+            })
+            .then((data) => {
+                if (cancelled) return;
+                setLocalEdits({});
+                setDirtyCols({});
+                setError(null);
+                setResult(data);
+                setPage(0);
+                setSelectedRows(new Set());
+                setEditingCell(null);
+                setLoading(false);
+            })
+            .catch((err) => {
+                if (cancelled) return;
+                setError(err instanceof Error ? err.message : String(err));
+                setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [connectionId, schema, table]);
 
     const totalPages = result
         ? Math.max(1, Math.ceil(result.totalRows / PAGE_SIZE))
@@ -585,7 +614,9 @@ export function TableDataView({
 
     // Stable wrappers so TableRow memo isn't invalidated by deps-changing callbacks
     const commitEditRef = useRef(commitEdit);
-    commitEditRef.current = commitEdit;
+    useEffect(() => {
+        commitEditRef.current = commitEdit;
+    }, [commitEdit]);
     const stableCommitEdit = useCallback(() => commitEditRef.current(), []);
 
     const onSetEditingCellValue = useCallback((value: string) => {

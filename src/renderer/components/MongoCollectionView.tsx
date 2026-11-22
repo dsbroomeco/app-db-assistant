@@ -66,8 +66,35 @@ export function MongoCollectionView({
     );
 
     useEffect(() => {
-        fetchDocuments(0);
-    }, [fetchDocuments]);
+        let cancelled = false;
+        window.electronAPI
+            .invoke("mongo:find", {
+                connectionId,
+                database,
+                collection,
+                filter: "{}",
+                page: 0,
+                pageSize,
+            })
+            .then((result: MongoFindResult) => {
+                if (cancelled) return;
+                setError(null);
+                setDocuments(result.documents);
+                setTotalCount(result.totalCount);
+                setHasMore(result.hasMore);
+                setPage(0);
+                setSelectedIds(new Set());
+                setLoading(false);
+            })
+            .catch((err) => {
+                if (cancelled) return;
+                setError(err instanceof Error ? err.message : String(err));
+                setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [connectionId, database, collection, pageSize]);
 
     const handleSearch = useCallback(() => {
         fetchDocuments(0);

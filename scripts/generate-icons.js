@@ -14,7 +14,6 @@
  */
 
 const sharp = require("sharp");
-const pngToIco = require("png-to-ico");
 const fs = require("fs");
 const path = require("path");
 
@@ -81,6 +80,8 @@ async function main() {
     console.log("  build/icon.png (1024x1024)");
 
     // 2. Windows .ico bundle (multi-resolution)
+    const pngToIcoMod = await import("png-to-ico");
+    const pngToIco = pngToIcoMod.default ?? pngToIcoMod;
     const icoSizes = [16, 24, 32, 48, 64, 128, 256];
     const icoBuffers = await Promise.all(
       icoSizes.map((size) => sharp(svgBuffer).resize(size, size).png().toBuffer()),

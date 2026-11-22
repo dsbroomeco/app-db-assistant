@@ -21,7 +21,7 @@ DB Assistant is a cross-platform desktop application built with **Electron** and
 │  │              IPC Bridge (typed channels)       │  │
 │  └───────────────────────┬───────────────────────┘  │
 └──────────────────────────┼──────────────────────────┘
-                           │ IPC (50 channels)
+                           │ IPC (typed channels)
 ┌──────────────────────────┼──────────────────────────┐
 │                    Main Process                      │
 │  ┌───────────────────────┴───────────────────────┐  │
@@ -90,7 +90,7 @@ NoSQL drivers implement their own interfaces (see `src/db/types.ts` for `MongoDB
 
 ### 3. Credential Security
 
-- Credentials are encrypted at rest using the OS keychain (via `keytar` or `electron-safeStorage`)
+- Credentials are encrypted at rest using the OS keychain via Electron's `safeStorage` API and stored with `electron-store`
 - Connection configs stored in a local JSON file contain only non-sensitive fields
 - Credentials are decrypted only at connection time in the main process
 - All SSL/TLS connections support configurable certificate verification (`sslRejectUnauthorized`)
@@ -111,7 +111,7 @@ NoSQL drivers implement their own interfaces (see `src/db/types.ts` for `MongoDB
 - Linux packaging installs the `rpm` system package before building the `.rpm` target
 - Docker containers (`docker/Dockerfile.linux`, `docker/Dockerfile.win`) for local pipeline validation before pushing to CI
 - Dependabot configured for automated dependency updates (`.github/dependabot.yml`)
-- `standard-version` for automated semver bumps, changelog generation, and git tagging
+- `commit-and-tag-version` for automated semver bumps, changelog generation, and git tagging
 
 ### 6. Tab System
 
@@ -124,7 +124,7 @@ The renderer uses a tab manager that supports:
 - Redis browser tabs (key list with pattern search, type-aware value viewer, inline string editing, CLI passthrough)
 - Each tab maintains its own state and can reference different database connections via metadata
 
-### 5. SQL Editor & Query Execution
+### 7. SQL Editor & Query Execution
 
 The SQL editor uses **CodeMirror 6** with the following features:
 - SQL syntax highlighting via `@codemirror/lang-sql`
@@ -139,11 +139,11 @@ The SQL editor uses **CodeMirror 6** with the following features:
 
 Security: All SQL execution happens in the main process via the driver layer. The renderer sends raw SQL strings through IPC — the drivers execute them using their native client libraries. No string interpolation is used for parameterized table browsing queries.
 
-### 6. CRUD Operations
+### 8. CRUD Operations
 
-The table data viewer supports inline CRUD operations:
+The table data viewer supports inline CRUD operations with deferred batch editing:
 
-- **Inline editing**: Double-click a cell to edit it in-place. Changes are committed via `UPDATE` with parameterized queries using the row's primary key for identification.
+- **Inline editing & deferred save**: Double-click a cell (or press F2) to edit it in-place. Pressing Enter stages the change locally and marks the cell/row dirty; pressing `Ctrl+S` commits all dirty rows in parallel via parameterized `UPDATE` queries keyed by primary key.
 - **Add row**: An insertable row form appears at the top of the table. Empty columns default to `NULL`, letting the database apply column defaults.
 - **Delete rows**: Single or multi-row deletion with a confirmation dialog. Rows are identified by primary key.
 - **Bulk operations**: Multi-select rows with Ctrl+Click (toggle) or Shift+Click (range). Bulk delete operates on all selected rows.
@@ -156,7 +156,8 @@ Keyboard shortcuts:
 | --- | --- |
 | Double-click | Edit cell |
 | F2 | Edit first column in selected row |
-| Enter | Commit edit |
+| Enter | Stage cell edit |
+| Ctrl+S | Save all pending edits |
 | Escape | Cancel edit / close add row |
 | Ctrl+N | Add new row |
 | Delete / Backspace | Delete selected rows |
@@ -165,9 +166,9 @@ Keyboard shortcuts:
 | Ctrl+Click | Toggle row selection |
 | Shift+Click | Range-select rows |
 
-### 7. IPC Communication
+### 9. IPC Communication
 
-All main ↔ renderer communication uses typed IPC channels defined in `src/shared/ipc.ts` (50 channels total):
+All main ↔ renderer communication uses typed IPC channels defined in `src/shared/ipc.ts` (51 channels total):
 
 ```typescript
 // Channel definitions include connection management, schema browsing, query execution, CRUD, and NoSQL operations
@@ -205,7 +206,7 @@ type IpcChannels = {
 | Desktop framework  | Electron                     | Mature, cross-platform, large ecosystem      |
 | UI framework       | React + TypeScript           | Component model, type safety, ecosystem      |
 | SQL Editor         | CodeMirror 6               | Lightweight, extensible, excellent SQL support   |
-| Database drivers   | pg, mysql2, better-sqlite3, tedious | Native Node.js drivers, well-maintained |
+| Database drivers   | pg, mysql2, better-sqlite3, mssql | Native Node.js drivers, well-maintained |
 | NoSQL drivers      | mongodb, ioredis             | Official/community standard drivers          |
 | Build/package      | electron-builder             | Multi-platform packaging and auto-update     |
 | Testing            | Vitest + Playwright          | Fast unit tests, reliable e2e                |
