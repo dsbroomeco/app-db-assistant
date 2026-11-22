@@ -37,6 +37,7 @@ yarn-error.log*
 
 # Coverage & test output
 coverage/
+.vitest/
 test-results/
 playwright-report/
 

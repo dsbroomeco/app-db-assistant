@@ -16,6 +16,8 @@ export default tseslint.config(
         },
         rules: {
             ...reactHooks.configs.recommended.rules,
+            // React Compiler is not enabled; TanStack Virtual's useVirtualizer is intentional
+            "react-hooks/incompatible-library": "off",
             "@typescript-eslint/no-unused-vars": [
                 "error",
                 { argsIgnorePattern: "^_" },

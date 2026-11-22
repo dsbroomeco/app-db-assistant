@@ -42,6 +42,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
     const [historyEntries, setHistoryEntries] = useState<QueryHistoryEntry[]>([]);
     const [activeResultsTab, setActiveResultsTab] = useState<ResultsTab>("results");
     const [editorHeight, setEditorHeight] = useState(200);
+    const [isResizing, setIsResizing] = useState(false);
     const [exportMenuOpen, setExportMenuOpen] = useState(false);
     const [savedQueries, setSavedQueries] = useState<SavedQuery[]>([]);
     const [savedQueriesOpen, setSavedQueriesOpen] = useState(false);
@@ -51,7 +52,6 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
     const viewRef = useRef<EditorView | null>(null);
     const themeCompartment = useRef(new Compartment());
     const completionCompartment = useRef(new Compartment());
-    const resizing = useRef(false);
     const resizeStartY = useRef(0);
     const resizeStartH = useRef(0);
 
@@ -60,12 +60,8 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
         [connections, isConnected],
     );
 
-    // Auto-select first connected connection if none selected
-    useEffect(() => {
-        if (!selectedConnectionId && connectedConnections.length > 0) {
-            setSelectedConnectionId(connectedConnections[0].id);
-        }
-    }, [selectedConnectionId, connectedConnections]);
+    const effectiveConnectionId =
+        selectedConnectionId || connectedConnections[0]?.id || "";
 
     const isDark = useMemo(() => {
         if (settings.theme === "dark") return true;
@@ -98,7 +94,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
     // Execute query
     const handleExecute = useCallback(async () => {
         const sqlText = getEditorContent().trim();
-        if (!sqlText || !selectedConnectionId) return;
+        if (!sqlText || !effectiveConnectionId) return;
 
         setExecuting(true);
         setError(null);
@@ -108,7 +104,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
 
         try {
             const res = await window.electronAPI.invoke("query:execute", {
-                connectionId: selectedConnectionId,
+                connectionId: effectiveConnectionId,
                 sql: sqlText,
             });
             setResult(res);
@@ -118,12 +114,12 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
             setExecuting(false);
             refreshHistory();
         }
-    }, [getEditorContent, selectedConnectionId, refreshHistory]);
+    }, [getEditorContent, effectiveConnectionId, refreshHistory]);
 
     // Explain query
     const handleExplain = useCallback(async () => {
         const sqlText = getEditorContent().trim();
-        if (!sqlText || !selectedConnectionId) return;
+        if (!sqlText || !effectiveConnectionId) return;
 
         setExecuting(true);
         setError(null);
@@ -132,7 +128,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
 
         try {
             const res = await window.electronAPI.invoke("query:explain", {
-                connectionId: selectedConnectionId,
+                connectionId: effectiveConnectionId,
                 sql: sqlText,
             });
             setExplainResult(res);
@@ -141,7 +137,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
         } finally {
             setExecuting(false);
         }
-    }, [getEditorContent, selectedConnectionId]);
+    }, [getEditorContent, effectiveConnectionId]);
 
     const handleClearHistory = useCallback(async () => {
         await window.electronAPI.invoke("query:history:clear");
@@ -160,7 +156,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
     const handleExport = useCallback(
         async (format: ExportFormat) => {
             setExportMenuOpen(false);
-            if (!result || !selectedConnectionId) return;
+            if (!result || !effectiveConnectionId) return;
 
             const sqlText = getEditorContent().trim();
             if (!sqlText) return;
@@ -174,7 +170,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
 
             try {
                 await window.electronAPI.invoke("query:export", {
-                    connectionId: selectedConnectionId,
+                    connectionId: effectiveConnectionId,
                     sql: sqlText,
                     format,
                     filePath,
@@ -183,7 +179,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
                 setError(err instanceof Error ? err.message : String(err));
             }
         },
-        [result, selectedConnectionId, getEditorContent],
+        [result, effectiveConnectionId, getEditorContent],
     );
 
     // Saved queries
@@ -198,11 +194,11 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
         await window.electronAPI.invoke("queries:save", {
             name: saveQueryName.trim(),
             sql,
-            connectionId: selectedConnectionId || undefined,
+            connectionId: effectiveConnectionId || undefined,
         });
         setSaveQueryName("");
         await refreshSavedQueries();
-    }, [getEditorContent, saveQueryName, selectedConnectionId, refreshSavedQueries]);
+    }, [getEditorContent, saveQueryName, effectiveConnectionId, refreshSavedQueries]);
 
     const handleLoadQuery = useCallback((sq: SavedQuery) => {
         setEditorContent(sq.sql);
@@ -274,7 +270,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
 
     // Update autocomplete when connection changes
     useEffect(() => {
-        if (!selectedConnectionId) return;
+        if (!effectiveConnectionId) return;
 
         let cancelled = false;
 
@@ -282,7 +278,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
             try {
                 const items = await window.electronAPI.invoke(
                     "query:completions",
-                    selectedConnectionId,
+                    effectiveConnectionId,
                 );
                 if (cancelled) return;
 
@@ -316,24 +312,23 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
         return () => {
             cancelled = true;
         };
-    }, [selectedConnectionId]);
+    }, [effectiveConnectionId]);
 
     // Resize handle
     const handleResizeStart = useCallback(
         (e: React.MouseEvent) => {
             e.preventDefault();
-            resizing.current = true;
+            setIsResizing(true);
             resizeStartY.current = e.clientY;
             resizeStartH.current = editorHeight;
 
             const onMove = (ev: MouseEvent) => {
-                if (!resizing.current) return;
                 const delta = ev.clientY - resizeStartY.current;
                 setEditorHeight(Math.max(80, Math.min(600, resizeStartH.current + delta)));
             };
 
             const onUp = () => {
-                resizing.current = false;
+                setIsResizing(false);
                 document.removeEventListener("mousemove", onMove);
                 document.removeEventListener("mouseup", onUp);
             };
@@ -366,7 +361,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
             <div className={styles.toolbar}>
                 <select
                     className={styles.connectionSelect}
-                    value={selectedConnectionId}
+                    value={effectiveConnectionId}
                     onChange={(e) => setSelectedConnectionId(e.target.value)}
                 >
                     <option value="">Select connection…</option>
@@ -380,7 +375,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
                 <button
                     className={styles.runBtn}
                     onClick={handleExecute}
-                    disabled={executing || !selectedConnectionId}
+                    disabled={executing || !effectiveConnectionId}
                     title="Execute query (Ctrl+Enter)"
                 >
                     ▶ Run
@@ -389,7 +384,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
                 <button
                     className={styles.toolbarBtn}
                     onClick={handleExplain}
-                    disabled={executing || !selectedConnectionId}
+                    disabled={executing || !effectiveConnectionId}
                     title="Explain query plan"
                 >
                     📊 Explain
@@ -499,7 +494,7 @@ export function QueryEditorView({ connectionId: initialConnectionId }: QueryEdit
 
             {/* Resize handle */}
             <div
-                className={`${styles.resizeHandle} ${resizing.current ? styles.resizeHandleActive : ""}`}
+                className={`${styles.resizeHandle} ${isResizing ? styles.resizeHandleActive : ""}`}
                 onMouseDown={handleResizeStart}
             />
 

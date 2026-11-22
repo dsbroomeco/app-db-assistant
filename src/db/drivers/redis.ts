@@ -116,7 +116,7 @@ export class RedisDriverImpl implements RedisDriver {
         value = await client.smembers(key);
         break;
       case "zset":
-        value = await client.zrange(key, 0, -1, "WITHSCORES");
+        value = await client.zrange(key, 0, "-1", "WITHSCORES");
         break;
       case "hash":
         value = await client.hgetall(key);

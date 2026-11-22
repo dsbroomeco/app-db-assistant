@@ -1,5 +1,8 @@
 import { defineConfig } from "@playwright/test";
 
+// Ensure Electron launches as Electron (not Node) when tests run from Electron-based IDEs.
+delete process.env.ELECTRON_RUN_AS_NODE;
+
 export default defineConfig({
   testDir: "./tests/e2e",
   testMatch: "**/*.test.ts",

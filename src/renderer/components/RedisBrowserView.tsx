@@ -71,8 +71,31 @@ export function RedisBrowserView({ connectionId }: RedisBrowserViewProps) {
     );
 
     useEffect(() => {
-        scanKeys(true);
-    }, [scanKeys]);
+        let cancelled = false;
+        window.electronAPI
+            .invoke("redis:scan", {
+                connectionId,
+                pattern: "*",
+                cursor: "0",
+                count: 100,
+            })
+            .then((result: RedisScanResult) => {
+                if (cancelled) return;
+                setError(null);
+                setKeys(result.keys);
+                setCursor(result.cursor);
+                setHasMore(result.hasMore);
+                setLoading(false);
+            })
+            .catch((err) => {
+                if (cancelled) return;
+                setError(err instanceof Error ? err.message : String(err));
+                setLoading(false);
+            });
+        return () => {
+            cancelled = true;
+        };
+    }, [connectionId]);
 
     const handleSearch = useCallback(() => {
         scanKeys(true);

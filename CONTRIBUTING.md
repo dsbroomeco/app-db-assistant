@@ -5,7 +5,7 @@ Thanks for your interest in contributing! Here's how to get started.
 ## Development Setup
 
 1. **Fork and clone** the repository
-2. **Install Node.js 20+** and npm 10+
+2. **Install Node.js 24+** and npm 10+
 3. Run `npm install` in the project root
 4. If you need to build Linux `.rpm` packages locally, install the system `rpm` package first
 

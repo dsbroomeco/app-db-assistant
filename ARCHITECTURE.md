@@ -111,7 +111,7 @@ NoSQL drivers implement their own interfaces (see `src/db/types.ts` for `MongoDB
 - Linux packaging installs the `rpm` system package before building the `.rpm` target
 - Docker containers (`docker/Dockerfile.linux`, `docker/Dockerfile.win`) for local pipeline validation before pushing to CI
 - Dependabot configured for automated dependency updates (`.github/dependabot.yml`)
-- `standard-version` for automated semver bumps, changelog generation, and git tagging
+- `commit-and-tag-version` for automated semver bumps, changelog generation, and git tagging
 
 ### 6. Tab System
 

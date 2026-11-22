@@ -52,8 +52,20 @@ export function ConnectionProvider({ children }: { children: ReactNode }) {
     }, []);
 
     useEffect(() => {
-        refresh();
-    }, [refresh]);
+        let cancelled = false;
+        Promise.all([
+            window.electronAPI.invoke("conn:list"),
+            window.electronAPI.invoke("conn:statuses"),
+        ]).then(([conns, stats]) => {
+            if (cancelled) return;
+            setConnections(conns);
+            setStatuses(stats);
+            setLoading(false);
+        });
+        return () => {
+            cancelled = true;
+        };
+    }, []);
 
     const save = useCallback(
         async (config: ConnectionConfig, password?: string, sshPassword?: string) => {

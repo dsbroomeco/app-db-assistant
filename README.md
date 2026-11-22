@@ -71,7 +71,7 @@ Visit the [Releases page](https://github.com/dsbroomeco/app-db-assistant/release
 
 ### Prerequisites
 
-- Node.js 20+
+- Node.js 24+
 - npm 10+
 
 ### Getting Started
@@ -157,7 +157,7 @@ app-db-assistant/
 
 ### Troubleshooting
 
-- **`better-sqlite3` / `NODE_MODULE_VERSION` mismatch**: `better-sqlite3` is a native addon compiled against a specific ABI. If SQLite fails to load inside Electron, run `npm run rebuild:native`. On Windows you need Visual Studio C++ Build Tools (Desktop development with C++) and Python 3; on Linux install `python3`, `make`, and `g++`.
+- **`better-sqlite3` / native module issues**: `better-sqlite3` v13 ships prebuilt N-API binaries, so manual rebuilds are usually unnecessary. If SQLite still fails to load inside Electron on your platform, run `npm run rebuild:native`. Building from source requires Visual Studio C++ Build Tools and Python 3 on Windows, or `python3`, `make`, and `g++` on Linux.
 - **Linux `.rpm` packaging fails locally**: `electron-builder` requires the system `rpm` package (`sudo apt-get install -y rpm` on Debian/Ubuntu) to build `.rpm` artifacts.
 - **Packaging fails on `cpu-features`**: `ssh2` pulls in `cpu-features` as an optional native dependency that does not always compile against Electron headers. Use `npm run build:win` or `npm run build:linux`, which remove `cpu-features` automatically before invoking `electron-builder`.
 - **Linux credential storage (`safeStorage`)**: Encrypted credentials require a running secret service (such as GNOME Keyring or KWallet) on Linux desktop environments.

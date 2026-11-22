@@ -447,6 +447,7 @@ export async function executeQuery(
       rowCount: 0,
       error: message,
     });
+    // eslint-disable-next-line preserve-caught-error -- intentionally omit raw cause to avoid leaking unsanitized credentials
     throw new Error(message);
   }
 }

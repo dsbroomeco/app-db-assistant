@@ -15,38 +15,43 @@ export function TableStructureView({
     schema,
     table,
 }: TableStructureViewProps) {
-    const [structure, setStructure] = useState<TableStructure | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const targetKey = `${connectionId}:${schema}:${table}`;
+    const [fetched, setFetched] = useState<{
+        key: string;
+        structure: TableStructure | null;
+        error: string | null;
+    }>({ key: "", structure: null, error: null });
     const [activeSection, setActiveSection] =
         useState<ActiveSection>("columns");
 
     useEffect(() => {
         let cancelled = false;
-        setLoading(true);
-        setError(null);
 
         window.electronAPI
             .invoke("db:table-structure", { connectionId, schema, table })
             .then((result) => {
                 if (!cancelled) {
-                    setStructure(result);
-                    setLoading(false);
+                    setFetched({ key: targetKey, structure: result, error: null });
                 }
             })
             .catch((err) => {
                 if (!cancelled) {
-                    setError(
-                        err instanceof Error ? err.message : String(err),
-                    );
-                    setLoading(false);
+                    setFetched({
+                        key: targetKey,
+                        structure: null,
+                        error: err instanceof Error ? err.message : String(err),
+                    });
                 }
             });
 
         return () => {
             cancelled = true;
         };
-    }, [connectionId, schema, table]);
+    }, [connectionId, schema, table, targetKey]);
+
+    const loading = fetched.key !== targetKey;
+    const structure = loading ? null : fetched.structure;
+    const error = loading ? null : fetched.error;
 
     if (loading) {
         return (

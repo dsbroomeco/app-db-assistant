@@ -10,7 +10,7 @@
 # NOTE: This produces unsigned Windows installers. The official signed
 # Windows build should use the GitHub Actions windows-latest runner.
 
-FROM node:20-bullseye
+FROM node:24-bookworm
 
 ENV DEBIAN_FRONTEND=noninteractive
 
